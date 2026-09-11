@@ -3,797 +3,462 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+
     <title>Sistem Manajemen Kas RT & Iuran Warga - Puri Avanti RT 1 RW 12</title>
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet"
+          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet">
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
 
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #f8fafc;
-            overflow-x: hidden;
+            background: #f8fafc;
         }
 
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 4px;
-            height: 4px;
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 2px 12px rgba(15, 23, 42, 0.06);
         }
 
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
+        .nav-active {
+            background: #2563eb;
+            color: white;
         }
 
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 4px;
+        .modal-bg {
+            background: rgba(15, 23, 42, 0.55);
         }
 
-        .tab-active {
-            border-bottom: 2px solid #2563eb;
-            color: #2563eb;
-            font-weight: 600;
+        .table-wrap {
+            overflow-x: auto;
         }
 
-        .tab-inactive {
-            color: #64748b;
-            font-weight: 500;
+        button:disabled {
+            opacity: .6;
+            cursor: not-allowed;
         }
 
-        .admin-only.hidden {
-            display: none !important;
+        .status-paid {
+            color: #059669;
+            background: #d1fae5;
         }
 
-        .readonly-overlay {
-            pointer-events: none;
-            opacity: .65;
-        }
-
-        th,
-        td {
-            white-space: normal !important;
-            word-break: break-word;
-        }
-
-        #toast {
-            top: 76px;
-            bottom: auto;
-            left: 50%;
-            right: auto;
-            transform: translate(-50%, -120px);
-            min-width: min(320px, calc(100vw - 24px));
-            max-width: calc(100vw - 24px);
-            justify-content: center;
-            text-align: center;
-            z-index: 200;
-        }
-
-        #toast.toast-show {
-            transform: translate(-50%, 0);
-            opacity: 1;
-        }
-
-        #toast.toast-success {
-            background-color: #166534;
-        }
-
-        #toast.toast-error {
-            background-color: #be123c;
-        }
-
-        #toast.toast-warning {
-            background-color: #b45309;
-        }
-
-        @media (max-width: 640px) {
-            #toast {
-                top: 72px;
-                min-width: calc(100vw - 24px);
-                font-size: 11px;
-            }
+        .status-unpaid {
+            color: #dc2626;
+            background: #fee2e2;
         }
     </style>
-
-    <!-- Firebase Realtime Database -->
-    <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
 </head>
 
-<body class="text-slate-800 min-h-screen flex flex-col overflow-x-hidden">
+<body class="text-slate-800">
 
-<nav class="bg-blue-700 text-white shadow-md sticky top-0 z-30">
-    <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-2.5">
+<div class="min-h-screen">
 
-        <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+    <!-- HEADER -->
+    <header class="bg-blue-700 text-white shadow-lg">
+        <div class="max-w-7xl mx-auto px-4 py-4">
 
-            <div class="flex items-center gap-2 min-w-0">
+            <div class="flex flex-wrap items-center justify-between gap-3">
 
-                <div class="w-8 h-8 sm:w-9 sm:h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-inner shrink-0">
-                    <i class="fas fa-building text-sm sm:text-lg"></i>
-                </div>
-
-                <div class="min-w-0 flex-1">
-                    <h1 class="font-bold text-xs sm:text-base leading-tight truncate">
-                        Puri Avanti RT 01 RW 12
+                <div>
+                    <h1 class="text-xl md:text-2xl font-bold">
+                        Sistem Manajemen Kas RT & Iuran Warga
                     </h1>
 
-                    <p class="text-blue-200 text-[10px] sm:text-xs truncate">
-                        Manajemen Keuangan & Status Iuran
+                    <p class="text-blue-100 text-sm">
+                        Puri Avanti RT 1 RW 12
                     </p>
                 </div>
 
-            </div>
+                <div class="flex items-center gap-2">
 
-            <div class="flex items-center shrink-0 sm:hidden">
+                    <span id="firebaseStatus"
+                          class="text-xs bg-white/15 px-3 py-1.5 rounded-full">
+                        Menghubungkan...
+                    </span>
 
-                <button
-                    id="admin-login-btn-mb"
-                    onclick="openAdminLogin()"
-                    class="px-2 py-1 rounded-lg bg-white/15 text-xs font-semibold">
-                    <i class="fas fa-lock"></i>
-                </button>
+                    <button
+                        id="adminButton"
+                        onclick="openAdminLogin()"
+                        class="bg-white text-blue-700 px-3 py-2 rounded-lg text-sm font-semibold">
 
-                <button
-                    id="admin-change-pin-btn-mb"
-                    onclick="openChangePin()"
-                    class="admin-only ml-1 px-2 py-1 rounded-lg bg-amber-500 text-xs font-semibold hidden">
-                    <i class="fas fa-key"></i>
-                </button>
+                        <i class="fa-solid fa-user-shield mr-1"></i>
+                        Admin
 
-                <button
-                    id="admin-logout-btn-mb"
-                    onclick="logoutAdmin()"
-                    class="admin-only ml-1 px-2 py-1 rounded-lg bg-rose-500 text-xs font-semibold hidden">
-                    <i class="fas fa-sign-out-alt"></i>
-                </button>
+                    </button>
+
+                </div>
 
             </div>
+
         </div>
+    </header>
 
-        <div class="flex items-center bg-blue-800/60 p-1 rounded-xl border border-blue-500/30 w-full sm:w-auto justify-center">
+
+    <!-- NAVIGATION -->
+    <nav class="bg-white border-b sticky top-0 z-30">
+
+        <div class="max-w-7xl mx-auto px-4 flex gap-2 py-2">
 
             <button
-                onclick="switchMainPage('dashboard')"
-                id="nav-btn-dashboard"
-                class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center">
-                <i class="fas fa-chart-pie mr-1"></i>
+                id="navCash"
+                onclick="showPage('cash')"
+                class="nav-active px-4 py-2 rounded-lg text-sm font-semibold">
+
+                <i class="fa-solid fa-wallet mr-1"></i>
                 Kas & Transaksi
+
             </button>
 
             <button
-                onclick="switchMainPage('houses')"
-                id="nav-btn-houses"
-                class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center">
+                id="navDues"
+                onclick="showPage('dues')"
+                class="px-4 py-2 rounded-lg text-sm font-semibold text-slate-600">
 
-                <i class="fas fa-home mr-1"></i>
+                <i class="fa-solid fa-house-user mr-1"></i>
                 Status Iuran
 
-                <span
-                    id="unpaid-badge"
-                    class="ml-1 px-1.5 py-0.5 text-[9px] bg-rose-500 text-white rounded-full font-bold inline-block">
-                    0
-                </span>
-
             </button>
 
         </div>
 
-        <div class="hidden sm:flex items-center">
+    </nav>
 
-            <div
-                class="text-xs font-medium text-blue-100 hidden lg:block mr-3"
-                id="current-date">
+
+    <main class="max-w-7xl mx-auto p-4">
+
+        <!-- ===================================================== -->
+        <!-- HALAMAN KAS -->
+        <!-- ===================================================== -->
+
+        <section id="cashPage">
+
+            <!-- DASHBOARD -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-5">
+
+                <div class="card p-5">
+
+                    <p class="text-sm text-slate-500">
+                        Total Saldo Kas RT
+                    </p>
+
+                    <p id="totalBalance"
+                       class="text-2xl font-bold text-blue-700 mt-2">
+                        Rp 0
+                    </p>
+
+                </div>
+
+
+                <div class="card p-5">
+
+                    <p class="text-sm text-slate-500">
+                        Total Pemasukan
+                    </p>
+
+                    <p id="totalIncome"
+                       class="text-2xl font-bold text-emerald-600 mt-2">
+                        Rp 0
+                    </p>
+
+                </div>
+
+
+                <div class="card p-5">
+
+                    <p class="text-sm text-slate-500">
+                        Total Pengeluaran
+                    </p>
+
+                    <p id="totalExpense"
+                       class="text-2xl font-bold text-red-600 mt-2">
+                        Rp 0
+                    </p>
+
+                </div>
+
             </div>
 
-            <button
-                id="admin-login-btn"
-                onclick="openAdminLogin()"
-                class="ml-3 px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-semibold">
-                <i class="fas fa-lock mr-1"></i>
-                Login Admin
-            </button>
 
-            <button
-                id="admin-change-pin-btn"
-                onclick="openChangePin()"
-                class="admin-only ml-2 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-xs font-semibold hidden">
-                <i class="fas fa-key mr-1"></i>
-                Ubah PIN
-            </button>
+            <div class="grid lg:grid-cols-3 gap-5">
 
-            <button
-                id="admin-logout-btn"
-                onclick="logoutAdmin()"
-                class="ml-2 px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-xs font-semibold hidden">
-                <i class="fas fa-sign-out-alt mr-1"></i>
-                Logout
-            </button>
+                <!-- FORM -->
+                <div class="card p-5">
 
-        </div>
-
-    </div>
-</nav>
-
-<main class="max-w-6xl mx-auto px-2 sm:px-4 py-4 flex-1 w-full space-y-4">
-
-    <div
-        id="firebase-status"
-        class="text-[11px] text-slate-500 font-medium px-1">
-    </div>
-
-    <!-- DASHBOARD KAS & TRANSAKSI -->
-    <div id="page-dashboard" class="space-y-4 sm:space-y-6">
-
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5">
-
-            <div class="bg-gradient-to-br from-blue-700 to-indigo-800 text-white rounded-2xl p-4 sm:p-6 shadow-md relative overflow-hidden flex flex-col justify-between">
-
-                <div>
-
-                    <div class="flex justify-between items-center mb-1">
-
-                        <span class="text-[10px] sm:text-xs uppercase tracking-wider text-blue-200 font-semibold">
-                            Total Saldo Kas RT
-                        </span>
-
-                        <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded text-white">
-                            Aktif
-                        </span>
-
-                    </div>
-
-                    <h2
-                        class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1"
-                        id="total-balance">
-                        Rp 0
+                    <h2 class="font-bold text-lg mb-4">
+                        Tambah Transaksi
                     </h2>
 
-                </div>
 
-                <div class="mt-3 pt-2 border-t border-white/20 flex justify-between items-center text-[11px] text-blue-100">
+                    <div class="flex gap-2 mb-4">
 
-                    <span>Status Kas</span>
+                        <button
+                            id="incomeTab"
+                            onclick="switchTransactionForm('income')"
+                            class="flex-1 bg-emerald-600 text-white rounded-lg py-2 font-semibold">
 
-                    <span class="font-medium text-emerald-300 flex items-center gap-1">
-                        <i class="fas fa-check-circle"></i>
-                        Seimbang
-                    </span>
+                            Pemasukan
 
-                </div>
+                        </button>
 
-            </div>
 
-            <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                        <button
+                            id="expenseTab"
+                            onclick="switchTransactionForm('expense')"
+                            class="flex-1 bg-slate-100 rounded-lg py-2 font-semibold">
 
-                <div>
+                            Pengeluaran
 
-                    <div class="flex justify-between items-center mb-1">
+                        </button>
 
-                        <span class="text-[10px] sm:text-xs uppercase tracking-wider text-slate-500 font-bold">
-                            Total Pemasukan
-                        </span>
+                    </div>
 
-                        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                            <i class="fas fa-arrow-down text-xs"></i>
+
+                    <!-- FORM PEMASUKAN -->
+
+                    <form id="incomeForm"
+                          onsubmit="saveIncome(event)">
+
+                        <div class="space-y-3">
+
+                            <input
+                                id="incomeDate"
+                                type="date"
+                                required
+                                class="w-full border rounded-lg px-3 py-2">
+
+
+                            <select
+                                id="incomeMethod"
+                                class="w-full border rounded-lg px-3 py-2">
+
+                                <option value="Cash">
+                                    Tunai
+                                </option>
+
+                                <option value="Bank Mandiri">
+                                    Bank Mandiri
+                                </option>
+
+                                <option value="Bank BCA">
+                                    Bank BCA
+                                </option>
+
+                            </select>
+
+
+                            <input
+                                id="incomeHouse"
+                                list="houseList"
+                                placeholder="Nomor rumah, contoh A-01"
+                                required
+                                class="w-full border rounded-lg px-3 py-2">
+
+
+                            <input
+                                id="incomeDesc"
+                                placeholder="Keterangan, contoh: Kas RT"
+                                required
+                                class="w-full border rounded-lg px-3 py-2">
+
+
+                            <input
+                                id="incomeAmount"
+                                type="number"
+                                min="0"
+                                placeholder="Nominal"
+                                required
+                                class="w-full border rounded-lg px-3 py-2">
+
+
+                            <input
+                                id="incomeProof"
+                                type="file"
+                                accept="image/*"
+                                class="w-full text-sm">
+
+
+                            <button
+                                id="incomeSubmit"
+                                class="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-2.5 font-semibold">
+
+                                Simpan Pemasukan
+
+                            </button>
+
                         </div>
 
-                    </div>
+                    </form>
 
-                    <h3
-                        class="text-xl sm:text-2xl font-bold text-emerald-600"
-                        id="total-income">
-                        Rp 0
-                    </h3>
 
-                </div>
+                    <!-- FORM PENGELUARAN -->
 
-                <div class="mt-3 pt-2 border-t border-slate-100 space-y-1 text-xs text-slate-600">
+                    <form id="expenseForm"
+                          onsubmit="saveExpense(event)"
+                          class="hidden">
 
-                    <div class="flex justify-between text-[11px]">
-                        <span>
-                            <i class="fas fa-money-bill-wave text-amber-500 w-3"></i>
-                            Tunai:
-                        </span>
-                        <span
-                            class="font-semibold text-slate-800"
-                            id="income-cash">
-                            Rp 0
-                        </span>
-                    </div>
+                        <div class="space-y-3">
 
-                    <div class="flex justify-between text-[11px]">
-                        <span>
-                            <i class="fas fa-university text-blue-500 w-3"></i>
-                            Mandiri:
-                        </span>
-                        <span
-                            class="font-semibold text-slate-800"
-                            id="income-mandiri">
-                            Rp 0
-                        </span>
-                    </div>
+                            <input
+                                id="expenseDate"
+                                type="date"
+                                required
+                                class="w-full border rounded-lg px-3 py-2">
 
-                    <div class="flex justify-between text-[11px]">
-                        <span>
-                            <i class="fas fa-credit-card text-indigo-500 w-3"></i>
-                            BCA:
-                        </span>
-                        <span
-                            class="font-semibold text-slate-800"
-                            id="income-bca">
-                            Rp 0
-                        </span>
-                    </div>
 
-                </div>
+                            <input
+                                id="expenseDesc"
+                                placeholder="Keterangan pengeluaran"
+                                required
+                                class="w-full border rounded-lg px-3 py-2">
 
-            </div>
 
-            <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                            <input
+                                id="expenseAmount"
+                                type="number"
+                                min="0"
+                                placeholder="Nominal"
+                                required
+                                class="w-full border rounded-lg px-3 py-2">
 
-                <div>
 
-                    <div class="flex justify-between items-center mb-1">
+                            <input
+                                id="expenseProof"
+                                type="file"
+                                accept="image/*"
+                                class="w-full text-sm">
 
-                        <span class="text-[10px] sm:text-xs uppercase tracking-wider text-slate-500 font-bold">
-                            Total Pengeluaran
-                        </span>
 
-                        <div class="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                            <i class="fas fa-arrow-up text-xs"></i>
+                            <button
+                                id="expenseSubmit"
+                                class="w-full bg-red-600 hover:bg-red-700 text-white rounded-lg py-2.5 font-semibold">
+
+                                Simpan Pengeluaran
+
+                            </button>
+
                         </div>
 
-                    </div>
-
-                    <h3
-                        class="text-xl sm:text-2xl font-bold text-rose-600"
-                        id="total-expense">
-                        Rp 0
-                    </h3>
+                    </form>
 
                 </div>
 
-                <div class="mt-3 pt-2 border-t border-slate-100 text-[10px] sm:text-xs text-slate-500 flex items-center gap-1.5">
 
-                    <i class="fas fa-info-circle text-blue-500 shrink-0"></i>
+                <!-- RIWAYAT -->
+                <div class="lg:col-span-2 space-y-5">
 
-                    <span>
-                        Tercatat & diverifikasi pengurus RT.
-                    </span>
+                    <div class="card p-5">
 
-                </div>
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
 
-            </div>
+                            <h2 class="font-bold text-lg">
+                                Riwayat Transaksi
+                            </h2>
 
-        </div>
+                            <input
+                                id="historySearch"
+                                oninput="renderHistory()"
+                                placeholder="Cari transaksi..."
+                                class="border rounded-lg px-3 py-2 text-sm">
 
-        <!-- Form Input & Tabel Riwayat -->
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                        </div>
 
-            <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col">
 
-                <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                        <div class="table-wrap">
 
-                    <h3
-                        class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2"
-                        id="form-title">
-                        <i class="fas fa-pen-to-square text-blue-600"></i>
-                        Catat Transaksi Baru
-                    </h3>
+                            <table class="w-full text-sm">
 
-                    <button
-                        type="button"
-                        id="btn-cancel-edit"
-                        onclick="cancelEditTransaction()"
-                        class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded-lg font-medium hidden">
-                        Batal
-                    </button>
+                                <thead>
 
-                </div>
+                                <tr class="border-b text-left text-slate-500">
 
-                <div
-                    id="form-type-switcher"
-                    class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-4">
-
-                    <button
-                        type="button"
-                        onclick="switchForm('income')"
-                        id="btn-form-income"
-                        class="py-1.5 text-xs font-bold rounded-lg transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1">
-
-                        <i class="fas fa-plus-circle"></i>
-                        Pemasukan
-
-                    </button>
-
-                    <button
-                        type="button"
-                        onclick="switchForm('expense')"
-                        id="btn-form-expense"
-                        class="py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
-
-                        <i class="fas fa-minus-circle"></i>
-                        Pengeluaran
-
-                    </button>
-
-                </div>
-
-                <form id="form-income" class="space-y-3">
-
-                    <input
-                        type="hidden"
-                        id="inc-id"
-                        value="">
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            Tanggal Transaksi
-                            <span class="text-rose-500">*</span>
-                        </label>
-
-                        <input
-                            type="date"
-                            id="inc-date"
-                            required
-                            class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-
-                    </div>
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            Metode Pembayaran
-                            <span class="text-rose-500">*</span>
-                        </label>
-
-                        <select
-                            id="inc-method"
-                            required
-                            class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
-
-                            <option value="Cash">
-                                Cash / Tunai
-                            </option>
-
-                            <option value="Bank Mandiri">
-                                Bank Mandiri
-                            </option>
-
-                            <option value="Bank BCA">
-                                Bank BCA
-                            </option>
-
-                        </select>
-
-                    </div>
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            No. Rumah / Blok Warga
-                        </label>
-
-                        <input
-                            type="text"
-                            id="inc-house"
-                            list="house-list"
-                            placeholder="Misal: A-01"
-                            class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase">
-
-                        <datalist id="house-list"></datalist>
-
-                    </div>
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            Keterangan / Keperluan
-                            <span class="text-rose-500">*</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="inc-desc"
-                            placeholder="Misal: Iuran Keamanan Bulan September"
-                            required
-                            class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-
-                    </div>
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            Nominal (Rp)
-                            <span class="text-rose-500">*</span>
-                        </label>
-
-                        <input
-                            type="number"
-                            id="inc-amount"
-                            min="1"
-                            placeholder="50000"
-                            required
-                            class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none">
-
-                    </div>
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            Upload Bukti Transaksi
-                            <span class="text-slate-400 font-normal">
-                                (Opsional)
-                            </span>
-                        </label>
-
-                        <input
-                            type="file"
-                            id="inc-proof"
-                            accept="image/*"
-                            class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
-
-                        <p
-                            id="inc-proof-info"
-                            class="text-[10px] text-emerald-600 font-medium mt-1 hidden">
-
-                            <i class="fas fa-check-circle"></i>
-                            Bukti transaksi tersimpan.
-
-                        </p>
-
-                    </div>
-
-                    <button
-                        type="submit"
-                        id="inc-submit-btn"
-                        class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
-
-                        <i class="fas fa-save"></i>
-                        Simpan Pemasukan
-
-                    </button>
-
-                </form>
-
-                <form
-                    id="form-expense"
-                    class="space-y-3 hidden">
-
-                    <input
-                        type="hidden"
-                        id="exp-id"
-                        value="">
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            Tanggal Transaksi
-                            <span class="text-rose-500">*</span>
-                        </label>
-
-                        <input
-                            type="date"
-                            id="exp-date"
-                            required
-                            class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500 outline-none">
-
-                    </div>
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            Keterangan Pengeluaran
-                            <span class="text-rose-500">*</span>
-                        </label>
-
-                        <input
-                            type="text"
-                            id="exp-desc"
-                            placeholder="Misal: Perbaikan Lampu Jalan"
-                            required
-                            class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500 outline-none">
-
-                    </div>
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            Nominal Pengeluaran (Rp)
-                            <span class="text-rose-500">*</span>
-                        </label>
-
-                        <input
-                            type="number"
-                            id="exp-amount"
-                            min="1"
-                            placeholder="150000"
-                            required
-                            class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500 outline-none">
-
-                    </div>
-
-                    <div>
-
-                        <label class="block text-xs font-semibold text-slate-600 mb-1">
-                            Upload Bukti / Nota
-                            <span class="text-slate-400 font-normal">
-                                (Opsional)
-                            </span>
-                        </label>
-
-                        <input
-                            type="file"
-                            id="exp-proof"
-                            accept="image/*"
-                            class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 cursor-pointer">
-
-                        <p
-                            id="exp-proof-info"
-                            class="text-[10px] text-emerald-600 font-medium mt-1 hidden">
-
-                            <i class="fas fa-check-circle"></i>
-                            Bukti/Struk tersimpan.
-
-                        </p>
-
-                    </div>
-
-                    <button
-                        type="submit"
-                        id="exp-submit-btn"
-                        class="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
-
-                        <i class="fas fa-save"></i>
-                        Simpan Pengeluaran
-
-                    </button>
-
-                </form>
-
-            </div>
-
-            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]">
-
-                <div class="flex px-3 sm:px-6 pt-3 border-b border-slate-200 gap-4 bg-slate-50/50">
-
-                    <button
-                        onclick="switchDataTab('history')"
-                        id="tab-data-history"
-                        class="pb-2.5 text-xs sm:text-sm transition-all tab-active">
-
-                        <i class="fas fa-list-ul mr-1"></i>
-                        Buku Kas
-
-                    </button>
-
-                    <button
-                        onclick="switchDataTab('recap')"
-                        id="tab-data-recap"
-                        class="pb-2.5 text-xs sm:text-sm transition-all tab-inactive">
-
-                        <i class="fas fa-chart-line mr-1"></i>
-                        Rekap Bulanan
-
-                    </button>
-
-                </div>
-
-                <div
-                    id="view-history"
-                    class="p-0 overflow-hidden flex-1 flex flex-col">
-
-                    <div class="overflow-y-auto custom-scrollbar flex-1">
-
-                        <table class="w-full text-left border-collapse">
-
-                            <thead>
-
-                                <tr class="bg-slate-50 text-slate-500 text-[10px] sm:text-xs uppercase tracking-wider sticky top-0 shadow-sm border-b border-slate-200">
-
-                                    <th class="px-2 sm:px-3 py-2 font-semibold w-20">
+                                    <th class="p-2">
                                         Tanggal
                                     </th>
 
-                                    <th class="px-2 sm:px-3 py-2 font-semibold">
+                                    <th class="p-2">
+                                        Jenis
+                                    </th>
+
+                                    <th class="p-2">
+                                        Rumah
+                                    </th>
+
+                                    <th class="p-2">
                                         Keterangan
                                     </th>
 
-                                    <th class="px-2 sm:px-3 py-2 font-semibold text-right w-20 sm:w-24">
+                                    <th class="p-2 text-right">
                                         Nominal
                                     </th>
 
-                                    <th class="px-1 py-2 font-semibold text-center w-12">
+                                    <th class="p-2">
                                         Aksi
                                     </th>
 
                                 </tr>
 
-                            </thead>
+                                </thead>
 
-                            <tbody
-                                id="history-tbody"
-                                class="divide-y divide-slate-100 text-xs sm:text-sm">
-                            </tbody>
+                                <tbody id="historyBody"></tbody>
 
-                        </table>
+                            </table>
 
-                    </div>
-
-                    <div
-                        id="history-empty"
-                        class="hidden flex-col items-center justify-center p-8 text-slate-400 my-auto">
-
-                        <i class="fas fa-inbox text-3xl mb-2 text-slate-300"></i>
-
-                        <p class="font-medium text-xs">
-                            Belum ada transaksi kas tercatat.
-                        </p>
+                        </div>
 
                     </div>
 
-                </div>
 
-                <div
-                    id="view-recap"
-                    class="p-0 overflow-hidden hidden flex-1 flex-col">
+                    <!-- REKAP -->
+                    <div class="card p-5">
 
-                    <div class="bg-blue-50/80 px-3 py-1.5 border-b border-blue-100 flex justify-between items-center text-[10px] sm:text-xs text-blue-800">
+                        <h2 class="font-bold text-lg mb-4">
+                            Rekap Bulanan
+                        </h2>
 
-                        <span>
-                            <i class="fas fa-info-circle mr-1"></i>
-                            Akumulasi kas per periode bulan.
-                        </span>
+                        <div class="table-wrap">
 
-                    </div>
+                            <table class="w-full text-sm">
 
-                    <div class="overflow-y-auto custom-scrollbar flex-1">
+                                <thead>
 
-                        <table class="w-full text-left border-collapse">
+                                <tr class="border-b text-left text-slate-500">
 
-                            <thead>
-
-                                <tr class="bg-slate-50 text-slate-500 text-[10px] sm:text-xs uppercase tracking-wider sticky top-0 shadow-sm border-b border-slate-200">
-
-                                    <th class="px-2 py-2 font-semibold">
-                                        Periode
+                                    <th class="p-2">
+                                        Bulan
                                     </th>
 
-                                    <th class="px-2 py-2 font-semibold text-right">
-                                        Masuk
+                                    <th class="p-2 text-right">
+                                        Pemasukan
                                     </th>
 
-                                    <th class="px-2 py-2 font-semibold text-right">
-                                        Keluar
+                                    <th class="p-2 text-right">
+                                        Pengeluaran
                                     </th>
 
-                                    <th class="px-2 py-2 font-semibold text-right">
-                                        Bersih
+                                    <th class="p-2 text-right">
+                                        Selisih
                                     </th>
 
                                 </tr>
 
-                            </thead>
+                                </thead>
 
-                            <tbody
-                                id="recap-tbody"
-                                class="divide-y divide-slate-100 text-xs sm:text-sm">
-                            </tbody>
+                                <tbody id="monthlyBody"></tbody>
 
-                        </table>
+                            </table>
 
-                    </div>
-
-                    <div
-                        id="recap-empty"
-                        class="hidden flex-col items-center justify-center p-8 text-slate-400 my-auto">
-
-                        <i class="fas fa-chart-pie text-3xl mb-2 text-slate-300"></i>
-
-                        <p class="font-medium text-xs">
-                            Belum ada data rekapitulasi.
-                        </p>
+                        </div>
 
                     </div>
 
@@ -801,303 +466,269 @@
 
             </div>
 
-        </div>
+        </section>
 
-    </div>
 
-    <!-- DAFTAR RUMAH WARGA & STATUS IURAN -->
-    <div
-        id="page-houses"
-        class="hidden space-y-4">
+        <!-- ===================================================== -->
+        <!-- HALAMAN IURAN -->
+        <!-- ===================================================== -->
 
-        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <section id="duesPage" class="hidden">
 
-            <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
 
-                <div class="text-slate-500 text-[10px] font-semibold uppercase">
-                    Total Warga
-                </div>
+                <div class="card p-4">
 
-                <h3
-                    class="text-lg sm:text-2xl font-bold text-slate-800"
-                    id="stat-total-houses">
-                    0
-                </h3>
+                    <p class="text-sm text-slate-500">
+                        Total Warga
+                    </p>
 
-            </div>
-
-            <div class="bg-emerald-50/70 rounded-xl p-3 border border-emerald-200/80 shadow-sm">
-
-                <div class="text-emerald-700 text-[10px] font-semibold uppercase">
-                    Sudah Bayar
-                </div>
-
-                <h3
-                    class="text-lg sm:text-2xl font-bold text-emerald-800"
-                    id="stat-paid-houses">
-                    0
-                </h3>
-
-            </div>
-
-            <div class="bg-rose-50/70 rounded-xl p-3 border border-rose-200/80 shadow-sm">
-
-                <div class="text-rose-700 text-[10px] font-semibold uppercase">
-                    Belum Bayar
-                </div>
-
-                <h3
-                    class="text-lg sm:text-2xl font-bold text-rose-800"
-                    id="stat-unpaid-houses">
-                    0
-                </h3>
-
-            </div>
-
-            <div class="bg-blue-50/70 rounded-xl p-3 border border-blue-200/80 shadow-sm">
-
-                <div class="text-blue-700 text-[10px] font-semibold uppercase">
-                    Persentase
-                </div>
-
-                <h3
-                    class="text-lg sm:text-2xl font-bold text-blue-800"
-                    id="stat-percentage">
-                    0%
-                </h3>
-
-            </div>
-
-        </div>
-
-        <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
-
-            <div class="grid grid-cols-2 gap-2">
-
-                <div>
-
-                    <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">
-                        Periode Bulan
-                    </label>
-
-                    <input
-                        type="month"
-                        id="house-period-filter"
-                        onchange="renderHouseStatus()"
-                        class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-slate-50">
+                    <p id="residentTotal"
+                       class="text-2xl font-bold mt-1">
+                        0
+                    </p>
 
                 </div>
 
-                <div>
 
-                    <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">
-                        Status Bayar
-                    </label>
+                <div class="card p-4">
 
-                    <select
-                        id="house-status-filter"
-                        onchange="renderHouseStatus()"
-                        class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-slate-50">
+                    <p class="text-sm text-slate-500">
+                        Lunas
+                    </p>
 
-                        <option value="all">
-                            Semua
-                        </option>
+                    <p id="residentPaid"
+                       class="text-2xl font-bold text-emerald-600 mt-1">
+                        0
+                    </p>
 
-                        <option value="unpaid">
-                            Belum Bayar
-                        </option>
+                </div>
 
-                        <option value="paid">
-                            Sudah Bayar
-                        </option>
 
-                    </select>
+                <div class="card p-4">
+
+                    <p class="text-sm text-slate-500">
+                        Belum Lunas
+                    </p>
+
+                    <p id="residentUnpaid"
+                       class="text-2xl font-bold text-red-600 mt-1">
+                        0
+                    </p>
+
+                </div>
+
+
+                <div class="card p-4">
+
+                    <p class="text-sm text-slate-500">
+                        Persentase
+                    </p>
+
+                    <p id="residentPercent"
+                       class="text-2xl font-bold text-blue-600 mt-1">
+                        0%
+                    </p>
 
                 </div>
 
             </div>
 
-            <div class="flex items-center gap-2">
 
-                <div class="relative flex-1">
+            <div class="card p-5">
 
-                    <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                <div class="flex flex-wrap gap-2 items-center justify-between mb-4">
 
-                    <input
-                        type="text"
-                        id="house-search-input"
-                        onkeyup="renderHouseStatus()"
-                        placeholder="Cari No. Rumah / Nama..."
-                        class="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    <div class="flex flex-wrap gap-2">
+
+                        <input
+                            id="periodMonth"
+                            type="month"
+                            onchange="renderHouseStatus()"
+                            class="border rounded-lg px-3 py-2 text-sm">
+
+
+                        <select
+                            id="statusFilter"
+                            onchange="renderHouseStatus()"
+                            class="border rounded-lg px-3 py-2 text-sm">
+
+                            <option value="all">
+                                Semua Status
+                            </option>
+
+                            <option value="paid">
+                                Lunas
+                            </option>
+
+                            <option value="unpaid">
+                                Belum Lunas
+                            </option>
+
+                        </select>
+
+
+                        <input
+                            id="residentSearch"
+                            oninput="renderHouseStatus()"
+                            placeholder="Cari rumah/nama..."
+                            class="border rounded-lg px-3 py-2 text-sm">
+
+                    </div>
+
+
+                    <button
+                        onclick="openHouseModal()"
+                        class="admin-only hidden bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold">
+
+                        <i class="fa-solid fa-plus mr-1"></i>
+                        Tambah Warga
+
+                    </button>
 
                 </div>
 
-                <button
-                    onclick="openAddHouseModal()"
-                    class="admin-only px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0">
 
-                    <i class="fas fa-plus"></i>
-                    Warga
+                <div class="table-wrap">
 
-                </button>
+                    <table class="w-full text-sm">
 
-            </div>
+                        <thead>
 
-        </div>
+                        <tr class="border-b text-left text-slate-500">
 
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-
-            <div class="overflow-x-auto custom-scrollbar">
-
-                <table class="w-full text-left border-collapse">
-
-                    <thead>
-
-                        <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200">
-
-                            <th class="px-3 py-2 font-semibold">
-                                Rumah & Penghuni
+                            <th class="p-2">
+                                Rumah
                             </th>
 
-                            <th class="px-2 py-2 font-semibold text-center w-20">
+                            <th class="p-2">
+                                Nama
+                            </th>
+
+                            <th class="p-2">
+                                WhatsApp
+                            </th>
+
+                            <th class="p-2">
                                 Status
                             </th>
 
-                            <th class="px-2 py-2 font-semibold text-right w-20">
-                                Bayar
+                            <th class="p-2 text-right">
+                                Nominal
                             </th>
 
-                            <th class="px-2 py-2 font-semibold text-center w-16">
+                            <th class="p-2">
                                 Aksi
                             </th>
 
                         </tr>
 
-                    </thead>
+                        </thead>
 
-                    <tbody
-                        id="houses-tbody"
-                        class="divide-y divide-slate-100 text-xs">
-                    </tbody>
+                        <tbody id="residentBody"></tbody>
 
-                </table>
+                    </table>
 
-            </div>
-
-            <div
-                id="houses-empty"
-                class="hidden flex-col items-center justify-center p-8 text-slate-400">
-
-                <i class="fas fa-users-slash text-3xl mb-2 text-slate-300"></i>
-
-                <p class="font-medium text-xs">
-                    Tidak ada data warga ditemukan.
-                </p>
+                </div>
 
             </div>
 
-        </div>
+        </section>
 
-    </div>
+    </main>
 
-</main>
+</div>
 
-<!-- HOUSE MODAL -->
+
+<!-- DATALIST -->
+<datalist id="houseList"></datalist>
+
+
+<!-- ===================================================== -->
+<!-- MODAL WARGA -->
+<!-- ===================================================== -->
+
 <div
-    id="house-modal"
-    class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+    id="houseModal"
+    class="hidden fixed inset-0 z-50 modal-bg items-center justify-center p-4">
 
-    <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
+    <div class="bg-white rounded-2xl w-full max-w-md p-5">
 
-        <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <div class="flex justify-between items-center mb-4">
 
-            <h3
-                class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5"
-                id="house-modal-title">
+            <h3 id="houseModalTitle"
+                class="font-bold text-lg">
 
-                <i class="fas fa-home text-blue-600"></i>
-                Tambah Data Warga
+                Tambah Warga
 
             </h3>
 
             <button
                 onclick="closeHouseModal()"
-                class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                class="text-slate-500 text-xl">
 
-                <i class="fas fa-times text-base"></i>
+                &times;
 
             </button>
 
         </div>
 
+
         <form
-            id="form-house"
-            class="p-4 space-y-3">
+            onsubmit="saveHouse(event)"
+            class="space-y-3">
 
             <input
                 type="hidden"
-                id="modal-house-id"
-                value="">
+                id="houseEditKey">
 
-            <div>
 
-                <label class="block text-xs font-medium text-slate-700 mb-1">
-                    Blok / No. Rumah
-                    <span class="text-rose-500">*</span>
-                </label>
+            <input
+                id="houseNumber"
+                required
+                placeholder="Nomor rumah"
+                class="w-full border rounded-lg px-3 py-2">
 
-                <input
-                    type="text"
-                    id="modal-house-no"
-                    placeholder="Misal: A-01"
-                    required
-                    class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none uppercase font-semibold">
 
-            </div>
+            <input
+                id="houseOwner"
+                required
+                placeholder="Nama pemilik/penghuni"
+                class="w-full border rounded-lg px-3 py-2">
 
-            <div>
 
-                <label class="block text-xs font-medium text-slate-700 mb-1">
-                    Nama Pemilik / Penghuni
-                    <span class="text-rose-500">*</span>
-                </label>
+            <input
+                id="housePhone"
+                placeholder="Nomor WhatsApp"
+                class="w-full border rounded-lg px-3 py-2">
 
-                <input
-                    type="text"
-                    id="modal-house-owner"
-                    placeholder="Misal: Bpk. Bambang"
-                    required
-                    class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
 
-            </div>
+            <input
+                id="houseFee"
+                type="number"
+                min="0"
+                value="50000"
+                placeholder="Iuran bulanan"
+                class="w-full border rounded-lg px-3 py-2">
 
-            <div>
 
-                <label class="block text-xs font-medium text-slate-700 mb-1">
-                    No. WhatsApp / Telepon
-                </label>
-
-                <input
-                    type="tel"
-                    id="modal-house-phone"
-                    placeholder="Misal: 08123456789"
-                    class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
-
-            </div>
-
-            <div class="pt-2 flex justify-end gap-2">
+            <div class="flex gap-2">
 
                 <button
                     type="button"
                     onclick="closeHouseModal()"
-                    class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs">
+                    class="flex-1 bg-slate-100 rounded-lg py-2">
+
                     Batal
+
                 </button>
 
+
                 <button
-                    type="submit"
-                    class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs shadow-sm">
+                    class="flex-1 bg-blue-600 text-white rounded-lg py-2 font-semibold">
+
                     Simpan
+
                 </button>
 
             </div>
@@ -1108,54 +739,47 @@
 
 </div>
 
-<!-- PROOF MODAL -->
+
+<!-- ===================================================== -->
+<!-- ADMIN LOGIN -->
+<!-- ===================================================== -->
+
 <div
-    id="proof-modal"
-    class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+    id="adminModal"
+    class="hidden fixed inset-0 z-50 modal-bg items-center justify-center p-4">
 
-    <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
+    <div class="bg-white rounded-2xl w-full max-w-sm p-5">
 
-        <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+        <h3 class="font-bold text-lg mb-4">
+            Login Admin
+        </h3>
 
-            <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
 
-                <i class="fas fa-receipt text-blue-600"></i>
-                Bukti Transaksi
+        <input
+            id="adminPinInput"
+            type="password"
+            inputmode="numeric"
+            placeholder="PIN Admin"
+            class="w-full border rounded-lg px-3 py-2 mb-3">
 
-            </h3>
+
+        <div class="flex gap-2">
 
             <button
-                onclick="closeProofModal()"
-                class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                onclick="closeAdminLogin()"
+                class="flex-1 bg-slate-100 rounded-lg py-2">
 
-                <i class="fas fa-times text-base"></i>
+                Batal
 
             </button>
 
-        </div>
-
-        <div class="p-3 flex items-center justify-center bg-slate-900 min-h-[220px]">
-
-            <img
-                id="proof-img"
-                src=""
-                alt="Bukti Transaksi"
-                class="max-h-[60vh] object-contain rounded-lg hidden">
-
-            <p
-                id="proof-empty-text"
-                class="text-slate-400 text-xs hidden">
-                Bukti transaksi tidak tersedia.
-            </p>
-
-        </div>
-
-        <div class="p-2 bg-slate-50 text-right">
 
             <button
-                onclick="closeProofModal()"
-                class="px-3 py-1 bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg">
-                Tutup
+                onclick="loginAdmin()"
+                class="flex-1 bg-blue-600 text-white rounded-lg py-2 font-semibold">
+
+                Masuk
+
             </button>
 
         </div>
@@ -1164,1592 +788,2503 @@
 
 </div>
 
+
 <!-- TOAST -->
 <div
     id="toast"
-    class="fixed opacity-0 transition-all duration-300 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2 pointer-events-none text-xs font-medium">
-
-    <i
-        id="toast-icon"
-        class="fas fa-check-circle text-emerald-300 text-sm shrink-0">
-    </i>
-
-    <span id="toast-message">
-        Notifikasi
-    </span>
-
+    class="fixed bottom-5 right-5 z-[60] hidden bg-slate-900 text-white px-4 py-3 rounded-xl shadow-lg text-sm">
 </div>
+
 
 <script>
 
-const defaultHousesArray = [
-    {
-        houseNumber: 'A-01',
-        ownerName: 'Bpk. Budi Santoso',
-        phone: '08123456781'
-    },
-    {
-        houseNumber: 'A-02',
-        ownerName: 'Ibu Siti Aminah',
-        phone: '08123456782'
-    },
-    {
-        houseNumber: 'A-03',
-        ownerName: 'Bpk. Ahmad Dahlan',
-        phone: ''
-    },
-    {
-        houseNumber: 'A-04',
-        ownerName: 'Bpk. Hendra Gunawan',
-        phone: '08123456784'
-    },
-    {
-        houseNumber: 'A-05',
-        ownerName: 'Ibu Ratna Dewi',
-        phone: ''
-    },
-    {
-        houseNumber: 'B-01',
-        ownerName: 'Bpk. Joko Widodo',
-        phone: '08123456786'
-    },
-    {
-        houseNumber: 'B-02',
-        ownerName: 'Bpk. Agus Yudhoyono',
-        phone: ''
-    },
-    {
-        houseNumber: 'B-03',
-        ownerName: 'Ibu Megawati',
-        phone: '08123456788'
-    },
-    {
-        houseNumber: 'B-04',
-        ownerName: 'Bpk. Prabowo Subianto',
-        phone: ''
-    },
-    {
-        houseNumber: 'B-05',
-        ownerName: 'Bpk. Anies Baswedan',
-        phone: ''
-    }
-];
+/* =========================================================
+   FIREBASE CONFIG
+========================================================= */
 
 const firebaseConfig = {
+
     apiKey: "AIzaSyA5XIhdeyBJw4MDNebedRKDcjsVcuR1Zx8",
+
     authDomain: "jaes-c1b52.firebaseapp.com",
-    databaseURL: "https://jaes-c1b52-default-rtdb.asia-southeast1.firebasedatabase.app",
+
+    databaseURL:
+        "https://jaes-c1b52-default-rtdb.asia-southeast1.firebasedatabase.app",
+
     projectId: "jaes-c1b52",
+
     storageBucket: "jaes-c1b52.firebasestorage.app",
+
     messagingSenderId: "934203338301",
-    appId: "1:934203338301:web:2bd353cec0b3f127e48454",
+
+    appId:
+        "1:934203338301:web:2bd353cec0b3f127e48454",
+
     measurementId: "G-QT5XKJSQ1X"
+
 };
 
-let firebaseReady = false;
-let firebaseDb = null;
 
-let transactions = [];
-let houses = [];
+/* =========================================================
+   DATA
+========================================================= */
 
-let editingTransactionId = null;
-let toastTimer = null;
+const defaultHouses = [
 
-/*
- * PIN DEFAULT BARU = 6 DIGIT
- */
-const DEFAULT_ADMIN_PIN = '123456';
+    {
+        houseNumber: "A-01",
+        owner: "Bpk. Joko Widodo",
+        phone: "",
+        monthlyFee: 50000
+    },
 
-let ADMIN_PIN =
-    localStorage.getItem('kasRtAdminPin') ||
-    DEFAULT_ADMIN_PIN;
+    {
+        houseNumber: "A-02",
+        owner: "Bpk. Agus Yudhoyono",
+        phone: "",
+        monthlyFee: 50000
+    },
+
+    {
+        houseNumber: "A-03",
+        owner: "Ibu Megawati",
+        phone: "",
+        monthlyFee: 50000
+    },
+
+    {
+        houseNumber: "A-04",
+        owner: "Bpk. Prabowo Subianto",
+        phone: "",
+        monthlyFee: 50000
+    },
+
+    {
+        houseNumber: "A-05",
+        owner: "Bpk. Anies Baswedan",
+        phone: "",
+        monthlyFee: 50000
+    },
+
+    {
+        houseNumber: "B-01",
+        owner: "Warga B-01",
+        phone: "",
+        monthlyFee: 50000
+    },
+
+    {
+        houseNumber: "B-02",
+        owner: "Warga B-02",
+        phone: "",
+        monthlyFee: 50000
+    },
+
+    {
+        houseNumber: "B-03",
+        owner: "Warga B-03",
+        phone: "",
+        monthlyFee: 50000
+    },
+
+    {
+        houseNumber: "B-04",
+        owner: "Warga B-04",
+        phone: "",
+        monthlyFee: 50000
+    },
+
+    {
+        houseNumber: "B-05",
+        owner: "Warga B-05",
+        phone: "",
+        monthlyFee: 50000
+    }
+
+];
+
+
+let db = null;
+
+let transactions = {};
+
+let houses = {};
 
 let isAdmin =
-    sessionStorage.getItem('kasRtIsAdmin') === 'true';
-
-const now = new Date();
-
-const currentYearMonth =
-    `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    sessionStorage.getItem("kasRtAdmin") === "true";
 
 
 /* =========================================================
-   DATE HELPER
-   ========================================================= */
+   RENDER QUEUE
+   Mencegah Firebase melakukan render berkali-kali
+========================================================= */
 
-function getLocalDateString(date = new Date()) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, '0');
-    const d = String(date.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-}
+let renderScheduled = false;
 
-function parseLocalDate(dateString) {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(dateString || '')) {
-        const [y, m, d] = dateString.split('-').map(Number);
-        return new Date(y, m - 1, d);
+
+function scheduleRenderAllViews() {
+
+    if (renderScheduled) {
+        return;
     }
-    return new Date(dateString);
-}
 
-function getYearMonth(dateValue) {
-    if (/^\d{4}-\d{2}-\d{2}$/.test(String(dateValue || ''))) {
-        return String(dateValue).substring(0, 7);
-    }
-    const d = new Date(dateValue);
-    if (isNaN(d.getTime())) {
-        return '';
-    }
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-}
-
-
-/* =========================================================
-   HTML HELPER
-   ========================================================= */
-
-window.escapeHTML = function(str) {
-    if (str === null || str === undefined) {
-        return '';
-    }
-    return String(str).replace(
-        /[&<>'"]/g,
-        tag => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            "'": '&#39;',
-            '"': '&quot;'
-        }[tag] || tag)
-    );
-};
-
-window.formatRupiah = function(number) {
-    return new Intl.NumberFormat(
-        'id-ID',
-        {
-            style: 'currency',
-            currency: 'IDR',
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0
-        }
-    ).format(Number(number) || 0);
-};
-
-window.formatDate = function(dateString) {
-    if (!dateString) return '-';
-    const d = parseLocalDate(dateString);
-    if (isNaN(d.getTime())) return dateString;
-    return d.toLocaleDateString('id-ID', {
-        day: 'numeric',
-        month: 'short'
-    });
-};
-
-
-/* =========================================================
-   TOAST
-   ========================================================= */
-
-window.showToast = function(message, type = 'success') {
-    const toast = document.getElementById('toast');
-    const toastMessage = document.getElementById('toast-message');
-    const toastIcon = document.getElementById('toast-icon');
-
-    if (!toast || !toastMessage || !toastIcon) return;
-
-    clearTimeout(toastTimer);
-
-    toastMessage.textContent = message;
-
-    toast.classList.remove('toast-success', 'toast-error', 'toast-warning', 'toast-show');
-
-    if (type === 'error' || type === 'delete') {
-        toast.classList.add('toast-error');
-        toastIcon.className = 'fas fa-exclamation-circle text-rose-200 text-sm shrink-0';
-    } else if (type === 'warning') {
-        toast.classList.add('toast-warning');
-        toastIcon.className = 'fas fa-exclamation-triangle text-amber-200 text-sm shrink-0';
-    } else {
-        toast.classList.add('toast-success');
-        toastIcon.className = 'fas fa-check-circle text-emerald-200 text-sm shrink-0';
-    }
+    renderScheduled = true;
 
     requestAnimationFrame(() => {
-        toast.classList.add('toast-show');
+
+        renderScheduled = false;
+
+        renderAllViews();
+
     });
 
-    toastTimer = setTimeout(() => {
-        toast.classList.remove('toast-show');
-    }, 3500);
-};
-
-
-/* =========================================================
-   FIREBASE STATUS
-   ========================================================= */
-
-function setFirebaseStatus(message, type = 'normal') {
-    const el = document.getElementById('firebase-status');
-    if (!el) return;
-
-    el.textContent = message;
-
-    if (type === 'success') {
-        el.className = 'text-[11px] text-emerald-600 font-medium px-1';
-    } else if (type === 'error') {
-        el.className = 'text-[11px] text-rose-600 font-medium px-1';
-    } else {
-        el.className = 'text-[11px] text-slate-500 font-medium px-1';
-    }
 }
 
 
 /* =========================================================
-   HOUSE DATALIST
-   ========================================================= */
+   HELPER
+========================================================= */
 
-function updateHouseDatalist() {
-    const datalist = document.getElementById('house-list');
-    if (!datalist) return;
+function todayISO() {
 
-    datalist.innerHTML = houses
-        .map(h => `<option value="${escapeHTML(h.houseNumber)}">${escapeHTML(h.houseNumber)} - ${escapeHTML(h.ownerName)}</option>`)
-        .join('');
+    const d = new Date();
+
+    const offset = d.getTimezoneOffset();
+
+    return new Date(
+        d.getTime() - offset * 60000
+    ).toISOString().slice(0, 10);
+
+}
+
+
+function currentMonth() {
+
+    return todayISO().slice(0, 7);
+
+}
+
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replace(/[&<>"']/g, function (m) {
+
+            return {
+
+                "&": "&amp;",
+                "<": "&lt;",
+                ">": "&gt;",
+                '"': "&quot;",
+                "'": "&#039;"
+
+            }[m];
+
+        });
+
+}
+
+
+function formatRupiah(value) {
+
+    return new Intl.NumberFormat(
+        "id-ID",
+        {
+            style: "currency",
+            currency: "IDR",
+            maximumFractionDigits: 0
+        }
+    ).format(Number(value) || 0);
+
+}
+
+
+function formatDate(value) {
+
+    if (!value) {
+        return "-";
+    }
+
+    const d = new Date(value + "T00:00:00");
+
+    if (isNaN(d)) {
+        return value;
+    }
+
+    return d.toLocaleDateString(
+        "id-ID",
+        {
+            day: "2-digit",
+            month: "short",
+            year: "numeric"
+        }
+    );
+
+}
+
+
+function monthLabel(month) {
+
+    if (!month) {
+        return "-";
+    }
+
+    const parts = month.split("-");
+
+    const d = new Date(
+        Number(parts[0]),
+        Number(parts[1]) - 1,
+        1
+    );
+
+    return d.toLocaleDateString(
+        "id-ID",
+        {
+            month: "long",
+            year: "numeric"
+        }
+    );
+
+}
+
+
+function toast(message) {
+
+    const element =
+        document.getElementById("toast");
+
+    element.textContent = message;
+
+    element.classList.remove("hidden");
+
+    clearTimeout(window.toastTimer);
+
+    window.toastTimer =
+        setTimeout(() => {
+
+            element.classList.add("hidden");
+
+        }, 3000);
+
+}
+
+
+function safeHouseKey(value) {
+
+    return String(value || "")
+        .replace(/[.#$\/\[\]]/g, "_")
+        .replace(/\s+/g, "_");
+
+}
+
+
+/* =========================================================
+   PERBAIKAN UTAMA STATUS IURAN
+========================================================= */
+
+/*
+    Fungsi ini sekarang mengenali:
+
+    1. paymentType = monthly_fee
+    2. keterangan mengandung "iuran"
+    3. keterangan mengandung "kas rt"
+    4. keterangan mengandung "kas"
+    5. keterangan mengandung "kebersihan"
+    6. keterangan mengandung "keamanan"
+
+    Jadi transaksi lama seperti:
+
+    "kas rt"
+
+    tetap dihitung sebagai LUNAS.
+*/
+
+function isMonthlyFeeTransaction(t) {
+
+    if (!t) {
+        return false;
+    }
+
+
+    if (
+        String(t.type || "").toLowerCase()
+        !== "income"
+    ) {
+
+        return false;
+
+    }
+
+
+    if (
+        !String(t.houseNumber || "").trim()
+    ) {
+
+        return false;
+
+    }
+
+
+    const paymentType =
+        String(t.paymentType || "")
+            .toLowerCase()
+            .trim();
+
+
+    if (
+        paymentType === "monthly_fee"
+    ) {
+
+        return true;
+
+    }
+
+
+    const description =
+        String(t.description || "")
+            .toLowerCase()
+            .trim();
+
+
+    const feeKeywords = [
+
+        "iuran",
+        "kas rt",
+        "kas",
+        "kebersihan",
+        "keamanan"
+
+    ];
+
+
+    return feeKeywords.some(
+        keyword =>
+            description.includes(keyword)
+    );
+
 }
 
 
 /* =========================================================
    NAVIGATION
-   ========================================================= */
+========================================================= */
 
-window.switchMainPage = function(page) {
-    const pageDashboard = document.getElementById('page-dashboard');
-    const pageHouses = document.getElementById('page-houses');
-    const navBtnDash = document.getElementById('nav-btn-dashboard');
-    const navBtnHouses = document.getElementById('nav-btn-houses');
+function showPage(page) {
 
-    if (page === 'dashboard') {
-        pageDashboard.classList.remove('hidden');
-        pageHouses.classList.add('hidden');
+    const cashPage =
+        document.getElementById("cashPage");
 
-        navBtnDash.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center";
-        navBtnHouses.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
+    const duesPage =
+        document.getElementById("duesPage");
+
+    const navCash =
+        document.getElementById("navCash");
+
+    const navDues =
+        document.getElementById("navDues");
+
+
+    cashPage.classList.toggle(
+        "hidden",
+        page !== "cash"
+    );
+
+    duesPage.classList.toggle(
+        "hidden",
+        page !== "dues"
+    );
+
+
+    if (page === "cash") {
+
+        navCash.className =
+            "nav-active px-4 py-2 rounded-lg text-sm font-semibold";
+
+        navDues.className =
+            "px-4 py-2 rounded-lg text-sm font-semibold text-slate-600";
+
     } else {
-        pageDashboard.classList.add('hidden');
-        pageHouses.classList.remove('hidden');
 
-        navBtnHouses.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center";
-        navBtnDash.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
+        navCash.className =
+            "px-4 py-2 rounded-lg text-sm font-semibold text-slate-600";
 
-        renderHouseStatus();
+        navDues.className =
+            "nav-active px-4 py-2 rounded-lg text-sm font-semibold";
+
     }
-};
 
-window.switchMainView = window.switchMainPage;
+}
 
 
 /* =========================================================
-   FORM SWITCH
-   ========================================================= */
+   FORM TRANSAKSI
+========================================================= */
 
-window.switchForm = function(type) {
-    const formIncome = document.getElementById('form-income');
-    const formExpense = document.getElementById('form-expense');
-    const btnInc = document.getElementById('btn-form-income');
-    const btnExp = document.getElementById('btn-form-expense');
+function switchTransactionForm(type) {
 
-    if (type === 'income') {
-        formIncome.classList.remove('hidden');
-        formExpense.classList.add('hidden');
+    const incomeForm =
+        document.getElementById("incomeForm");
 
-        btnInc.className = "py-1.5 text-xs font-bold rounded-lg transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1";
-        btnExp.className = "py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1";
+    const expenseForm =
+        document.getElementById("expenseForm");
+
+    const incomeTab =
+        document.getElementById("incomeTab");
+
+    const expenseTab =
+        document.getElementById("expenseTab");
+
+
+    incomeForm.classList.toggle(
+        "hidden",
+        type !== "income"
+    );
+
+    expenseForm.classList.toggle(
+        "hidden",
+        type !== "expense"
+    );
+
+
+    if (type === "income") {
+
+        incomeTab.className =
+            "flex-1 bg-emerald-600 text-white rounded-lg py-2 font-semibold";
+
+        expenseTab.className =
+            "flex-1 bg-slate-100 rounded-lg py-2 font-semibold";
+
     } else {
-        formIncome.classList.add('hidden');
-        formExpense.classList.remove('hidden');
 
-        btnExp.className = "py-1.5 text-xs font-bold rounded-lg transition-all bg-rose-600 text-white shadow-sm flex items-center justify-center gap-1";
-        btnInc.className = "py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1";
-    }
-};
+        incomeTab.className =
+            "flex-1 bg-slate-100 rounded-lg py-2 font-semibold";
 
+        expenseTab.className =
+            "flex-1 bg-red-600 text-white rounded-lg py-2 font-semibold";
 
-/* =========================================================
-   DATA TAB
-   ========================================================= */
-
-window.switchDataTab = function(tab) {
-    const viewHistory = document.getElementById('view-history');
-    const viewRecap = document.getElementById('view-recap');
-    const tabHistory = document.getElementById('tab-data-history');
-    const tabRecap = document.getElementById('tab-data-recap');
-
-    if (tab === 'history') {
-        viewHistory.classList.remove('hidden');
-        viewHistory.classList.add('flex');
-        viewRecap.classList.add('hidden');
-        viewRecap.classList.remove('flex');
-
-        tabHistory.className = "pb-2.5 text-xs sm:text-sm transition-all tab-active";
-        tabRecap.className = "pb-2.5 text-xs sm:text-sm transition-all tab-inactive";
-    } else {
-        viewHistory.classList.add('hidden');
-        viewHistory.classList.remove('flex');
-        viewRecap.classList.remove('hidden');
-        viewRecap.classList.add('flex');
-
-        tabRecap.className = "pb-2.5 text-xs sm:text-sm transition-all tab-active";
-        tabHistory.className = "pb-2.5 text-xs sm:text-sm transition-all tab-inactive";
-
-        renderRecap();
-    }
-};
-
-
-/* =========================================================
-   DETEKSI TRANSAKSI IURAN
-   ========================================================= */
-
-function isMonthlyFeeTransaction(t) {
-    if (!t) return false;
-    if (String(t.type || '').toLowerCase() !== 'income') return false;
-    if (!String(t.houseNumber || '').trim()) return false;
-
-    const paymentType = String(t.paymentType || '').toLowerCase();
-    if (paymentType === 'monthly_fee') return true;
-
-    const description = String(t.description || '').toLowerCase().trim();
-
-    if (/\biuran\b/i.test(description)) return true;
-
-    if (/\bkebersihan\b/i.test(description) && /\bkeamanan\b/i.test(description)) {
-        return true;
     }
 
-    return false;
 }
 
 
 /* =========================================================
    DASHBOARD
-   ========================================================= */
+========================================================= */
 
-window.renderDashboard = function() {
-    let totalInc = 0;
-    let incCash = 0;
-    let incMandiri = 0;
-    let incBca = 0;
-    let totalExp = 0;
+function renderDashboard() {
 
-    transactions.forEach(t => {
-        const amt = parseFloat(t.amount) || 0;
+    let income = 0;
 
-        if (String(t.type).toLowerCase() === 'income') {
-            totalInc += amt;
-            const m = (t.paymentMethod || 'Cash').toLowerCase();
+    let expense = 0;
 
-            if (m.includes('mandiri')) {
-                incMandiri += amt;
-            } else if (m.includes('bca')) {
-                incBca += amt;
-            } else {
-                incCash += amt;
+
+    Object.values(transactions)
+        .forEach(t => {
+
+            const amount =
+                Number(t.amount) || 0;
+
+
+            if (t.type === "income") {
+
+                income += amount;
+
             }
-        } else if (String(t.type).toLowerCase() === 'expense') {
-            totalExp += amt;
-        }
-    });
 
-    document.getElementById('total-balance').textContent = formatRupiah(totalInc - totalExp);
-    document.getElementById('total-income').textContent = formatRupiah(totalInc);
-    document.getElementById('income-cash').textContent = formatRupiah(incCash);
-    document.getElementById('income-mandiri').textContent = formatRupiah(incMandiri);
-    document.getElementById('income-bca').textContent = formatRupiah(incBca);
-    document.getElementById('total-expense').textContent = formatRupiah(totalExp);
-};
+
+            if (t.type === "expense") {
+
+                expense += amount;
+
+            }
+
+        });
+
+
+    document.getElementById("totalIncome")
+        .textContent =
+        formatRupiah(income);
+
+
+    document.getElementById("totalExpense")
+        .textContent =
+        formatRupiah(expense);
+
+
+    document.getElementById("totalBalance")
+        .textContent =
+        formatRupiah(
+            income - expense
+        );
+
+}
 
 
 /* =========================================================
-   HISTORY
-   ========================================================= */
+   RIWAYAT
+========================================================= */
 
-window.renderHistory = function() {
-    const tbody = document.getElementById('history-tbody');
-    const emptyEl = document.getElementById('history-empty');
+function renderHistory() {
 
-    tbody.innerHTML = '';
+    const body =
+        document.getElementById(
+            "historyBody"
+        );
 
-    if (transactions.length === 0) {
-        emptyEl.classList.remove('hidden');
-        emptyEl.classList.add('flex');
-        return;
+
+    const search =
+        (
+            document.getElementById(
+                "historySearch"
+            ).value || ""
+        )
+        .toLowerCase()
+        .trim();
+
+
+    let rows =
+        Object.entries(transactions)
+            .map(([key, t]) => ({
+                key,
+                ...t
+            }))
+            .sort(
+                (a, b) =>
+                    String(b.date || "")
+                    .localeCompare(
+                        String(a.date || "")
+                    )
+            );
+
+
+    if (search) {
+
+        rows =
+            rows.filter(t => {
+
+                return [
+
+                    t.date,
+                    t.type,
+                    t.houseNumber,
+                    t.description,
+                    t.method
+
+                ]
+                    .join(" ")
+                    .toLowerCase()
+                    .includes(search);
+
+            });
+
     }
 
-    emptyEl.classList.add('hidden');
-    emptyEl.classList.remove('flex');
 
-    const sorted = [...transactions].sort(
-        (a, b) => parseLocalDate(b.date) - parseLocalDate(a.date)
-    );
+    if (!rows.length) {
 
-    sorted.forEach(t => {
-        const isInc = String(t.type).toLowerCase() === 'income';
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 transition-colors";
-
-        let methodBadge = '';
-        if (isInc) {
-            const m = t.paymentMethod || 'Cash';
-            let badgeBg = 'bg-slate-100 text-slate-700';
-
-            if (m.includes('Mandiri')) {
-                badgeBg = 'bg-blue-100 text-blue-700';
-            } else if (m.includes('BCA')) {
-                badgeBg = 'bg-indigo-100 text-indigo-700';
-            } else {
-                badgeBg = 'bg-amber-100 text-amber-800';
-            }
-
-            methodBadge = `<span class="inline-block px-1.5 py-0.2 text-[9px] rounded font-semibold ${badgeBg}">${escapeHTML(m)}</span>`;
-        }
-
-        tr.innerHTML = `
-            <td class="px-2 sm:px-3 py-2 font-medium text-slate-500 text-[11px]">
-                ${formatDate(t.date)}
-            </td>
-            <td class="px-2 sm:px-3 py-2">
-                <div class="font-semibold text-slate-800 text-xs sm:text-sm leading-tight">
-                    ${escapeHTML(t.description)}
-                </div>
-                <div class="flex items-center gap-1.5 mt-1 flex-wrap">
-                    ${t.houseNumber ? `<span class="bg-slate-100 text-slate-700 px-1 py-0.2 rounded text-[9px] font-bold border border-slate-200">Blok ${escapeHTML(t.houseNumber)}</span>` : ''}
-                    ${methodBadge}
-                    ${t.proof ? `<button onclick="openProofModal('${t.id}')" class="text-blue-600 hover:text-blue-800 text-[10px] font-semibold underline flex items-center gap-0.5"><i class="fas fa-image"></i>Bukti</button>` : ''}
-                </div>
-            </td>
-            <td class="px-2 sm:px-3 py-2 text-right font-bold text-xs sm:text-sm ${isInc ? 'text-emerald-600' : 'text-rose-600'}">
-                ${isInc ? '+' : '-'} ${formatRupiah(t.amount)}
-            </td>
-            <td class="px-1 py-2 text-center">
-                <div class="flex items-center justify-center gap-1">
-                    <button onclick="editTransaction('${t.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}">
-                        <i class="fas fa-pen text-xs"></i>
-                    </button>
-                    <button onclick="deleteTransaction('${t.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}">
-                        <i class="fas fa-trash-alt text-xs"></i>
-                    </button>
-                </div>
-            </td>
+        body.innerHTML = `
+            <tr>
+                <td colspan="6"
+                    class="p-5 text-center text-slate-400">
+                    Belum ada transaksi.
+                </td>
+            </tr>
         `;
 
-        tbody.appendChild(tr);
-    });
-};
+        return;
+
+    }
+
+
+    body.innerHTML =
+        rows.map(t => {
+
+            const income =
+                t.type === "income";
+
+
+            return `
+
+                <tr class="border-b hover:bg-slate-50">
+
+                    <td class="p-2 whitespace-nowrap">
+                        ${formatDate(t.date)}
+                    </td>
+
+
+                    <td class="p-2">
+
+                        <span
+                            class="px-2 py-1 rounded-full text-xs
+                            ${
+                                income
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-red-100 text-red-700"
+                            }">
+
+                            ${
+                                income
+                                ? "Pemasukan"
+                                : "Pengeluaran"
+                            }
+
+                        </span>
+
+                    </td>
+
+
+                    <td class="p-2">
+
+                        ${escapeHTML(
+                            t.houseNumber || "-"
+                        )}
+
+                    </td>
+
+
+                    <td class="p-2">
+
+                        ${escapeHTML(
+                            t.description || "-"
+                        )}
+
+                    </td>
+
+
+                    <td class="p-2 text-right font-semibold">
+
+                        ${formatRupiah(t.amount)}
+
+                    </td>
+
+
+                    <td class="p-2">
+
+                        ${
+                            isAdmin
+                            ?
+                            `
+                            <button
+                                onclick="deleteTransaction('${escapeHTML(t.key)}')"
+                                class="text-red-600">
+
+                                <i class="fa-solid fa-trash"></i>
+
+                            </button>
+                            `
+                            :
+                            ""
+                        }
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }).join("");
+
+}
 
 
 /* =========================================================
    REKAP BULANAN
-   ========================================================= */
+========================================================= */
 
-window.renderRecap = function() {
-    const tbody = document.getElementById('recap-tbody');
-    const emptyEl = document.getElementById('recap-empty');
+function renderMonthlyRecap() {
 
-    tbody.innerHTML = '';
+    const map = {};
 
-    let tfoot = document.getElementById('recap-tfoot');
-    if (tfoot) tfoot.innerHTML = '';
 
-    if (transactions.length === 0) {
-        emptyEl.classList.remove('hidden');
-        emptyEl.classList.add('flex');
+    Object.values(transactions)
+        .forEach(t => {
+
+            const month =
+                String(t.date || "")
+                    .slice(0, 7);
+
+
+            if (!month) {
+                return;
+            }
+
+
+            if (!map[month]) {
+
+                map[month] = {
+
+                    income: 0,
+                    expense: 0
+
+                };
+
+            }
+
+
+            if (t.type === "income") {
+
+                map[month].income +=
+                    Number(t.amount) || 0;
+
+            }
+
+
+            if (t.type === "expense") {
+
+                map[month].expense +=
+                    Number(t.amount) || 0;
+
+            }
+
+        });
+
+
+    const keys =
+        Object.keys(map)
+            .sort()
+            .reverse();
+
+
+    const body =
+        document.getElementById(
+            "monthlyBody"
+        );
+
+
+    if (!keys.length) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="4"
+                    class="p-5 text-center text-slate-400">
+                    Belum ada data.
+                </td>
+            </tr>
+        `;
+
         return;
+
     }
 
-    emptyEl.classList.add('hidden');
-    emptyEl.classList.remove('flex');
 
-    const monthlyData = {};
-    let grandTotalIncome = 0;
-    let grandTotalExpense = 0;
+    body.innerHTML =
+        keys.map(month => {
 
-    transactions.forEach(t => {
-        const d = parseLocalDate(t.date);
-        if (isNaN(d.getTime())) return;
+            const data = map[month];
 
-        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            return `
 
-        if (!monthlyData[key]) {
-            monthlyData[key] = {
-                income: 0,
-                expense: 0,
-                dateObj: new Date(d.getFullYear(), d.getMonth(), 1)
-            };
-        }
+                <tr class="border-b">
 
-        const amt = parseFloat(t.amount) || 0;
+                    <td class="p-2">
+                        ${monthLabel(month)}
+                    </td>
 
-        if (String(t.type).toLowerCase() === 'income') {
-            monthlyData[key].income += amt;
-            grandTotalIncome += amt;
-        } else if (String(t.type).toLowerCase() === 'expense') {
-            monthlyData[key].expense += amt;
-            grandTotalExpense += amt;
-        }
-    });
+                    <td class="p-2 text-right text-emerald-600">
+                        ${formatRupiah(data.income)}
+                    </td>
 
-    const sortedKeys = Object.keys(monthlyData).sort().reverse();
+                    <td class="p-2 text-right text-red-600">
+                        ${formatRupiah(data.expense)}
+                    </td>
 
-    sortedKeys.forEach(key => {
-        const item = monthlyData[key];
-        const net = item.income - item.expense;
+                    <td class="p-2 text-right font-semibold">
+                        ${formatRupiah(
+                            data.income -
+                            data.expense
+                        )}
+                    </td>
 
-        const monthName = item.dateObj.toLocaleDateString('id-ID', {
-            month: 'short',
-            year: '2-digit'
-        });
+                </tr>
 
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 transition-colors";
+            `;
 
-        tr.innerHTML = `
-            <td class="px-2 py-2.5 font-bold text-slate-800 text-xs">
-                ${monthName}
-            </td>
-            <td class="px-2 py-2.5 text-right font-semibold text-emerald-600 text-xs">
-                ${formatRupiah(item.income)}
-            </td>
-            <td class="px-2 py-2.5 text-right font-semibold text-rose-600 text-xs">
-                ${formatRupiah(item.expense)}
-            </td>
-            <td class="px-2 py-2.5 text-right font-bold text-xs ${net >= 0 ? 'text-blue-600' : 'text-rose-600'}">
-                ${formatRupiah(net)}
-            </td>
-        `;
+        }).join("");
 
-        tbody.appendChild(tr);
-    });
-
-    const grandNet = grandTotalIncome - grandTotalExpense;
-
-    if (!tfoot) {
-        const table = tbody.closest('table');
-        tfoot = document.createElement('tfoot');
-        tfoot.id = 'recap-tfoot';
-        table.appendChild(tfoot);
-    }
-
-    tfoot.className = "bg-slate-100 font-bold border-t-2 border-slate-300 sticky bottom-0 shadow-inner";
-    tfoot.innerHTML = `
-        <tr>
-            <td class="px-2 py-2.5 text-slate-800 text-xs uppercase tracking-wider">
-                Total
-            </td>
-            <td class="px-2 py-2.5 text-right text-emerald-700 text-xs">
-                ${formatRupiah(grandTotalIncome)}
-            </td>
-            <td class="px-2 py-2.5 text-right text-rose-700 text-xs">
-                ${formatRupiah(grandTotalExpense)}
-            </td>
-            <td class="px-2 py-2.5 text-right text-xs ${grandNet >= 0 ? 'text-blue-700' : 'text-rose-700'}">
-                ${formatRupiah(grandNet)}
-            </td>
-        </tr>
-    `;
-};
+}
 
 
 /* =========================================================
-   STATUS IURAN RUMAH
-   ========================================================= */
+   HOUSE LIST
+========================================================= */
 
-window.renderHouseStatus = function() {
-    const periodInput = document.getElementById('house-period-filter');
-    if (!periodInput.value) {
-        periodInput.value = currentYearMonth;
-    }
+function renderHouseList() {
 
-    const selectedPeriod = periodInput.value;
-    const statusFilter = document.getElementById('house-status-filter').value;
-    const searchQuery = (document.getElementById('house-search-input').value || '').toLowerCase().trim();
+    const list =
+        document.getElementById(
+            "houseList"
+        );
 
-    const tbody = document.getElementById('houses-tbody');
-    const emptyEl = document.getElementById('houses-empty');
 
-    tbody.innerHTML = '';
+    list.innerHTML =
+        Object.values(houses)
+            .sort(
+                (a, b) =>
+                    String(a.houseNumber)
+                        .localeCompare(
+                            String(b.houseNumber)
+                        )
+            )
+            .map(h => {
 
-    let paidCount = 0;
-    let unpaidCount = 0;
+                return `
 
-    const filteredHouses = houses.filter(h => {
-        const houseNumber = String(h.houseNumber || '').toLowerCase();
-        const ownerName = String(h.ownerName || '').toLowerCase();
-        return houseNumber.includes(searchQuery) || ownerName.includes(searchQuery);
-    });
+                    <option
+                        value="${escapeHTML(
+                            h.houseNumber
+                        )}">
 
-    let visibleRows = 0;
+                        ${escapeHTML(
+                            h.owner || ""
+                        )}
 
-    filteredHouses.forEach(h => {
-        const houseNumber = String(h.houseNumber || '').trim().toUpperCase();
+                    </option>
 
-        const payment = transactions.find(t => {
-            if (!isMonthlyFeeTransaction(t)) return false;
+                `;
 
-            const transactionHouse = String(t.houseNumber || '').trim().toUpperCase();
-            if (transactionHouse !== houseNumber) return false;
+            })
+            .join("");
 
-            const tPeriod = getYearMonth(t.date);
-            return tPeriod === selectedPeriod;
-        });
-
-        const isPaid = !!payment;
-
-        if (isPaid) paidCount++;
-        else unpaidCount++;
-
-        if (statusFilter === 'paid' && !isPaid) return;
-        if (statusFilter === 'unpaid' && isPaid) return;
-
-        visibleRows++;
-
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-slate-50 transition-colors";
-
-        const statusBadge = isPaid
-            ? `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Lunas</span>`
-            : `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">Belum</span>`;
-
-        const actionBtn = isPaid
-            ? `<button onclick="openProofModal('${payment.id}')" class="text-[11px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded ${payment.proof ? '' : 'opacity-40 cursor-not-allowed'}" ${payment.proof ? '' : 'disabled'}>Bukti</button>`
-            : `<button onclick="quickRecordPayment('${escapeHTML(h.houseNumber)}')" class="text-[11px] px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded shadow-sm">Bayar</button>`;
-
-        tr.innerHTML = `
-            <td class="px-3 py-2.5 font-medium text-slate-800">
-                <div class="font-bold text-blue-700 text-xs">
-                    ${escapeHTML(h.houseNumber)}
-                </div>
-                <div class="text-xs">
-                    ${escapeHTML(h.ownerName)}
-                </div>
-                ${h.phone ? `<a href="https://wa.me/${String(h.phone).replace(/[^0-9]/g, '')}" target="_blank" rel="noopener noreferrer" class="text-[10px] text-emerald-600 flex items-center gap-0.5 mt-0.5"><i class="fab fa-whatsapp"></i>${escapeHTML(h.phone)}</a>` : ''}
-            </td>
-            <td class="px-2 py-2.5 text-center">
-                ${statusBadge}
-            </td>
-            <td class="px-2 py-2.5 text-right font-medium text-xs ${isPaid ? 'text-emerald-600 font-bold' : 'text-slate-300'}">
-                ${isPaid ? formatRupiah(payment.amount) : '-'}
-            </td>
-            <td class="px-2 py-2.5 text-center">
-                <div class="flex items-center justify-center gap-1">
-                    ${actionBtn}
-                    <button onclick="editHouse('${escapeHTML(h.id)}')" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}">
-                        <i class="fas fa-pen text-xs"></i>
-                    </button>
-                    <button onclick="deleteHouse('${escapeHTML(h.id)}')" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}">
-                        <i class="fas fa-trash-alt text-xs"></i>
-                    </button>
-                </div>
-            </td>
-        `;
-
-        tbody.appendChild(tr);
-    });
-
-    const totalHouses = houses.length;
-
-    document.getElementById('stat-total-houses').textContent = totalHouses;
-    document.getElementById('stat-paid-houses').textContent = paidCount;
-    document.getElementById('stat-unpaid-houses').textContent = unpaidCount;
-
-    const percentage = totalHouses > 0 ? Math.round((paidCount / totalHouses) * 100) : 0;
-    document.getElementById('stat-percentage').textContent = `${percentage}%`;
-
-    const unpaidBadge = document.getElementById('unpaid-badge');
-    if (unpaidBadge) {
-        unpaidBadge.textContent = unpaidCount;
-        if (unpaidCount > 0) unpaidBadge.classList.remove('hidden');
-        else unpaidBadge.classList.add('hidden');
-    }
-
-    if (visibleRows === 0) {
-        emptyEl.classList.remove('hidden');
-        emptyEl.classList.add('flex');
-    } else {
-        emptyEl.classList.add('hidden');
-        emptyEl.classList.remove('flex');
-    }
-};
+}
 
 
 /* =========================================================
-   QUICK RECORD PAYMENT
-   ========================================================= */
+   STATUS IURAN
+========================================================= */
 
-window.quickRecordPayment = function(houseNo) {
-    if (!requireAdmin()) return;
+function renderHouseStatus() {
 
-    switchMainPage('dashboard');
-    cancelEditTransaction();
-    switchForm('income');
+    const month =
+        document.getElementById(
+            "periodMonth"
+        ).value || currentMonth();
 
-    const houseInput = document.getElementById('inc-house');
-    const descInput = document.getElementById('inc-desc');
-    const dateInput = document.getElementById('inc-date');
-    const periodInput = document.getElementById('house-period-filter').value;
 
-    houseInput.value = houseNo;
+    const status =
+        document.getElementById(
+            "statusFilter"
+        ).value;
 
-    let monthName = new Date().toLocaleDateString('id-ID', {
-        month: 'long',
-        year: 'numeric'
-    });
 
-    if (periodInput) {
-        const [pYear, pMonth] = periodInput.split('-');
-        const pDate = new Date(parseInt(pYear, 10), parseInt(pMonth, 10) - 1, 1);
+    const search =
+        (
+            document.getElementById(
+                "residentSearch"
+            ).value || ""
+        )
+        .toLowerCase()
+        .trim();
 
-        if (!isNaN(pDate.getTime())) {
-            monthName = pDate.toLocaleDateString('id-ID', {
-                month: 'long',
-                year: 'numeric'
+
+    const list =
+        Object.entries(houses)
+            .map(([key, h]) => {
+
+                const paidTransactions =
+                    Object.values(transactions)
+                        .filter(t => {
+
+                            return (
+
+                                isMonthlyFeeTransaction(t)
+
+                                &&
+
+                                String(
+                                    t.houseNumber || ""
+                                )
+                                .toLowerCase()
+                                ===
+                                String(
+                                    h.houseNumber || ""
+                                )
+                                .toLowerCase()
+
+                                &&
+
+                                String(
+                                    t.date || ""
+                                ).slice(0, 7)
+                                ===
+                                month
+
+                            );
+
+                        });
+
+
+                const paid =
+                    paidTransactions.length > 0;
+
+
+                const amount =
+                    paidTransactions
+                        .reduce(
+                            (sum, t) =>
+                                sum +
+                                (
+                                    Number(t.amount) ||
+                                    0
+                                ),
+                            0
+                        );
+
+
+                return {
+
+                    key,
+                    ...h,
+                    paid,
+                    amount
+
+                };
+
             });
 
-            const todayPeriod = getYearMonth(getLocalDateString());
 
-            if (periodInput !== todayPeriod) {
-                dateInput.value = `${periodInput}-01`;
-            } else {
-                dateInput.value = getLocalDateString();
-            }
-        }
+    let filtered = list;
+
+
+    if (status === "paid") {
+
+        filtered =
+            filtered.filter(
+                x => x.paid
+            );
+
     }
 
-    descInput.value = `Iuran Kebersihan & Keamanan Bulan ${monthName}`;
-    document.getElementById('inc-method').value = 'Cash';
-    document.getElementById('inc-amount').focus();
 
-    showToast(`Mencatat iuran rumah ${houseNo}`);
-};
+    if (status === "unpaid") {
 
+        filtered =
+            filtered.filter(
+                x => !x.paid
+            );
 
-/* =========================================================
-   EDIT TRANSACTION
-   ========================================================= */
-
-window.editTransaction = function(id) {
-    if (!requireAdmin()) return;
-
-    const t = transactions.find(item => item.id === id);
-    if (!t) return;
-
-    editingTransactionId = id;
-
-    switchMainPage('dashboard');
-    document.getElementById('form-type-switcher').classList.add('hidden');
-    document.getElementById('btn-cancel-edit').classList.remove('hidden');
-
-    if (String(t.type).toLowerCase() === 'income') {
-        switchForm('income');
-
-        document.getElementById('form-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Pemasukan';
-        document.getElementById('inc-id').value = t.id;
-        document.getElementById('inc-date').value = t.date || '';
-        document.getElementById('inc-method').value = t.paymentMethod || 'Cash';
-        document.getElementById('inc-house').value = t.houseNumber || '';
-        document.getElementById('inc-desc').value = t.description || '';
-        document.getElementById('inc-amount').value = t.amount || '';
-        document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Perbarui Pemasukan';
-
-        const proofInfo = document.getElementById('inc-proof-info');
-        if (t.proof) proofInfo.classList.remove('hidden');
-        else proofInfo.classList.add('hidden');
-    } else {
-        switchForm('expense');
-
-        document.getElementById('form-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Pengeluaran';
-        document.getElementById('exp-id').value = t.id;
-        document.getElementById('exp-date').value = t.date || '';
-        document.getElementById('exp-desc').value = t.description || '';
-        document.getElementById('exp-amount').value = t.amount || '';
-        document.getElementById('exp-submit-btn').innerHTML = '<i class="fas fa-save"></i> Perbarui Pengeluaran';
-
-        const proofInfo = document.getElementById('exp-proof-info');
-        if (t.proof) proofInfo.classList.remove('hidden');
-        else proofInfo.classList.add('hidden');
     }
 
-    document.getElementById('form-title').scrollIntoView({ behavior: 'smooth' });
-};
+
+    if (search) {
+
+        filtered =
+            filtered.filter(x => {
+
+                return (
+
+                    String(
+                        x.houseNumber || ""
+                    )
+                    .toLowerCase()
+                    .includes(search)
+
+                    ||
+
+                    String(
+                        x.owner || ""
+                    )
+                    .toLowerCase()
+                    .includes(search)
+
+                );
+
+            });
+
+    }
 
 
-/* =========================================================
-   CANCEL EDIT
-   ========================================================= */
-
-window.cancelEditTransaction = function() {
-    editingTransactionId = null;
-
-    document.getElementById('form-type-switcher').classList.remove('hidden');
-    document.getElementById('btn-cancel-edit').classList.add('hidden');
-    document.getElementById('form-title').innerHTML = '<i class="fas fa-pen-to-square text-blue-600"></i> Catat Transaksi Baru';
-
-    const formInc = document.getElementById('form-income');
-    formInc.reset();
-    document.getElementById('inc-id').value = '';
-    document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Simpan Pemasukan';
-    document.getElementById('inc-proof-info').classList.add('hidden');
-
-    const formExp = document.getElementById('form-expense');
-    formExp.reset();
-    document.getElementById('exp-id').value = '';
-    document.getElementById('exp-submit-btn').innerHTML = '<i class="fas fa-save"></i> Simpan Pengeluaran';
-    document.getElementById('exp-proof-info').classList.add('hidden');
-
-    const todayISO = getLocalDateString();
-    document.getElementById('inc-date').value = todayISO;
-    document.getElementById('exp-date').value = todayISO;
-};
+    const total =
+        list.length;
 
 
-/* =========================================================
-   HOUSE MODAL
-   ========================================================= */
-
-window.openAddHouseModal = function() {
-    if (!requireAdmin()) return;
-
-    document.getElementById('modal-house-id').value = '';
-    document.getElementById('modal-house-no').value = '';
-    document.getElementById('modal-house-owner').value = '';
-    document.getElementById('modal-house-phone').value = '';
-    document.getElementById('house-modal-title').innerHTML = '<i class="fas fa-home text-blue-600"></i> Tambah Data Warga';
-    document.getElementById('house-modal').classList.remove('hidden');
-};
-
-window.editHouse = function(id) {
-    if (!requireAdmin()) return;
-
-    const house = houses.find(h => h.id === id);
-    if (!house) return;
-
-    document.getElementById('modal-house-id').value = house.id;
-    document.getElementById('modal-house-no').value = house.houseNumber || '';
-    document.getElementById('modal-house-owner').value = house.ownerName || '';
-    document.getElementById('modal-house-phone').value = house.phone || '';
-    document.getElementById('house-modal-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Data Warga';
-    document.getElementById('house-modal').classList.remove('hidden');
-};
-
-window.closeHouseModal = function() {
-    document.getElementById('house-modal').classList.add('hidden');
-};
+    const paidCount =
+        list.filter(
+            x => x.paid
+        ).length;
 
 
-/* =========================================================
-   DELETE HOUSE
-   ========================================================= */
+    document.getElementById(
+        "residentTotal"
+    ).textContent = total;
 
-window.deleteHouse = async function(id) {
-    if (!requireAdmin()) return;
 
-    const house = houses.find(h => h.id === id);
-    const houseName = house ? `Rumah ${house.houseNumber}` : 'data ini';
+    document.getElementById(
+        "residentPaid"
+    ).textContent = paidCount;
 
-    if (!confirm(`Hapus ${houseName}?`)) return;
-    if (!firebaseReady) {
-        showToast('Firebase belum terhubung.', 'error');
+
+    document.getElementById(
+        "residentUnpaid"
+    ).textContent =
+        total - paidCount;
+
+
+    document.getElementById(
+        "residentPercent"
+    ).textContent =
+        total
+        ?
+        Math.round(
+            paidCount / total * 100
+        ) + "%"
+        :
+        "0%";
+
+
+    const body =
+        document.getElementById(
+            "residentBody"
+        );
+
+
+    if (!filtered.length) {
+
+        body.innerHTML = `
+            <tr>
+                <td colspan="6"
+                    class="p-5 text-center text-slate-400">
+                    Tidak ada data.
+                </td>
+            </tr>
+        `;
+
         return;
+
     }
 
-    try {
-        await firebaseDb.ref(`kasRt/houses/${id}`).remove();
-        showToast('Data rumah terhapus', 'delete');
-    } catch (error) {
-        console.error(error);
-        showToast('Gagal menghapus data rumah.', 'error');
-    }
-};
+
+    body.innerHTML =
+        filtered.map(h => {
+
+            const whatsapp =
+                h.phone
+                ?
+                `
+                <a
+                    class="text-green-600"
+                    target="_blank"
+                    href="https://wa.me/${String(
+                        h.phone
+                    ).replace(/\D/g, "")}">
+
+                    <i class="fa-brands fa-whatsapp"></i>
+
+                </a>
+                `
+                :
+                "-";
 
 
-/* =========================================================
-   PROOF MODAL
-   ========================================================= */
+            return `
 
-window.openProofModal = function(id) {
-    const t = transactions.find(item => item.id === id);
-    const modal = document.getElementById('proof-modal');
-    const img = document.getElementById('proof-img');
-    const emptyText = document.getElementById('proof-empty-text');
+                <tr class="border-b hover:bg-slate-50">
 
-    if (t && t.proof) {
-        img.src = t.proof;
-        img.classList.remove('hidden');
-        emptyText.classList.add('hidden');
-    } else {
-        img.src = '';
-        img.classList.add('hidden');
-        emptyText.classList.remove('hidden');
-    }
-
-    modal.classList.remove('hidden');
-};
-
-window.closeProofModal = function() {
-    document.getElementById('proof-modal').classList.add('hidden');
-};
+                    <td class="p-2 font-semibold">
+                        ${escapeHTML(
+                            h.houseNumber
+                        )}
+                    </td>
 
 
-/* =========================================================
-   DELETE TRANSACTION
-   ========================================================= */
-
-window.deleteTransaction = async function(id) {
-    if (!requireAdmin()) return;
-
-    if (!confirm('Hapus transaksi ini?')) return;
-    if (!firebaseReady) {
-        showToast('Firebase belum terhubung.', 'error');
-        return;
-    }
-
-    try {
-        if (editingTransactionId === id) {
-            cancelEditTransaction();
-        }
-        await firebaseDb.ref(`kasRt/transactions/${id}`).remove();
-        showToast('Transaksi dihapus', 'delete');
-    } catch (error) {
-        console.error(error);
-        showToast('Gagal menghapus transaksi.', 'error');
-    }
-};
+                    <td class="p-2">
+                        ${escapeHTML(
+                            h.owner
+                        )}
+                    </td>
 
 
-/* =========================================================
-   RENDER ALL
-   ========================================================= */
+                    <td class="p-2">
+                        ${whatsapp}
+                    </td>
 
-function renderAllViews() {
-    updateHouseDatalist();
-    renderDashboard();
-    renderHistory();
-    renderRecap();
-    renderHouseStatus();
+
+                    <td class="p-2">
+
+                        <span
+                            class="px-2 py-1 rounded-full text-xs
+                            ${
+                                h.paid
+                                ? "status-paid"
+                                : "status-unpaid"
+                            }">
+
+                            ${
+                                h.paid
+                                ? "Lunas"
+                                : "Belum Lunas"
+                            }
+
+                        </span>
+
+                    </td>
+
+
+                    <td class="p-2 text-right">
+
+                        ${
+                            h.paid
+                            ?
+                            formatRupiah(h.amount)
+                            :
+                            formatRupiah(
+                                h.monthlyFee || 50000
+                            )
+                        }
+
+                    </td>
+
+
+                    <td class="p-2 whitespace-nowrap">
+
+                        ${
+                            !h.paid
+                            ?
+                            `
+                            <button
+                                onclick="quickRecordPayment('${escapeHTML(h.houseNumber)}')"
+                                class="text-emerald-600 mr-2"
+                                title="Catat pembayaran">
+
+                                <i class="fa-solid fa-money-bill-wave"></i>
+
+                            </button>
+                            `
+                            :
+                            ""
+                        }
+
+
+                        ${
+                            isAdmin
+                            ?
+                            `
+
+                            <button
+                                onclick="editHouse('${escapeHTML(h.key)}')"
+                                class="text-blue-600 mr-2">
+
+                                <i class="fa-solid fa-pen"></i>
+
+                            </button>
+
+
+                            <button
+                                onclick="deleteHouse('${escapeHTML(h.key)}')"
+                                class="text-red-600">
+
+                                <i class="fa-solid fa-trash"></i>
+
+                            </button>
+
+                            `
+                            :
+                            ""
+                        }
+
+                    </td>
+
+                </tr>
+
+            `;
+
+        }).join("");
+
 }
 
 
 /* =========================================================
-   HOUSE KEY HELPER
-   ========================================================= */
+   SIMPAN FILE KE BASE64
+========================================================= */
 
-function getSafeHouseKey(houseNumber) {
-    return String(houseNumber || '')
-        .trim()
-        .toUpperCase()
-        .replace(/[.#$/\[\]]/g, '_')
-        .replace(/\s+/g, '_');
+function fileToBase64(file) {
+
+    if (!file) {
+        return Promise.resolve(null);
+    }
+
+
+    return new Promise(
+        (resolve, reject) => {
+
+            const reader =
+                new FileReader();
+
+
+            reader.onload =
+                () =>
+                    resolve(
+                        reader.result
+                    );
+
+
+            reader.onerror =
+                reject;
+
+
+            reader.readAsDataURL(file);
+
+        }
+    );
+
 }
 
 
 /* =========================================================
-   ADD HOUSE
-   ========================================================= */
+   SIMPAN PEMASUKAN
+========================================================= */
 
-async function addHouseToFirebase(houseData) {
-    if (!firebaseReady) {
-        throw new Error('Firebase belum terhubung.');
+async function saveIncome(event) {
+
+    event.preventDefault();
+
+
+    if (!db) {
+
+        toast(
+            "Firebase belum terhubung."
+        );
+
+        return;
+
     }
 
-    const houseNumber = String(houseData.houseNumber || '').trim().toUpperCase();
-    if (!houseNumber) {
-        throw new Error('Nomor rumah kosong.');
-    }
 
-    const safeKey = getSafeHouseKey(houseNumber);
-    const houseRef = firebaseDb.ref(`kasRt/houses/${safeKey}`);
+    const button =
+        document.getElementById(
+            "incomeSubmit"
+        );
 
-    const result = await houseRef.transaction(currentData => {
-        if (currentData !== null) {
-            return;
-        }
 
-        return {
-            houseNumber,
-            ownerName: houseData.ownerName || '',
-            phone: houseData.phone || ''
+    button.disabled = true;
+
+
+    try {
+
+        const desc =
+            document.getElementById(
+                "incomeDesc"
+            ).value.trim();
+
+
+        const normalizedDesc =
+            desc.toLowerCase().trim();
+
+
+        /*
+            PERBAIKAN:
+
+            Semua keterangan berikut
+            dianggap sebagai iuran:
+
+            iuran
+            kas
+            kas rt
+            kebersihan
+            keamanan
+        */
+
+        const paymentType =
+            /(\biuran\b|\bkas\b|\bkebersihan\b|\bkeamanan\b)/i
+                .test(normalizedDesc)
+
+            ?
+
+            "monthly_fee"
+
+            :
+
+            "other_income";
+
+
+        const proof =
+            await fileToBase64(
+                document.getElementById(
+                    "incomeProof"
+                ).files[0]
+            );
+
+
+        const data = {
+
+            type: "income",
+
+            date:
+                document.getElementById(
+                    "incomeDate"
+                ).value,
+
+            method:
+                document.getElementById(
+                    "incomeMethod"
+                ).value,
+
+            houseNumber:
+                document.getElementById(
+                    "incomeHouse"
+                ).value.trim(),
+
+            description: desc,
+
+            amount:
+                Number(
+                    document.getElementById(
+                        "incomeAmount"
+                    ).value
+                ) || 0,
+
+            paymentType:
+
+                paymentType,
+
+            proof:
+                proof || null,
+
+            createdAt:
+                firebase.database.ServerValue.TIMESTAMP
+
         };
-    });
 
-    if (!result.committed) {
-        const snapshot = await houseRef.once('value');
-        if (snapshot.exists()) {
-            return safeKey;
-        }
-        throw new Error('Gagal menambahkan data rumah.');
+
+        await db
+            .ref("kasRt/transactions")
+            .push(data);
+
+
+        event.target.reset();
+
+
+        document.getElementById(
+            "incomeDate"
+        ).value =
+            todayISO();
+
+
+        toast(
+            "Pemasukan berhasil disimpan."
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Gagal menyimpan pemasukan: "
+            + error.message
+        );
+
+
+    } finally {
+
+        button.disabled = false;
+
     }
 
-    return safeKey;
 }
 
 
 /* =========================================================
-   INITIALIZE DEFAULT HOUSES
-   ========================================================= */
+   SIMPAN PENGELUARAN
+========================================================= */
+
+async function saveExpense(event) {
+
+    event.preventDefault();
+
+
+    if (!db) {
+
+        toast(
+            "Firebase belum terhubung."
+        );
+
+        return;
+
+    }
+
+
+    const button =
+        document.getElementById(
+            "expenseSubmit"
+        );
+
+
+    button.disabled = true;
+
+
+    try {
+
+        const proof =
+            await fileToBase64(
+                document.getElementById(
+                    "expenseProof"
+                ).files[0]
+            );
+
+
+        const data = {
+
+            type: "expense",
+
+            date:
+                document.getElementById(
+                    "expenseDate"
+                ).value,
+
+            description:
+                document.getElementById(
+                    "expenseDesc"
+                ).value.trim(),
+
+            amount:
+                Number(
+                    document.getElementById(
+                        "expenseAmount"
+                    ).value
+                ) || 0,
+
+            proof:
+                proof || null,
+
+            createdAt:
+                firebase.database.ServerValue.TIMESTAMP
+
+        };
+
+
+        await db
+            .ref("kasRt/transactions")
+            .push(data);
+
+
+        event.target.reset();
+
+
+        document.getElementById(
+            "expenseDate"
+        ).value =
+            todayISO();
+
+
+        toast(
+            "Pengeluaran berhasil disimpan."
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Gagal menyimpan pengeluaran: "
+            + error.message
+        );
+
+
+    } finally {
+
+        button.disabled = false;
+
+    }
+
+}
+
+
+/* =========================================================
+   CATAT PEMBAYARAN CEPAT
+========================================================= */
+
+async function quickRecordPayment(
+    houseNumber
+) {
+
+    const house =
+        Object.values(houses)
+            .find(
+                h =>
+                    h.houseNumber ===
+                    houseNumber
+            );
+
+
+    if (!house) {
+        return;
+    }
+
+
+    if (!db) {
+
+        toast(
+            "Firebase belum terhubung."
+        );
+
+        return;
+
+    }
+
+
+    const month =
+        document.getElementById(
+            "periodMonth"
+        ).value ||
+        currentMonth();
+
+
+    const exists =
+        Object.values(transactions)
+            .some(t => {
+
+                return (
+
+                    isMonthlyFeeTransaction(t)
+
+                    &&
+
+                    String(
+                        t.houseNumber || ""
+                    )
+                    .toLowerCase()
+                    ===
+                    houseNumber.toLowerCase()
+
+                    &&
+
+                    String(
+                        t.date || ""
+                    ).slice(0, 7)
+                    ===
+                    month
+
+                );
+
+            });
+
+
+    if (exists) {
+
+        toast(
+            "Warga ini sudah tercatat lunas pada periode tersebut."
+        );
+
+        return;
+
+    }
+
+
+    try {
+
+        await db
+            .ref("kasRt/transactions")
+            .push({
+
+                type: "income",
+
+                date:
+                    month === currentMonth()
+                    ?
+                    todayISO()
+                    :
+                    month + "-01",
+
+                method: "Cash",
+
+                houseNumber:
+                    houseNumber,
+
+                description:
+                    "Iuran Kebersihan & Keamanan Bulan "
+                    + monthLabel(month),
+
+                amount:
+                    Number(
+                        house.monthlyFee
+                    ) || 50000,
+
+                paymentType:
+                    "monthly_fee",
+
+                createdAt:
+                    firebase.database.ServerValue.TIMESTAMP
+
+            });
+
+
+        toast(
+            "Pembayaran "
+            + houseNumber
+            + " berhasil dicatat."
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Gagal mencatat pembayaran: "
+            + error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   HAPUS TRANSAKSI
+========================================================= */
+
+async function deleteTransaction(key) {
+
+    if (!isAdmin) {
+
+        toast(
+            "Login admin terlebih dahulu."
+        );
+
+        return;
+
+    }
+
+
+    if (
+        !confirm(
+            "Hapus transaksi ini?"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await db
+            .ref(
+                "kasRt/transactions/" +
+                key
+            )
+            .remove();
+
+
+        toast(
+            "Transaksi berhasil dihapus."
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Gagal menghapus transaksi: "
+            + error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   MODAL WARGA
+========================================================= */
+
+function openHouseModal(key = null) {
+
+    if (!isAdmin) {
+
+        toast(
+            "Login admin terlebih dahulu."
+        );
+
+        return;
+
+    }
+
+
+    const modal =
+        document.getElementById(
+            "houseModal"
+        );
+
+
+    modal.classList.remove("hidden");
+
+    modal.classList.add("flex");
+
+
+    document.getElementById(
+        "houseEditKey"
+    ).value =
+        key || "";
+
+
+    document.getElementById(
+        "houseModalTitle"
+    ).textContent =
+        key
+        ?
+        "Edit Warga"
+        :
+        "Tambah Warga";
+
+
+    if (key) {
+
+        const house =
+            houses[key];
+
+
+        if (house) {
+
+            document.getElementById(
+                "houseNumber"
+            ).value =
+                house.houseNumber || "";
+
+
+            document.getElementById(
+                "houseOwner"
+            ).value =
+                house.owner || "";
+
+
+            document.getElementById(
+                "housePhone"
+            ).value =
+                house.phone || "";
+
+
+            document.getElementById(
+                "houseFee"
+            ).value =
+                house.monthlyFee ||
+                50000;
+
+        }
+
+    } else {
+
+        document.getElementById(
+            "houseNumber"
+        ).value = "";
+
+
+        document.getElementById(
+            "houseOwner"
+        ).value = "";
+
+
+        document.getElementById(
+            "housePhone"
+        ).value = "";
+
+
+        document.getElementById(
+            "houseFee"
+        ).value = 50000;
+
+    }
+
+}
+
+
+function closeHouseModal() {
+
+    const modal =
+        document.getElementById(
+            "houseModal"
+        );
+
+
+    modal.classList.add("hidden");
+
+    modal.classList.remove("flex");
+
+}
+
+
+function editHouse(key) {
+
+    openHouseModal(key);
+
+}
+
+
+/* =========================================================
+   SIMPAN WARGA
+========================================================= */
+
+async function saveHouse(event) {
+
+    event.preventDefault();
+
+
+    if (!isAdmin) {
+        return;
+    }
+
+
+    const oldKey =
+        document.getElementById(
+            "houseEditKey"
+        ).value;
+
+
+    const houseNumber =
+        document.getElementById(
+            "houseNumber"
+        ).value.trim();
+
+
+    const data = {
+
+        houseNumber:
+
+            houseNumber,
+
+        owner:
+
+            document.getElementById(
+                "houseOwner"
+            ).value.trim(),
+
+        phone:
+
+            document.getElementById(
+                "housePhone"
+            ).value.trim(),
+
+        monthlyFee:
+
+            Number(
+                document.getElementById(
+                    "houseFee"
+                ).value
+            ) || 50000,
+
+        updatedAt:
+
+            firebase.database.ServerValue.TIMESTAMP
+
+    };
+
+
+    try {
+
+        const newKey =
+            safeHouseKey(
+                houseNumber
+            );
+
+
+        if (
+            oldKey &&
+            oldKey !== newKey
+        ) {
+
+            await db
+                .ref(
+                    "kasRt/houses/" +
+                    newKey
+                )
+                .set(data);
+
+
+            await db
+                .ref(
+                    "kasRt/houses/" +
+                    oldKey
+                )
+                .remove();
+
+        } else {
+
+            await db
+                .ref(
+                    "kasRt/houses/" +
+                    (
+                        oldKey ||
+                        newKey
+                    )
+                )
+                .set(data);
+
+        }
+
+
+        closeHouseModal();
+
+
+        toast(
+            "Data warga berhasil disimpan."
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Gagal menyimpan warga: "
+            + error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   HAPUS WARGA
+========================================================= */
+
+async function deleteHouse(key) {
+
+    if (!isAdmin) {
+        return;
+    }
+
+
+    const house =
+        houses[key];
+
+
+    if (!house) {
+        return;
+    }
+
+
+    if (
+        !confirm(
+            "Hapus data warga "
+            + house.houseNumber
+            + "?"
+        )
+    ) {
+
+        return;
+
+    }
+
+
+    try {
+
+        await db
+            .ref(
+                "kasRt/houses/" +
+                key
+            )
+            .remove();
+
+
+        toast(
+            "Data warga berhasil dihapus."
+        );
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Gagal menghapus warga: "
+            + error.message
+        );
+
+    }
+
+}
+
+
+/* =========================================================
+   ADMIN
+========================================================= */
+
+function openAdminLogin() {
+
+    if (isAdmin) {
+
+        if (
+            confirm(
+                "Anda sudah login sebagai admin. Logout sekarang?"
+            )
+        ) {
+
+            logoutAdmin();
+
+        }
+
+        return;
+
+    }
+
+
+    const modal =
+        document.getElementById(
+            "adminModal"
+        );
+
+
+    modal.classList.remove("hidden");
+
+    modal.classList.add("flex");
+
+
+    document.getElementById(
+        "adminPinInput"
+    ).value = "";
+
+
+    setTimeout(
+        () =>
+            document
+                .getElementById(
+                    "adminPinInput"
+                )
+                .focus(),
+        100
+    );
+
+}
+
+
+function closeAdminLogin() {
+
+    const modal =
+        document.getElementById(
+            "adminModal"
+        );
+
+
+    modal.classList.add("hidden");
+
+    modal.classList.remove("flex");
+
+}
+
+
+async function loginAdmin() {
+
+    const pin =
+        document.getElementById(
+            "adminPinInput"
+        ).value.trim();
+
+
+    try {
+
+        const snapshot =
+            await db
+                .ref("kasRt/adminPin")
+                .once("value");
+
+
+        const savedPin =
+            snapshot.val() ||
+            "123456";
+
+
+        if (
+            pin ===
+            String(savedPin)
+        ) {
+
+            isAdmin = true;
+
+
+            sessionStorage.setItem(
+                "kasRtAdmin",
+                "true"
+            );
+
+
+            closeAdminLogin();
+
+            updateAdminUI();
+
+            renderAllViews();
+
+
+            toast(
+                "Login admin berhasil."
+            );
+
+        } else {
+
+            toast(
+                "PIN salah."
+            );
+
+        }
+
+
+    } catch (error) {
+
+        console.error(error);
+
+        toast(
+            "Gagal memeriksa PIN: "
+            + error.message
+        );
+
+    }
+
+}
+
+
+function logoutAdmin() {
+
+    isAdmin = false;
+
+
+    sessionStorage.removeItem(
+        "kasRtAdmin"
+    );
+
+
+    updateAdminUI();
+
+    renderAllViews();
+
+
+    toast(
+        "Logout berhasil."
+    );
+
+}
+
+
+function updateAdminUI() {
+
+    document
+        .querySelectorAll(".admin-only")
+        .forEach(element => {
+
+            element.classList.toggle(
+                "hidden",
+                !isAdmin
+            );
+
+        });
+
+
+    const button =
+        document.getElementById(
+            "adminButton"
+        );
+
+
+    button.innerHTML =
+        isAdmin
+        ?
+        `
+        <i class="fa-solid fa-right-from-bracket mr-1"></i>
+        Logout Admin
+        `
+        :
+        `
+        <i class="fa-solid fa-user-shield mr-1"></i>
+        Admin
+        `;
+
+}
+
+
+/* =========================================================
+   DEFAULT WARGA
+   Menggunakan transaction agar tidak menimpa data
+   jika beberapa user membuka aplikasi bersamaan.
+========================================================= */
 
 async function initializeDefaultHousesIfEmpty() {
-    if (!firebaseReady) return;
 
-    const housesRef = firebaseDb.ref('kasRt/houses');
-
-    try {
-        await housesRef.transaction(currentData => {
-            if (currentData !== null) return;
-
-            const initialData = {};
-            defaultHousesArray.forEach(house => {
-                const key = getSafeHouseKey(house.houseNumber);
-                initialData[key] = {
-                    houseNumber: house.houseNumber,
-                    ownerName: house.ownerName,
-                    phone: house.phone || ''
-                };
-            });
-
-            return initialData;
-        });
-    } catch (error) {
-        console.error('Gagal inisialisasi rumah:', error);
-        showToast('Gagal memuat data warga awal.', 'error');
-    }
-}
+    const ref =
+        db.ref("kasRt/houses");
 
 
-/* =========================================================
-   FIREBASE CONFIG CHECK
-   ========================================================= */
+    await ref.transaction(
+        currentData => {
 
-function isFirebaseConfigured() {
-    return (
-        firebaseConfig.apiKey &&
-        !firebaseConfig.apiKey.startsWith('ISI_')
+            if (
+                currentData &&
+                Object.keys(
+                    currentData
+                ).length > 0
+            ) {
+
+                return;
+
+            }
+
+
+            const result = {};
+
+
+            defaultHouses.forEach(
+                house => {
+
+                    result[
+                        safeHouseKey(
+                            house.houseNumber
+                        )
+                    ] = house;
+
+                }
+            );
+
+
+            return result;
+
+        }
     );
+
 }
 
 
 /* =========================================================
    FIREBASE SYNC
-   ========================================================= */
+========================================================= */
 
-async function startFirebaseSync() {
-    if (!isFirebaseConfigured()) {
-        setFirebaseStatus('Firebase belum dikonfigurasi.', 'error');
-        initApp();
-        return;
-    }
+function startFirebaseSync() {
 
     try {
+
         if (!firebase.apps.length) {
-            firebase.initializeApp(firebaseConfig);
+
+            firebase.initializeApp(
+                firebaseConfig
+            );
+
         }
 
-        firebaseDb = firebase.database();
-        firebaseReady = true;
 
-        setFirebaseStatus('Terhubung ke Firebase.', 'success');
+        db =
+            firebase.database();
 
-        firebaseDb.ref('.info/connected').on('value', snap => {
-            if (snap.val() === true) {
-                setFirebaseStatus('Terhubung ke Firebase.', 'success');
-            } else {
-                setFirebaseStatus('Koneksi Firebase terputus / mencoba menghubungkan...', 'error');
-            }
-        });
 
-        const pinRef = firebaseDb.ref('kasRt/adminPin');
+        const status =
+            document.getElementById(
+                "firebaseStatus"
+            );
 
-        pinRef.on('value', snap => {
-            const pinVal = snap.val();
-            if (pinVal !== null && pinVal !== '') {
-                ADMIN_PIN = String(pinVal);
-                localStorage.setItem('kasRtAdminPin', ADMIN_PIN);
-            }
-        });
 
-        pinRef.transaction(currentPin => {
-            if (currentPin !== null && currentPin !== '') return;
-            return DEFAULT_ADMIN_PIN;
-        }).catch(error => {
-            console.error('Gagal inisialisasi PIN:', error);
-        });
+        status.textContent =
+            "Firebase terhubung";
 
-        firebaseDb.ref('kasRt/transactions').on('value', snap => {
-            const data = snap.val();
-            transactions = [];
 
-            if (data) {
-                Object.keys(data).forEach(key => {
-                    const item = data[key];
-                    if (item && typeof item === 'object') {
-                        transactions.push({
-                            id: key,
-                            ...item
-                        });
+        status.className =
+            "text-xs bg-emerald-500 px-3 py-1.5 rounded-full";
+
+
+        /*
+            LISTENER TRANSAKSI
+
+            Perubahan data langsung diterima
+            oleh semua pengguna.
+        */
+
+        db
+            .ref("kasRt/transactions")
+            .on(
+                "value",
+
+                snapshot => {
+
+                    transactions =
+                        snapshot.val() || {};
+
+
+                    /*
+                        Gunakan scheduleRenderAllViews()
+                        supaya jika transaksi dan rumah
+                        berubah bersamaan, tampilan tidak
+                        dirender berkali-kali.
+                    */
+
+                    scheduleRenderAllViews();
+
+                },
+
+                error => {
+
+                    console.error(
+                        error
+                    );
+
+                    status.textContent =
+                        "Error Database";
+
+                    status.className =
+                        "text-xs bg-red-500 px-3 py-1.5 rounded-full";
+
+                }
+            );
+
+
+        /*
+            LISTENER DATA WARGA
+        */
+
+        db
+            .ref("kasRt/houses")
+            .on(
+                "value",
+
+                snapshot => {
+
+                    houses =
+                        snapshot.val() || {};
+
+
+                    scheduleRenderAllViews();
+
+                },
+
+                error => {
+
+                    console.error(
+                        error
+                    );
+
+                }
+            );
+
+
+        /*
+            PIN ADMIN
+        */
+
+        db
+            .ref("kasRt/adminPin")
+            .on(
+                "value",
+
+                snapshot => {
+
+                    if (
+                        !snapshot.exists()
+                    ) {
+
+                        db
+                            .ref(
+                                "kasRt/adminPin"
+                            )
+                            .set("123456")
+                            .catch(
+                                console.error
+                            );
+
                     }
-                });
-            }
 
-            renderAllViews();
-        });
+                }
+            );
 
-        firebaseDb.ref('kasRt/houses').on('value', snap => {
-            const data = snap.val();
-            houses = [];
 
-            if (data) {
-                Object.keys(data).forEach(key => {
-                    const item = data[key];
-                    if (item && typeof item === 'object') {
-                        houses.push({
-                            id: key,
-                            ...item
-                        });
-                    }
-                });
-            }
+        /*
+            Pastikan data rumah default
+            hanya dibuat jika database kosong.
+        */
 
-            renderAllViews();
-        });
+        initializeDefaultHousesIfEmpty()
+            .catch(
+                error =>
+                    console.error(
+                        error
+                    )
+            );
 
-        await initializeDefaultHousesIfEmpty();
-        initApp();
 
-    } catch (err) {
-        console.error('Firebase initialization error:', err);
-        firebaseReady = false;
-        setFirebaseStatus('Gagal terhubung ke Firebase.', 'error');
-        showToast('Gagal terhubung ke Firebase.', 'error');
-        initApp();
+    } catch (error) {
+
+        console.error(
+            error
+        );
+
+
+        const status =
+            document.getElementById(
+                "firebaseStatus"
+            );
+
+
+        status.textContent =
+            "Firebase Error";
+
+
+        status.className =
+            "text-xs bg-red-500 px-3 py-1.5 rounded-full";
+
+
+        toast(
+            "Firebase gagal diinisialisasi."
+        );
+
     }
+
 }
 
 
 /* =========================================================
-   FILE -> BASE64
-   ========================================================= */
+   RENDER SEMUA
+========================================================= */
 
-function readFileAsBase64(file) {
-    return new Promise(resolve => {
-        if (!file) {
-            resolve('');
-            return;
-        }
+function renderAllViews() {
 
-        const reader = new FileReader();
-        reader.onload = e => resolve(e.target.result);
-        reader.onerror = () => resolve('');
-        reader.readAsDataURL(file);
-    });
-}
-
-
-/* =========================================================
-   BUTTON LOADING
-   ========================================================= */
-
-function setButtonLoading(button, loading, loadingText) {
-    if (!button) return;
-
-    if (loading) {
-        button.dataset.originalText = button.innerHTML;
-        button.disabled = true;
-        button.innerHTML = `<i class="fas fa-spinner fa-spin"></i> ${loadingText}`;
-    } else {
-        button.disabled = false;
-        if (button.dataset.originalText) {
-            button.innerHTML = button.dataset.originalText;
-            delete button.dataset.originalText;
-        }
-    }
-}
-
-
-/* =========================================================
-   FORM INCOME
-   ========================================================= */
-
-document.getElementById('form-income').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    if (!requireAdmin()) return;
-
-    if (!firebaseReady) {
-        showToast('Firebase belum terhubung.', 'error');
-        return;
-    }
-
-    const submitBtn = document.getElementById('inc-submit-btn');
-    const editId = document.getElementById('inc-id').value;
-    const date = document.getElementById('inc-date').value;
-    const method = document.getElementById('inc-method').value;
-    const house = document.getElementById('inc-house').value.trim().toUpperCase();
-    const desc = document.getElementById('inc-desc').value.trim();
-    const amount = parseFloat(document.getElementById('inc-amount').value);
-    const fileInput = document.getElementById('inc-proof');
-
-    if (!date || !desc || isNaN(amount) || amount <= 0) {
-        showToast('Lengkapi data pemasukan terlebih dahulu.', 'error');
-        return;
-    }
-
-    setButtonLoading(submitBtn, true, editId ? 'Memperbarui...' : 'Menyimpan...');
-
-    try {
-        if (
-            house &&
-            !houses.some(h => String(h.houseNumber || '').trim().toUpperCase() === house)
-        ) {
-            await addHouseToFirebase({
-                houseNumber: house,
-                ownerName: `Warga Rumah ${house}`,
-                phone: ''
-            });
-        }
-
-        let proofBase64 = fileInput.files.length > 0
-            ? await readFileAsBase64(fileInput.files[0])
-            : '';
-
-        const paymentType = /\biuran\b/i.test(desc) ? 'monthly_fee' : 'other_income';
-
-        if (editId) {
-            const existing = transactions.find(t => t.id === editId);
-
-            if (existing && !proofBase64) {
-                proofBase64 = existing.proof || '';
-            }
-
-            let existingPaymentType = existing && existing.paymentType ? existing.paymentType : null;
-
-            if (!existingPaymentType && existing && isMonthlyFeeTransaction(existing)) {
-                existingPaymentType = 'monthly_fee';
-            }
-
-            if (!existingPaymentType) {
-                existingPaymentType = paymentType;
-            }
-
-            await firebaseDb.ref(`kasRt/transactions/${editId}`).update({
-                type: 'income',
-                date: date,
-                paymentMethod: method,
-                houseNumber: house,
-                description: desc,
-                amount: amount,
-                proof: proofBase64,
-                paymentType: existingPaymentType
-            });
-
-            cancelEditTransaction();
-            showToast('Pemasukan berhasil diperbarui!');
-
-        } else {
-            await firebaseDb.ref('kasRt/transactions').push({
-                type: 'income',
-                date: date,
-                paymentMethod: method,
-                houseNumber: house,
-                description: desc,
-                amount: amount,
-                proof: proofBase64,
-                paymentType: paymentType
-            });
-
-            this.reset();
-            document.getElementById('inc-date').value = getLocalDateString();
-            showToast('Pemasukan berhasil disimpan!');
-        }
-
-    } catch (error) {
-        console.error('Gagal menyimpan pemasukan:', error);
-        showToast('Gagal menyimpan pemasukan. Periksa koneksi Firebase.', 'error');
-    } finally {
-        setButtonLoading(submitBtn, false);
-    }
-});
-
-
-/* =========================================================
-   FORM EXPENSE
-   ========================================================= */
-
-document.getElementById('form-expense').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    if (!requireAdmin()) return;
-
-    if (!firebaseReady) {
-        showToast('Firebase belum terhubung.', 'error');
-        return;
-    }
-
-    const submitBtn = document.getElementById('exp-submit-btn');
-    const editId = document.getElementById('exp-id').value;
-    const date = document.getElementById('exp-date').value;
-    const desc = document.getElementById('exp-desc').value.trim();
-    const amount = parseFloat(document.getElementById('exp-amount').value);
-    const fileInput = document.getElementById('exp-proof');
-
-    if (!date || !desc || isNaN(amount) || amount <= 0) {
-        showToast('Lengkapi data pengeluaran terlebih dahulu.', 'error');
-        return;
-    }
-
-    setButtonLoading(submitBtn, true, editId ? 'Memperbarui...' : 'Menyimpan...');
-
-    try {
-        let proofBase64 = fileInput.files.length > 0
-            ? await readFileAsBase64(fileInput.files[0])
-            : '';
-
-        if (editId) {
-            const existing = transactions.find(t => t.id === editId);
-
-            if (existing && !proofBase64) {
-                proofBase64 = existing.proof || '';
-            }
-
-            await firebaseDb.ref(`kasRt/transactions/${editId}`).update({
-                type: 'expense',
-                date: date,
-                description: desc,
-                amount: amount,
-                proof: proofBase64
-            });
-
-            cancelEditTransaction();
-            showToast('Pengeluaran berhasil diperbarui!');
-
-        } else {
-            await firebaseDb.ref('kasRt/transactions').push({
-                type: 'expense',
-                date: date,
-                description: desc,
-                amount: amount,
-                proof: proofBase64
-            });
-
-            this.reset();
-            document.getElementById('exp-date').value = getLocalDateString();
-            showToast('Pengeluaran berhasil disimpan!');
-        }
-
-    } catch (error) {
-        console.error('Gagal menyimpan pengeluaran:', error);
-        showToast('Gagal menyimpan pengeluaran. Periksa koneksi Firebase.', 'error');
-    } finally {
-        setButtonLoading(submitBtn, false);
-    }
-});
-
-
-/* =========================================================
-   FORM HOUSE
-   ========================================================= */
-
-document.getElementById('form-house').addEventListener('submit', async function(e) {
-    e.preventDefault();
-
-    if (!requireAdmin()) return;
-
-    if (!firebaseReady) {
-        showToast('Firebase belum terhubung.', 'error');
-        return;
-    }
-
-    const submitBtn = this.querySelector('button[type="submit"]');
-    const houseId = document.getElementById('modal-house-id').value;
-    const no = document.getElementById('modal-house-no').value.trim().toUpperCase();
-    const owner = document.getElementById('modal-house-owner').value.trim();
-    const phone = document.getElementById('modal-house-phone').value.trim();
-
-    if (!no || !owner) {
-        showToast('Lengkapi nomor rumah dan nama pemilik.', 'error');
-        return;
-    }
-
-    setButtonLoading(submitBtn, true, houseId ? 'Memperbarui...' : 'Menyimpan...');
-
-    try {
-        if (houseId) {
-            await firebaseDb.ref(`kasRt/houses/${houseId}`).update({
-                houseNumber: no,
-                ownerName: owner,
-                phone: phone
-            });
-
-            showToast('Data warga berhasil diperbarui!');
-        } else {
-            await addHouseToFirebase({
-                houseNumber: no,
-                ownerName: owner,
-                phone: phone
-            });
-
-            showToast('Data warga berhasil ditambahkan!');
-        }
-
-        closeHouseModal();
-
-    } catch (error) {
-        console.error('Gagal menyimpan data warga:', error);
-        showToast('Gagal menyimpan data warga.', 'error');
-    } finally {
-        setButtonLoading(submitBtn, false);
-    }
-});
-
-
-/* =========================================================
-   ADMIN AUTHENTICATION & UI
-   ========================================================= */
-
-function updateAdminUI() {
-    const adminOnlyElements = document.querySelectorAll('.admin-only');
-    adminOnlyElements.forEach(el => {
-        if (isAdmin) {
-            el.classList.remove('hidden');
-        } else {
-            el.classList.add('hidden');
-        }
-    });
-
-    const loginBtn = document.getElementById('admin-login-btn');
-    const loginBtnMb = document.getElementById('admin-login-btn-mb');
-    const logoutBtn = document.getElementById('admin-logout-btn');
-    const logoutBtnMb = document.getElementById('admin-logout-btn-mb');
-
-    if (isAdmin) {
-        if (loginBtn) loginBtn.classList.add('hidden');
-        if (loginBtnMb) loginBtnMb.classList.add('hidden');
-        if (logoutBtn) logoutBtn.classList.remove('hidden');
-        if (logoutBtnMb) logoutBtnMb.classList.remove('hidden');
-    } else {
-        if (loginBtn) loginBtn.classList.remove('hidden');
-        if (loginBtnMb) loginBtnMb.classList.remove('hidden');
-        if (logoutBtn) logoutBtn.classList.add('hidden');
-        if (logoutBtnMb) logoutBtnMb.classList.add('hidden');
-    }
+    renderDashboard();
 
     renderHistory();
+
+    renderMonthlyRecap();
+
     renderHouseStatus();
-}
 
-function requireAdmin() {
-    if (isAdmin) return true;
-    openAdminLogin();
-    return false;
-}
+    renderHouseList();
 
-window.openAdminLogin = function() {
-    const inputPin = prompt('Masukkan PIN Admin (6 digit):');
-    if (inputPin === null) return;
-
-    if (inputPin.trim() === ADMIN_PIN) {
-        isAdmin = true;
-        sessionStorage.setItem('kasRtIsAdmin', 'true');
-        updateAdminUI();
-        showToast('Login Admin berhasil!');
-    } else {
-        showToast('PIN Admin salah!', 'error');
-    }
-};
-
-window.logoutAdmin = function() {
-    isAdmin = false;
-    sessionStorage.removeItem('kasRtIsAdmin');
     updateAdminUI();
-    showToast('Logout Admin berhasil');
-};
 
-window.openChangePin = function() {
-    if (!requireAdmin()) return;
-
-    const currentPin = prompt('Masukkan PIN Lama:');
-    if (currentPin === null) return;
-
-    if (currentPin.trim() !== ADMIN_PIN) {
-        showToast('PIN Lama tidak sesuai!', 'error');
-        return;
-    }
-
-    const newPin = prompt('Masukkan PIN Baru (6 digit angka):');
-    if (!newPin) return;
-
-    const trimmedNew = newPin.trim();
-    if (!/^\d{6}$/.test(trimmedNew)) {
-        showToast('PIN Baru harus berupa 6 digit angka!', 'error');
-        return;
-    }
-
-    const confirmPin = prompt('Konfirmasi PIN Baru:');
-    if (confirmPin === null) return;
-
-    if (confirmPin.trim() !== trimmedNew) {
-        showToast('Konfirmasi PIN Baru tidak cocok!', 'error');
-        return;
-    }
-
-    ADMIN_PIN = trimmedNew;
-    localStorage.setItem('kasRtAdminPin', ADMIN_PIN);
-
-    if (firebaseReady) {
-        firebaseDb.ref('kasRt/adminPin').set(ADMIN_PIN)
-            .then(() => {
-                showToast('PIN Admin berhasil diperbarui!');
-            })
-            .catch(err => {
-                console.error('Gagal menyimpan PIN ke Firebase:', err);
-                showToast('PIN diperbarui di lokal, gagal tersimpan di Firebase.', 'warning');
-            });
-    } else {
-        showToast('PIN Admin berhasil diperbarui!');
-    }
-};
+}
 
 
 /* =========================================================
-   INITIALIZATION
-   ========================================================= */
+   INIT
+========================================================= */
 
 function initApp() {
-    const todayISO = getLocalDateString();
 
-    const incDate = document.getElementById('inc-date');
-    const expDate = document.getElementById('exp-date');
-    const periodFilter = document.getElementById('house-period-filter');
-    const currentDate = document.getElementById('current-date');
+    document.getElementById(
+        "incomeDate"
+    ).value =
+        todayISO();
 
-    if (incDate && !incDate.value) incDate.value = todayISO;
-    if (expDate && !expDate.value) expDate.value = todayISO;
-    if (periodFilter && !periodFilter.value) periodFilter.value = currentYearMonth;
 
-    if (currentDate) {
-        currentDate.textContent = new Date().toLocaleDateString('id-ID', {
-            weekday: 'long',
-            day: 'numeric',
-            month: 'long',
-            year: 'numeric'
-        });
-    }
+    document.getElementById(
+        "expenseDate"
+    ).value =
+        todayISO();
+
+
+    document.getElementById(
+        "periodMonth"
+    ).value =
+        currentMonth();
+
 
     updateAdminUI();
+
     renderAllViews();
+
+    startFirebaseSync();
+
 }
 
-document.addEventListener('DOMContentLoaded', function() {
-    startFirebaseSync();
-});
+
+document.addEventListener(
+    "DOMContentLoaded",
+    initApp
+);
 
 </script>
 
