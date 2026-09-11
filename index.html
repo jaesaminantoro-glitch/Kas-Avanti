@@ -91,7 +91,7 @@
                 <button id="admin-change-pin-btn" onclick="openChangePin()" class="admin-only ml-2 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-xs font-semibold hidden">
                     <i class="fas fa-key mr-1"></i> Ubah PIN
                 </button>
-                <button id="admin-logout-btn" onclick="logoutAdmin()" class="admin-only ml-2 px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-xs font-semibold hidden">
+                <button id="admin-logout-btn" onclick="logoutAdmin()" class="ml-2 px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-xs font-semibold hidden">
                     <i class="fas fa-sign-out-alt mr-1"></i> Logout
                 </button>
             </div>
@@ -105,7 +105,6 @@
         <!-- DASHBOARD KAS & TRANSAKSI -->
         <div id="page-dashboard" class="space-y-4 sm:space-y-6">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5">
-                <!-- Total Saldo Kas -->
                 <div class="bg-gradient-to-br from-blue-700 to-indigo-800 text-white rounded-2xl p-4 sm:p-6 shadow-md relative overflow-hidden flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-1">
@@ -120,7 +119,6 @@
                     </div>
                 </div>
 
-                <!-- Total Pemasukan & Akumulasi Metode Pembayaran -->
                 <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-1">
@@ -134,7 +132,7 @@
                     
                     <div class="mt-3 pt-2 border-t border-slate-100 space-y-1 text-xs text-slate-600">
                         <div class="flex justify-between text-[11px]">
-                            <span><i class="fas fa-money-bill-wave text-amber-500 w-3"></i> Tunai / Cash:</span>
+                            <span><i class="fas fa-money-bill-wave text-amber-500 w-3"></i> Tunai:</span>
                             <span class="font-semibold text-slate-800" id="income-cash">Rp 0</span>
                         </div>
                         <div class="flex justify-between text-[11px]">
@@ -148,7 +146,6 @@
                     </div>
                 </div>
 
-                <!-- Total Pengeluaran -->
                 <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-1">
@@ -167,11 +164,9 @@
                 </div>
             </div>
 
-            <!-- Form Input (Hanya untuk Admin) & Tabel Riwayat -->
+            <!-- Form Input & Tabel Riwayat -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                
-                <!-- Panel Form Input: Menyembunyikan form secara default jika BUKAN admin -->
-                <div id="admin-input-panel" class="admin-only hidden lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col">
+                <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                         <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2" id="form-title">
                             <i class="fas fa-pen-to-square text-blue-600"></i> Catat Transaksi Baru
@@ -190,8 +185,7 @@
                         </button>
                     </div>
 
-                    <!-- Form Pemasukan -->
-                    <form id="form-income" onsubmit="handleFormSubmit(event, 'income')" class="space-y-3">
+                    <form id="form-income" class="space-y-3">
                         <input type="hidden" id="inc-id" value="">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Transaksi <span class="text-rose-500">*</span></label>
@@ -209,7 +203,8 @@
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">No. Rumah / Blok Warga</label>
-                            <input type="text" id="inc-house" placeholder="Misal: A-01" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                            <input type="text" id="inc-house" list="house-list" placeholder="Misal: A-01" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                            <datalist id="house-list"></datalist>
                         </div>
 
                         <div>
@@ -222,13 +217,18 @@
                             <input type="number" id="inc-amount" min="1" placeholder="50000" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
 
-                        <button type="submit" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload Bukti Transaksi <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                            <input type="file" id="inc-proof" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                            <p id="inc-proof-info" class="text-[10px] text-emerald-600 font-medium mt-1 hidden"><i class="fas fa-check-circle"></i> Bukti transaksi tersimpan.</p>
+                        </div>
+
+                        <button type="submit" id="inc-submit-btn" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
                             <i class="fas fa-save"></i> Simpan Pemasukan
                         </button>
                     </form>
 
-                    <!-- Form Pengeluaran -->
-                    <form id="form-expense" onsubmit="handleFormSubmit(event, 'expense')" class="space-y-3 hidden">
+                    <form id="form-expense" class="space-y-3 hidden">
                         <input type="hidden" id="exp-id" value="">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Transaksi <span class="text-rose-500">*</span></label>
@@ -245,17 +245,25 @@
                             <input type="number" id="exp-amount" min="1" placeholder="150000" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500 outline-none">
                         </div>
 
-                        <button type="submit" class="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload Bukti / Nota <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                            <input type="file" id="exp-proof" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 cursor-pointer">
+                            <p id="exp-proof-info" class="text-[10px] text-emerald-600 font-medium mt-1 hidden"><i class="fas fa-check-circle"></i> Bukti/Struk tersimpan.</p>
+                        </div>
+
+                        <button type="submit" id="exp-submit-btn" class="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
                             <i class="fas fa-save"></i> Simpan Pengeluaran
                         </button>
                     </form>
                 </div>
 
-                <!-- Tabel Riwayat Data: Menggunakan 'table-container' agar fleksibel saat form disembunyikan -->
-                <div id="table-container" class="lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]">
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]">
                     <div class="flex px-3 sm:px-6 pt-3 border-b border-slate-200 gap-4 bg-slate-50/50">
                         <button onclick="switchDataTab('history')" id="tab-data-history" class="pb-2.5 text-xs sm:text-sm transition-all tab-active">
                             <i class="fas fa-list-ul mr-1"></i> Buku Kas
+                        </button>
+                        <button onclick="switchDataTab('recap')" id="tab-data-recap" class="pb-2.5 text-xs sm:text-sm transition-all tab-inactive">
+                            <i class="fas fa-chart-line mr-1"></i> Rekap Bulanan
                         </button>
                     </div>
 
@@ -264,216 +272,1120 @@
                             <table class="w-full text-left border-collapse">
                                 <thead>
                                     <tr class="bg-slate-50 text-slate-500 text-[10px] sm:text-xs uppercase tracking-wider sticky top-0 shadow-sm border-b border-slate-200">
-                                        <th class="px-2 sm:px-3 py-2 font-semibold w-24">Tanggal</th>
+                                        <th class="px-2 sm:px-3 py-2 font-semibold w-20">Tanggal</th>
                                         <th class="px-2 sm:px-3 py-2 font-semibold">Keterangan</th>
-                                        <th class="px-2 sm:px-3 py-2 font-semibold w-24">Metode</th>
-                                        <th class="px-2 sm:px-3 py-2 font-semibold text-right w-24 sm:w-28">Nominal</th>
+                                        <th class="px-2 sm:px-3 py-2 font-semibold text-right w-20 sm:w-24">Nominal</th>
+                                        <th class="px-1 py-2 font-semibold text-center w-12">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody id="history-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm">
-                                    <!-- Data riwayat dirender secara dinamis oleh JavaScript -->
-                                </tbody>
+                                <tbody id="history-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
                             </table>
+                        </div>
+                        <div id="history-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400 my-auto">
+                            <i class="fas fa-inbox text-3xl mb-2 text-slate-300"></i>
+                            <p class="font-medium text-xs">Belum ada transaksi kas tercatat.</p>
+                        </div>
+                    </div>
+
+                    <div id="view-recap" class="p-0 overflow-hidden hidden flex-1 flex-col">
+                        <div class="bg-blue-50/80 px-3 py-1.5 border-b border-blue-100 flex justify-between items-center text-[10px] sm:text-xs text-blue-800">
+                            <span><i class="fas fa-info-circle mr-1"></i> Akumulasi kas per periode bulan.</span>
+                        </div>
+                        <div class="overflow-y-auto custom-scrollbar flex-1">
+                            <table class="w-full text-left border-collapse">
+                                <thead>
+                                    <tr class="bg-slate-50 text-slate-500 text-[10px] sm:text-xs uppercase tracking-wider sticky top-0 shadow-sm border-b border-slate-200">
+                                        <th class="px-2 py-2 font-semibold">Periode</th>
+                                        <th class="px-2 py-2 font-semibold text-right">Masuk</th>
+                                        <th class="px-2 py-2 font-semibold text-right">Keluar</th>
+                                        <th class="px-2 py-2 font-semibold text-right">Bersih</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recap-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
+                            </table>
+                        </div>
+                        <div id="recap-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400 my-auto">
+                            <i class="fas fa-chart-pie text-3xl mb-2 text-slate-300"></i>
+                            <p class="font-medium text-xs">Belum ada data rekapitulasi.</p>
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
 
+        <!-- DAFTAR RUMAH WARGA & STATUS IURAN -->
+        <div id="page-houses" class="hidden space-y-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+                    <div class="text-slate-500 text-[10px] font-semibold uppercase">Total Warga</div>
+                    <h3 class="text-lg sm:text-2xl font-bold text-slate-800" id="stat-total-houses">0</h3>
+                </div>
+                
+                <div class="bg-emerald-50/70 rounded-xl p-3 border border-emerald-200/80 shadow-sm">
+                    <div class="text-emerald-700 text-[10px] font-semibold uppercase">Sudah Bayar</div>
+                    <h3 class="text-lg sm:text-2xl font-bold text-emerald-800" id="stat-paid-houses">0</h3>
+                </div>
+
+                <div class="bg-rose-50/70 rounded-xl p-3 border border-rose-200/80 shadow-sm">
+                    <div class="text-rose-700 text-[10px] font-semibold uppercase">Belum Bayar</div>
+                    <h3 class="text-lg sm:text-2xl font-bold text-rose-800" id="stat-unpaid-houses">0</h3>
+                </div>
+
+                <div class="bg-blue-50/70 rounded-xl p-3 border border-blue-200/80 shadow-sm">
+                    <div class="text-blue-700 text-[10px] font-semibold uppercase">Persentase</div>
+                    <h3 class="text-lg sm:text-2xl font-bold text-blue-800" id="stat-percentage">0%</h3>
+                </div>
+            </div>
+
+            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">Periode Bulan</label>
+                        <input type="month" id="house-period-filter" onchange="renderHouseStatus()" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-slate-50">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">Status Bayar</label>
+                        <select id="house-status-filter" onchange="renderHouseStatus()" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-slate-50">
+                            <option value="all">Semua</option>
+                            <option value="unpaid">Belum Bayar</option>
+                            <option value="paid">Sudah Bayar</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="house-search-input" onkeyup="renderHouseStatus()" placeholder="Cari No. Rumah / Nama..." class="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                    </div>
+                    <button onclick="openAddHouseModal()" class="admin-only px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0">
+                        <i class="fas fa-plus"></i> Warga
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                <div class="overflow-x-auto custom-scrollbar">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200">
+                                <th class="px-3 py-2 font-semibold">Rumah & Penghuni</th>
+                                <th class="px-2 py-2 font-semibold text-center w-20">Status</th>
+                                <th class="px-2 py-2 font-semibold text-right w-20">Bayar</th>
+                                <th class="px-2 py-2 font-semibold text-center w-16">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="houses-tbody" class="divide-y divide-slate-100 text-xs"></tbody>
+                    </table>
+                </div>
+                <div id="houses-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400">
+                    <i class="fas fa-users-slash text-3xl mb-2 text-slate-300"></i>
+                    <p class="font-medium text-xs">Tidak ada data warga ditemukan.</p>
+                </div>
             </div>
         </div>
     </main>
 
-    <!-- Modal Login Admin -->
-    <div id="login-modal" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center hidden">
-        <div class="bg-white rounded-2xl p-6 w-full max-w-xs shadow-xl space-y-4">
-            <h3 class="font-bold text-slate-800 text-center text-lg">Login Admin</h3>
-            <input type="password" id="admin-pin-input" placeholder="Masukkan PIN" class="w-full px-3 py-2 border rounded-xl text-center text-lg tracking-widest outline-none focus:ring-2 focus:ring-blue-500">
-            <div class="flex gap-2">
-                <button onclick="closeAdminLogin()" class="w-1/2 py-2 bg-slate-100 rounded-xl font-semibold text-xs text-slate-600">Batal</button>
-                <button onclick="submitAdminLogin()" class="w-1/2 py-2 bg-blue-600 text-white rounded-xl font-semibold text-xs">Login</button>
+    <!-- Modal Modals & Toast -->
+    <div id="house-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
+            <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5" id="house-modal-title">
+                    <i class="fas fa-home text-blue-600"></i> Tambah Data Warga
+                </h3>
+                <button onclick="closeHouseModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fas fa-times text-base"></i>
+                </button>
+            </div>
+            <form id="form-house" class="p-4 space-y-3">
+                <input type="hidden" id="modal-house-id" value="">
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Blok / No. Rumah <span class="text-rose-500">*</span></label>
+                    <input type="text" id="modal-house-no" placeholder="Misal: A-01" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none uppercase font-semibold">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Nama Pemilik / Penghuni <span class="text-rose-500">*</span></label>
+                    <input type="text" id="modal-house-owner" placeholder="Misal: Bpk. Bambang" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">No. WhatsApp / Telepon</label>
+                    <input type="tel" id="modal-house-phone" placeholder="Misal: 08123456789" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                </div>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeHouseModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs">Batal</button>
+                    <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs shadow-sm">Simpan</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="proof-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
+            <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
+                    <i class="fas fa-receipt text-blue-600"></i> Bukti Transaksi
+                </h3>
+                <button onclick="closeProofModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fas fa-times text-base"></i>
+                </button>
+            </div>
+            <div class="p-3 flex items-center justify-center bg-slate-900 min-h-[220px]">
+                <img id="proof-img" src="" alt="Bukti Transaksi" class="max-h-[60vh] object-contain rounded-lg hidden">
+                <p id="proof-empty-text" class="text-slate-400 text-xs hidden">Bukti transaksi tidak tersedia.</p>
+            </div>
+            <div class="p-2 bg-slate-50 text-right">
+                <button onclick="closeProofModal()" class="px-3 py-1 bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg">Tutup</button>
             </div>
         </div>
     </div>
 
-    <script>
-        // Inisialisasi State & Data Dummy
-        let isAdmin = false;
-        const ADMIN_PIN = "1234";
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-3 py-2 rounded-xl shadow-xl flex items-center gap-2 z-50 pointer-events-none text-xs">
+        <i id="toast-icon" class="fas fa-check-circle text-emerald-400 text-sm"></i>
+        <span id="toast-message" class="font-medium">Notifikasi</span>
+    </div>
 
-        let transactions = [
-            { id: 1, type: 'income', date: '2026-09-01', method: 'Cash', house: 'A-01', desc: 'Iuran Keamanan A-01', amount: 50000 },
-            { id: 2, type: 'income', date: '2026-09-02', method: 'Bank BCA', house: 'B-04', desc: 'Iuran Kebersihan B-04', amount: 100000 },
-            { id: 3, type: 'income', date: '2026-09-03', method: 'Bank Mandiri', house: 'C-02', desc: 'Iuran Bulanan C-02', amount: 75000 },
-            { id: 4, type: 'expense', date: '2026-09-05', method: 'Cash', house: '', desc: 'Perbaikan Lampu Jalan', amount: 45000 }
+    <script>
+        const defaultHousesArray = [
+            { houseNumber: 'A-01', ownerName: 'Bpk. Budi Santoso', phone: '08123456781' },
+            { houseNumber: 'A-02', ownerName: 'Ibu Siti Aminah', phone: '08123456782' },
+            { houseNumber: 'A-03', ownerName: 'Bpk. Ahmad Dahlan', phone: '' },
+            { houseNumber: 'A-04', ownerName: 'Bpk. Hendra Gunawan', phone: '08123456784' },
+            { houseNumber: 'A-05', ownerName: 'Ibu Ratna Dewi', phone: '' },
+            { houseNumber: 'B-01', ownerName: 'Bpk. Joko Widodo', phone: '08123456786' },
+            { houseNumber: 'B-02', ownerName: 'Bpk. Agus Yudhoyono', phone: '' },
+            { houseNumber: 'B-03', ownerName: 'Ibu Megawati', phone: '08123456788' },
+            { houseNumber: 'B-04', ownerName: 'Bpk. Prabowo Subianto', phone: '' },
+            { houseNumber: 'B-05', ownerName: 'Bpk. Anies Baswedan', phone: '' }
         ];
 
-        // Format angka ke format rupiah
-        function formatRupiah(amount) {
-            return 'Rp ' + Number(amount).toLocaleString('id-ID');
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5XIhdeyBJw4MDNebedRKDcjsVcuR1Zx8",
+            authDomain: "jaes-c1b52.firebaseapp.com",
+            databaseURL: "https://jaes-c1b52-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "jaes-c1b52",
+            storageBucket: "jaes-c1b52.firebasestorage.app",
+            messagingSenderId: "934203338301",
+            appId: "1:934203338301:web:2bd353cec0b3f127e48454",
+            measurementId: "G-QT5XKJSQ1X"
+        };
+
+        let firebaseReady = false;
+        let firebaseDb = null;
+        let transactions = []; 
+        let houses = [];       
+        let editingTransactionId = null;
+
+        const DEFAULT_ADMIN_PIN = '1234';
+        let ADMIN_PIN = localStorage.getItem('kasRtAdminPin') || DEFAULT_ADMIN_PIN;
+        let isAdmin = sessionStorage.getItem('kasRtIsAdmin') === 'true';
+
+        const now = new Date();
+        const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+        function updateHouseDatalist() {
+            const datalist = document.getElementById('house-list');
+            if (!datalist) return;
+            datalist.innerHTML = houses.map(h => 
+                `<option value="${escapeHTML(h.houseNumber)}">${escapeHTML(h.houseNumber)} - ${escapeHTML(h.ownerName)}</option>`
+            ).join('');
         }
 
-        // Menghitung akumulasi dan merender ulang dashboard
-        function updateDashboard() {
-            let totalIncome = 0;
-            let totalExpense = 0;
-            let cashIncome = 0;
-            let mandiriIncome = 0;
-            let bcaIncome = 0;
+        window.formatRupiah = function(number) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR',
+                minimumFractionDigits: 0,
+                maximumFractionDigits: 0
+            }).format(number || 0);
+        };
 
-            transactions.forEach(t => {
-                if (t.type === 'income') {
-                    totalIncome += t.amount;
-                    if (t.method === 'Cash') cashIncome += t.amount;
-                    if (t.method === 'Bank Mandiri') mandiriIncome += t.amount;
-                    if (t.method === 'Bank BCA') bcaIncome += t.amount;
-                } else if (t.type === 'expense') {
-                    totalExpense += t.amount;
-                }
-            });
+        window.formatDate = function(dateString) {
+            if (!dateString) return '-';
+            const d = new Date(dateString);
+            if (isNaN(d.getTime())) return dateString;
+            return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        };
 
-            // Update Tampilan DOM
-            document.getElementById('total-balance').textContent = formatRupiah(totalIncome - totalExpense);
-            document.getElementById('total-income').textContent = formatRupiah(totalIncome);
-            document.getElementById('total-expense').textContent = formatRupiah(totalExpense);
-            
-            document.getElementById('income-cash').textContent = formatRupiah(cashIncome);
-            document.getElementById('income-mandiri').textContent = formatRupiah(mandiriIncome);
-            document.getElementById('income-bca').textContent = formatRupiah(bcaIncome);
+        window.escapeHTML = function(str) {
+            if (!str) return '';
+            return String(str).replace(/[&<>'"]/g, tag => ({
+                '&': '&amp;',
+                '<': '&lt;',
+                '>': '&gt;',
+                "'": '&#39;',
+                '"': '&quot;'
+            }[tag] || tag));
+        };
 
-            renderHistoryTable();
-        }
+        let toastTimer;
+        window.showToast = function(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMessage = document.getElementById('toast-message');
+            const toastIcon = document.getElementById('toast-icon');
 
-        // Render tabel riwayat
-        function renderHistoryTable() {
-            const tbody = document.getElementById('history-tbody');
-            tbody.innerHTML = '';
-
-            transactions.forEach(t => {
-                const tr = document.createElement('tr');
-                const isIncome = t.type === 'income';
-                
-                tr.innerHTML = `
-                    <td class="px-2 sm:px-3 py-2 text-slate-600">${t.date}</td>
-                    <td class="px-2 sm:px-3 py-2 font-medium text-slate-800">${t.desc} ${t.house ? '(' + t.house + ')' : ''}</td>
-                    <td class="px-2 sm:px-3 py-2 text-slate-500">${t.method || '-'}</td>
-                    <td class="px-2 sm:px-3 py-2 text-right font-semibold ${isIncome ? 'text-emerald-600' : 'text-rose-600'}">
-                        ${isIncome ? '+' : '-'}${formatRupiah(t.amount)}
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        // Pengaturan hak akses tampilan admin / non-admin
-        function updateUIAccess() {
-            const adminElements = document.querySelectorAll('.admin-only');
-            const tableContainer = document.getElementById('table-container');
-
-            adminElements.forEach(el => {
-                if (isAdmin) {
-                    el.classList.remove('hidden');
-                } else {
-                    el.classList.add('hidden');
-                }
-            });
-
-            // Atur lebar tabel: penuh (3 kolom) untuk non-admin, terbagi (2 kolom) jika admin aktif
-            if (isAdmin) {
-                tableContainer.classList.remove('lg:col-span-3');
-                tableContainer.classList.add('lg:col-span-2');
+            toastMessage.textContent = message;
+            if (type === 'delete' || type === 'error') {
+                toastIcon.className = 'fas fa-exclamation-circle text-rose-400 text-sm';
             } else {
-                tableContainer.classList.remove('lg:col-span-2');
-                tableContainer.classList.add('lg:col-span-3');
+                toastIcon.className = 'fas fa-check-circle text-emerald-400 text-sm';
             }
 
-            // Tombol Login/Logout Header
-            document.getElementById('admin-login-btn').classList.toggle('hidden', isAdmin);
-            document.getElementById('admin-logout-btn').classList.toggle('hidden', !isAdmin);
-        }
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => {
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 3000);
+        };
 
-        // Kontrol Modal & Login Admin
-        function openAdminLogin() {
-            document.getElementById('login-modal').classList.remove('hidden');
-        }
+        window.switchMainPage = function(page) {
+            const pageDashboard = document.getElementById('page-dashboard');
+            const pageHouses = document.getElementById('page-houses');
+            const navBtnDash = document.getElementById('nav-btn-dashboard');
+            const navBtnHouses = document.getElementById('nav-btn-houses');
 
-        function closeAdminLogin() {
-            document.getElementById('login-modal').classList.add('hidden');
-            document.getElementById('admin-pin-input').value = '';
-        }
-
-        function submitAdminLogin() {
-            const pin = document.getElementById('admin-pin-input').value;
-            if (pin === ADMIN_PIN) {
-                isAdmin = true;
-                updateUIAccess();
-                closeAdminLogin();
+            if (page === 'dashboard') {
+                pageDashboard.classList.remove('hidden');
+                pageHouses.classList.add('hidden');
+                navBtnDash.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center";
+                navBtnHouses.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
             } else {
-                alert('PIN Salah!');
+                pageDashboard.classList.add('hidden');
+                pageHouses.classList.remove('hidden');
+                navBtnHouses.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center";
+                navBtnDash.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
+                renderHouseStatus();
             }
-        }
+        };
 
-        function logoutAdmin() {
-            isAdmin = false;
-            updateUIAccess();
-        }
+        window.switchMainView = window.switchMainPage;
 
-        // Handler Pergantian Form Input
-        function switchForm(type) {
-            const incForm = document.getElementById('form-income');
-            const expForm = document.getElementById('form-expense');
+        window.switchForm = function(type) {
+            const formIncome = document.getElementById('form-income');
+            const formExpense = document.getElementById('form-expense');
             const btnInc = document.getElementById('btn-form-income');
             const btnExp = document.getElementById('btn-form-expense');
 
             if (type === 'income') {
-                incForm.classList.remove('hidden');
-                expForm.classList.add('hidden');
+                formIncome.classList.remove('hidden');
+                formExpense.classList.add('hidden');
                 btnInc.className = "py-1.5 text-xs font-bold rounded-lg transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1";
                 btnExp.className = "py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1";
             } else {
-                incForm.classList.add('hidden');
-                expForm.classList.remove('hidden');
+                formIncome.classList.add('hidden');
+                formExpense.classList.remove('hidden');
                 btnExp.className = "py-1.5 text-xs font-bold rounded-lg transition-all bg-rose-600 text-white shadow-sm flex items-center justify-center gap-1";
                 btnInc.className = "py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1";
             }
-        }
+        };
 
-        // Submit Form Transaksi
-        function handleFormSubmit(e, type) {
-            e.preventDefault();
-            
-            if (type === 'income') {
-                const newIncome = {
-                    id: Date.now(),
-                    type: 'income',
-                    date: document.getElementById('inc-date').value,
-                    method: document.getElementById('inc-method').value,
-                    house: document.getElementById('inc-house').value,
-                    desc: document.getElementById('inc-desc').value,
-                    amount: parseFloat(document.getElementById('inc-amount').value) || 0
-                };
-                transactions.unshift(newIncome);
-                document.getElementById('form-income').reset();
+        window.switchDataTab = function(tab) {
+            const viewHistory = document.getElementById('view-history');
+            const viewRecap = document.getElementById('view-recap');
+            const tabHistory = document.getElementById('tab-data-history');
+            const tabRecap = document.getElementById('tab-data-recap');
+
+            if (tab === 'history') {
+                viewHistory.classList.remove('hidden');
+                viewHistory.classList.add('flex');
+                viewRecap.classList.add('hidden');
+                viewRecap.classList.remove('flex');
+                tabHistory.className = "pb-2.5 text-xs sm:text-sm transition-all tab-active";
+                tabRecap.className = "pb-2.5 text-xs sm:text-sm transition-all tab-inactive";
             } else {
-                const newExpense = {
-                    id: Date.now(),
-                    type: 'expense',
-                    date: document.getElementById('exp-date').value,
-                    method: 'Cash',
-                    house: '',
-                    desc: document.getElementById('exp-desc').value,
-                    amount: parseFloat(document.getElementById('exp-amount').value) || 0
-                };
-                transactions.unshift(newExpense);
-                document.getElementById('form-expense').reset();
+                viewHistory.classList.add('hidden');
+                viewHistory.classList.remove('flex');
+                viewRecap.classList.remove('hidden');
+                viewRecap.classList.add('flex');
+                tabRecap.className = "pb-2.5 text-xs sm:text-sm transition-all tab-active";
+                tabHistory.className = "pb-2.5 text-xs sm:text-sm transition-all tab-inactive";
+                renderRecap();
+            }
+        };
+
+        window.renderDashboard = function() {
+            let totalInc = 0, incCash = 0, incMandiri = 0, incBca = 0, totalExp = 0;
+
+            transactions.forEach(t => {
+                const amt = parseFloat(t.amount) || 0;
+                if (t.type === 'income') {
+                    totalInc += amt;
+                    const m = (t.paymentMethod || 'Cash').toLowerCase();
+                    if (m.includes('mandiri')) incMandiri += amt;
+                    else if (m.includes('bca')) incBca += amt;
+                    else incCash += amt;
+                } else if (t.type === 'expense') {
+                    totalExp += amt;
+                }
+            });
+
+            document.getElementById('total-balance').textContent = formatRupiah(totalInc - totalExp);
+            document.getElementById('total-income').textContent = formatRupiah(totalInc);
+            document.getElementById('income-cash').textContent = formatRupiah(incCash);
+            document.getElementById('income-mandiri').textContent = formatRupiah(incMandiri);
+            document.getElementById('income-bca').textContent = formatRupiah(incBca);
+            document.getElementById('total-expense').textContent = formatRupiah(totalExp);
+        };
+
+        window.renderHistory = function() {
+            const tbody = document.getElementById('history-tbody');
+            const emptyEl = document.getElementById('history-empty');
+            tbody.innerHTML = '';
+
+            if (transactions.length === 0) {
+                emptyEl.classList.remove('hidden');
+                emptyEl.classList.add('flex');
+                return;
             }
 
-            updateDashboard();
+            emptyEl.classList.add('hidden');
+            emptyEl.classList.remove('flex');
+
+            const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            sorted.forEach(t => {
+                const isInc = t.type === 'income';
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+
+                let methodBadge = '';
+                if (isInc) {
+                    const m = t.paymentMethod || 'Cash';
+                    let badgeBg = 'bg-slate-100 text-slate-700';
+                    if (m.includes('Mandiri')) badgeBg = 'bg-blue-100 text-blue-700';
+                    else if (m.includes('BCA')) badgeBg = 'bg-indigo-100 text-indigo-700';
+                    else badgeBg = 'bg-amber-100 text-amber-800';
+                    methodBadge = `<span class="inline-block px-1.5 py-0.2 text-[9px] rounded font-semibold ${badgeBg}">${escapeHTML(m)}</span>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="px-2 sm:px-3 py-2 font-medium text-slate-500 text-[11px]">
+                        ${formatDate(t.date)}
+                    </td>
+                    <td class="px-2 sm:px-3 py-2">
+                        <div class="font-semibold text-slate-800 text-xs sm:text-sm leading-tight">${escapeHTML(t.description)}</div>
+                        <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                            ${t.houseNumber ? `<span class="bg-slate-100 text-slate-700 px-1 py-0.2 rounded text-[9px] font-bold border border-slate-200">Blok ${escapeHTML(t.houseNumber)}</span>` : ''}
+                            ${methodBadge}
+                            ${t.proof 
+                                ? `<button onclick="openProofModal('${t.id}')" class="text-blue-600 hover:text-blue-800 text-[10px] font-semibold underline flex items-center gap-0.5">
+                                    <i class="fas fa-image"></i> Bukti
+                                   </button>` 
+                                : ''}
+                        </div>
+                    </td>
+                    <td class="px-2 sm:px-3 py-2 text-right font-bold text-xs sm:text-sm ${isInc ? 'text-emerald-600' : 'text-rose-600'}">
+                        ${isInc ? '+' : '-'}${formatRupiah(t.amount)}
+                    </td>
+                    <td class="px-1 py-2 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="editTransaction('${t.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                                <i class="fas fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteTransaction('${t.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        };
+
+        window.renderRecap = function() {
+            const tbody = document.getElementById('recap-tbody');
+            const emptyEl = document.getElementById('recap-empty');
+            tbody.innerHTML = '';
+
+            let tfoot = document.getElementById('recap-tfoot');
+            if (tfoot) tfoot.innerHTML = '';
+
+            if (transactions.length === 0) {
+                emptyEl.classList.remove('hidden');
+                emptyEl.classList.add('flex');
+                return;
+            }
+
+            emptyEl.classList.add('hidden');
+            emptyEl.classList.remove('flex');
+
+            const monthlyData = {};
+            let grandTotalIncome = 0;
+            let grandTotalExpense = 0;
+
+            transactions.forEach(t => {
+                const d = new Date(t.date);
+                if (isNaN(d.getTime())) return;
+                
+                const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                if (!monthlyData[key]) {
+                    monthlyData[key] = { income: 0, expense: 0, dateObj: new Date(d.getFullYear(), d.getMonth(), 1) };
+                }
+
+                const amt = parseFloat(t.amount) || 0;
+                if (t.type === 'income') {
+                    monthlyData[key].income += amt;
+                    grandTotalIncome += amt;
+                } else if (t.type === 'expense') {
+                    monthlyData[key].expense += amt;
+                    grandTotalExpense += amt;
+                }
+            });
+
+            const sortedKeys = Object.keys(monthlyData).sort().reverse();
+
+            sortedKeys.forEach((key) => {
+                const item = monthlyData[key];
+                const net = item.income - item.expense;
+                const monthName = item.dateObj.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+
+                tr.innerHTML = `
+                    <td class="px-2 py-2.5 font-bold text-slate-800 text-xs">${monthName}</td>
+                    <td class="px-2 py-2.5 text-right font-semibold text-emerald-600 text-xs">${formatRupiah(item.income)}</td>
+                    <td class="px-2 py-2.5 text-right font-semibold text-rose-600 text-xs">${formatRupiah(item.expense)}</td>
+                    <td class="px-2 py-2.5 text-right font-bold text-xs ${net >= 0 ? 'text-blue-600' : 'text-rose-600'}">${formatRupiah(net)}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const grandNet = grandTotalIncome - grandTotalExpense;
+            if (!tfoot) {
+                const table = tbody.closest('table');
+                tfoot = document.createElement('tfoot');
+                tfoot.id = 'recap-tfoot';
+                tfoot.className = "bg-slate-100 font-bold border-t-2 border-slate-300 sticky bottom-0 shadow-inner";
+                table.appendChild(tfoot);
+            } else {
+                tfoot.className = "bg-slate-100 font-bold border-t-2 border-slate-300 sticky bottom-0 shadow-inner";
+            }
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td class="px-2 py-2.5 text-slate-800 text-xs uppercase tracking-wider">Total</td>
+                    <td class="px-2 py-2.5 text-right text-emerald-700 text-xs">${formatRupiah(grandTotalIncome)}</td>
+                    <td class="px-2 py-2.5 text-right text-rose-700 text-xs">${formatRupiah(grandTotalExpense)}</td>
+                    <td class="px-2 py-2.5 text-right text-xs ${grandNet >= 0 ? 'text-blue-700' : 'text-rose-700'}">${formatRupiah(grandNet)}</td>
+                </tr>
+            `;
+        };
+
+        window.renderHouseStatus = function() {
+            const periodInput = document.getElementById('house-period-filter');
+            if (!periodInput.value) periodInput.value = currentYearMonth;
+
+            const selectedPeriod = periodInput.value;
+            const statusFilter = document.getElementById('house-status-filter').value;
+            const searchQuery = (document.getElementById('house-search-input').value || '').toLowerCase().trim();
+
+            const tbody = document.getElementById('houses-tbody');
+            const emptyEl = document.getElementById('houses-empty');
+            tbody.innerHTML = '';
+
+            let paidCount = 0, unpaidCount = 0;
+
+            const filteredHouses = houses.filter(h => 
+                (h.houseNumber && h.houseNumber.toLowerCase().includes(searchQuery)) || 
+                (h.ownerName && h.ownerName.toLowerCase().includes(searchQuery))
+            );
+
+            let visibleRows = 0;
+
+            filteredHouses.forEach(h => {
+                const payment = transactions.find(t => {
+                    if (t.type !== 'income' || !t.houseNumber) return false;
+                    if (t.houseNumber.trim().toUpperCase() !== h.houseNumber.trim().toUpperCase()) return false;
+                    
+                    const tDate = new Date(t.date);
+                    if (isNaN(tDate.getTime())) return false;
+                    
+                    const tPeriod = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
+                    return tPeriod === selectedPeriod;
+                });
+
+                const isPaid = !!payment;
+                if (isPaid) paidCount++;
+                else unpaidCount++;
+
+                if (statusFilter === 'paid' && !isPaid) return;
+                if (statusFilter === 'unpaid' && isPaid) return;
+
+                visibleRows++;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50 transition-colors";
+
+                const statusBadge = isPaid
+                    ? `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Lunas</span>`
+                    : `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">Belum</span>`;
+
+                const actionBtn = isPaid 
+                    ? `<button onclick="openProofModal('${payment.id}')" class="text-[11px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded ${payment.proof ? '' : 'opacity-40 cursor-not-allowed'}" ${payment.proof ? '' : 'disabled'}>Bukti</button>`
+                    : `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[11px] px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded shadow-sm">Bayar</button>`;
+
+                tr.innerHTML = `
+                    <td class="px-3 py-2.5 font-medium text-slate-800">
+                        <div class="font-bold text-blue-700 text-xs">${escapeHTML(h.houseNumber)}</div>
+                        <div class="text-xs">${escapeHTML(h.ownerName)}</div>
+                        ${h.phone ? `<a href="https://wa.me/${h.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-[10px] text-emerald-600 flex items-center gap-0.5 mt-0.5"><i class="fab fa-whatsapp"></i> ${escapeHTML(h.phone)}</a>` : ''}
+                    </td>
+                    <td class="px-2 py-2.5 text-center">${statusBadge}</td>
+                    <td class="px-2 py-2.5 text-right font-medium text-xs ${isPaid ? 'text-emerald-600 font-bold' : 'text-slate-300'}">
+                        ${isPaid ? formatRupiah(payment.amount) : '-'}
+                    </td>
+                    <td class="px-2 py-2.5 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            ${actionBtn}
+                            <button onclick="editHouse('${h.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                                <i class="fas fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteHouse('${h.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            const totalHouses = houses.length;
+            document.getElementById('stat-total-houses').textContent = totalHouses;
+            document.getElementById('stat-paid-houses').textContent = paidCount;
+            document.getElementById('stat-unpaid-houses').textContent = unpaidCount;
+            
+            const percentage = totalHouses > 0 ? Math.round((paidCount / totalHouses) * 100) : 0;
+            document.getElementById('stat-percentage').textContent = `${percentage}%`;
+
+            const unpaidBadge = document.getElementById('unpaid-badge');
+            if (unpaidBadge) {
+                unpaidBadge.textContent = unpaidCount;
+                if (unpaidCount > 0) unpaidBadge.classList.remove('hidden');
+                else unpaidBadge.classList.add('hidden');
+            }
+
+            if (visibleRows === 0) {
+                emptyEl.classList.remove('hidden');
+                emptyEl.classList.add('flex');
+            } else {
+                emptyEl.classList.add('hidden');
+                emptyEl.classList.remove('flex');
+            }
+        };
+
+        window.quickRecordPayment = function(houseNo) { 
+            if (!requireAdmin()) return;
+            switchMainPage('dashboard');
+            cancelEditTransaction();
+            switchForm('income');
+            const houseInput = document.getElementById('inc-house');
+            const descInput = document.getElementById('inc-desc');
+            const periodInput = document.getElementById('house-period-filter').value;
+            
+            houseInput.value = houseNo;
+            
+            let monthName = new Date().toLocaleDateString('id-ID', { month: 'long' });
+            if (periodInput) {
+                const [pYear, pMonth] = periodInput.split('-');
+                const pDate = new Date(parseInt(pYear), parseInt(pMonth) - 1, 1);
+                if (!isNaN(pDate.getTime())) {
+                    monthName = pDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                    const yearMonthToday = `${new Date().getFullYear()}-${String(new Date().getMonth() + 1).padStart(2, '0')}`;
+                    if (periodInput !== yearMonthToday) {
+                        document.getElementById('inc-date').value = `${periodInput}-01`;
+                    }
+                }
+            }
+            
+            descInput.value = `Iuran Kebersihan & Keamanan Bulan ${monthName}`;
+            document.getElementById('inc-amount').focus();
+            showToast(`Mencatat iuran rumah ${houseNo}`);
+        };
+
+        window.editTransaction = function(id) {
+            if (!requireAdmin()) return;
+            const t = transactions.find(item => item.id === id);
+            if (!t) return;
+
+            editingTransactionId = id;
+            switchMainPage('dashboard');
+
+            document.getElementById('form-type-switcher').classList.add('hidden');
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+            if (t.type === 'income') {
+                switchForm('income');
+                document.getElementById('form-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Pemasukan';
+                document.getElementById('inc-id').value = t.id;
+                document.getElementById('inc-date').value = t.date || '';
+                document.getElementById('inc-method').value = t.paymentMethod || 'Cash';
+                document.getElementById('inc-house').value = t.houseNumber || '';
+                document.getElementById('inc-desc').value = t.description || '';
+                document.getElementById('inc-amount').value = t.amount || '';
+                document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Perbarui Pemasukan';
+
+                const proofInfo = document.getElementById('inc-proof-info');
+                if (t.proof) proofInfo.classList.remove('hidden');
+                else proofInfo.classList.add('hidden');
+
+            } else {
+                switchForm('expense');
+                document.getElementById('form-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Pengeluaran';
+                document.getElementById('exp-id').value = t.id;
+                document.getElementById('exp-date').value = t.date || '';
+                document.getElementById('exp-desc').value = t.description || '';
+                document.getElementById('exp-amount').value = t.amount || '';
+                document.getElementById('exp-submit-btn').innerHTML = '<i class="fas fa-save"></i> Perbarui Pengeluaran';
+
+                const proofInfo = document.getElementById('exp-proof-info');
+                if (t.proof) proofInfo.classList.remove('hidden');
+                else proofInfo.classList.add('hidden');
+            }
+
+            document.getElementById('form-title').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.cancelEditTransaction = function() {
+            editingTransactionId = null;
+            document.getElementById('form-type-switcher').classList.remove('hidden');
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+            document.getElementById('form-title').innerHTML = '<i class="fas fa-pen-to-square text-blue-600"></i> Catat Transaksi Baru';
+
+            const formInc = document.getElementById('form-income');
+            formInc.reset();
+            document.getElementById('inc-id').value = '';
+            document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Simpan Pemasukan';
+            document.getElementById('inc-proof-info').classList.add('hidden');
+
+            const formExp = document.getElementById('form-expense');
+            formExp.reset();
+            document.getElementById('exp-id').value = '';
+            document.getElementById('exp-submit-btn').innerHTML = '<i class="fas fa-save"></i> Simpan Pengeluaran';
+            document.getElementById('exp-proof-info').classList.add('hidden');
+
+            const todayISO = new Date().toISOString().split('T')[0];
+            document.getElementById('inc-date').value = todayISO;
+            document.getElementById('exp-date').value = todayISO;
+        };
+
+        window.openAddHouseModal = function() { 
+            if (!requireAdmin()) return;
+            document.getElementById('modal-house-id').value = '';
+            document.getElementById('modal-house-no').value = '';
+            document.getElementById('modal-house-owner').value = '';
+            document.getElementById('modal-house-phone').value = '';
+            document.getElementById('house-modal-title').innerHTML = '<i class="fas fa-home text-blue-600"></i> Tambah Data Warga';
+            document.getElementById('house-modal').classList.remove('hidden');
+        };
+
+        window.editHouse = function(id) {
+            if (!requireAdmin()) return;
+            const house = houses.find(h => h.id === id);
+            if (!house) return;
+
+            document.getElementById('modal-house-id').value = house.id;
+            document.getElementById('modal-house-no').value = house.houseNumber || '';
+            document.getElementById('modal-house-owner').value = house.ownerName || '';
+            document.getElementById('modal-house-phone').value = house.phone || '';
+            document.getElementById('house-modal-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Data Warga';
+            document.getElementById('house-modal').classList.remove('hidden');
+        };
+
+        window.closeHouseModal = function() {
+            document.getElementById('house-modal').classList.add('hidden');
+        };
+
+        window.deleteHouse = function(id) { 
+            if (!requireAdmin()) return;
+            const house = houses.find(h => h.id === id);
+            const houseName = house ? `Rumah ${house.houseNumber}` : 'data ini';
+            if (confirm(`Hapus ${houseName}?`)) {
+                if (firebaseReady) {
+                    firebaseDb.ref(`kasRt/houses/${id}`).remove();
+                }
+                showToast('Data rumah terhapus', 'delete');
+            }
+        };
+
+        window.openProofModal = function(id) {
+            const t = transactions.find(item => item.id === id);
+            const modal = document.getElementById('proof-modal');
+            const img = document.getElementById('proof-img');
+            const emptyText = document.getElementById('proof-empty-text');
+
+            if (t && t.proof) {
+                img.src = t.proof;
+                img.classList.remove('hidden');
+                emptyText.classList.add('hidden');
+            } else {
+                img.src = '';
+                img.classList.add('hidden');
+                emptyText.classList.remove('hidden');
+            }
+            modal.classList.remove('hidden');
+        };
+
+        window.closeProofModal = function() {
+            document.getElementById('proof-modal').classList.add('hidden');
+        };
+
+        window.deleteTransaction = function(id) { 
+            if (!requireAdmin()) return;
+            if (confirm('Hapus transaksi ini?')) {
+                if (editingTransactionId === id) cancelEditTransaction();
+                if (firebaseReady) {
+                    firebaseDb.ref(`kasRt/transactions/${id}`).remove();
+                }
+                showToast('Transaksi dihapus', 'delete');
+            }
+        };
+
+        function renderAllViews() {
+            updateHouseDatalist();
+            renderDashboard();
+            renderHistory();
+            renderRecap();
+            renderHouseStatus();
         }
 
-        // Inisialisasi awal saat halaman dimuat
-        window.addEventListener('DOMContentLoaded', () => {
-            updateDashboard();
-            updateUIAccess();
+        function addHouseToFirebase(houseData) {
+            if (!firebaseReady) return;
+            const newRef = firebaseDb.ref('kasRt/houses').push();
+            newRef.set({
+                houseNumber: houseData.houseNumber,
+                ownerName: houseData.ownerName,
+                phone: houseData.phone || ''
+            });
+        }
+
+        function isFirebaseConfigured() {
+            return firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('ISI_');
+        }
+
+        function startFirebaseSync() {
+            if (!isFirebaseConfigured()) {
+                initApp();
+                return;
+            }
+            try {
+                firebase.initializeApp(firebaseConfig);
+                firebaseDb = firebase.database();
+                firebaseReady = true;
+
+                firebaseDb.ref('kasRt/adminPin').on('value', snap => {
+                    const pinVal = snap.val();
+                    if (pinVal) {
+                        ADMIN_PIN = String(pinVal);
+                        localStorage.setItem('kasRtAdminPin', ADMIN_PIN);
+                    } else {
+                        firebaseDb.ref('kasRt/adminPin').set(DEFAULT_ADMIN_PIN);
+                    }
+                });
+
+                firebaseDb.ref('kasRt/transactions').on('value', snap => {
+                    const data = snap.val();
+                    transactions = [];
+                    if (data) {
+                        Object.keys(data).forEach(key => {
+                            transactions.push({ id: key, ...data[key] });
+                        });
+                    }
+                    renderAllViews();
+                });
+
+                firebaseDb.ref('kasRt/houses').on('value', snap => {
+                    const data = snap.val();
+                    houses = [];
+                    if (data) {
+                        Object.keys(data).forEach(key => {
+                            houses.push({ id: key, ...data[key] });
+                        });
+                    } else {
+                        defaultHousesArray.forEach(h => addHouseToFirebase(h));
+                    }
+                    renderAllViews();
+                });
+
+                initApp();
+            } catch (err) {
+                console.error(err);
+                initApp();
+            }
+        }
+
+        function readFileAsBase64(file) {
+            return new Promise((resolve) => {
+                if (!file) {
+                    resolve('');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => resolve('');
+                reader.readAsDataURL(file);
+            });
+        }
+
+        document.getElementById('form-income').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!requireAdmin()) return;
+            const editId = document.getElementById('inc-id').value;
+            const date = document.getElementById('inc-date').value;
+            const method = document.getElementById('inc-method').value;
+            const house = document.getElementById('inc-house').value.trim().toUpperCase();
+            const desc = document.getElementById('inc-desc').value.trim();
+            const amount = parseFloat(document.getElementById('inc-amount').value);
+            const fileInput = document.getElementById('inc-proof');
+
+            if (!date || !desc || isNaN(amount) || amount <= 0) return;
+
+            if (house && !houses.some(h => h.houseNumber.toUpperCase() === house)) {
+                addHouseToFirebase({ houseNumber: house, ownerName: `Warga Rumah ${house}`, phone: '' });
+            }
+
+            let proofBase64 = fileInput.files.length > 0 ? await readFileAsBase64(fileInput.files[0]) : '';
+
+            if (editId) {
+                const existing = transactions.find(t => t.id === editId);
+                if (existing && !proofBase64) proofBase64 = existing.proof || '';
+                
+                firebaseDb.ref(`kasRt/transactions/${editId}`).update({
+                    type: 'income',
+                    date,
+                    paymentMethod: method,
+                    houseNumber: house,
+                    description: desc,
+                    amount,
+                    proof: proofBase64
+                });
+                cancelEditTransaction();
+                showToast('Pemasukan diperbarui!');
+            } else {
+                firebaseDb.ref('kasRt/transactions').push({
+                    type: 'income',
+                    date,
+                    paymentMethod: method,
+                    houseNumber: house,
+                    description: desc,
+                    amount,
+                    proof: proofBase64
+                });
+                this.reset();
+                document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
+                showToast('Pemasukan disimpan!');
+            }
         });
+
+        document.getElementById('form-expense').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!requireAdmin()) return;
+            const editId = document.getElementById('exp-id').value;
+            const date = document.getElementById('exp-date').value;
+            const desc = document.getElementById('exp-desc').value.trim();
+            const amount = parseFloat(document.getElementById('exp-amount').value);
+            const fileInput = document.getElementById('exp-proof');
+
+            if (!date || !desc || isNaN(amount) || amount <= 0) return;
+
+            let proofBase64 = fileInput.files.length > 0 ? await readFileAsBase64(fileInput.files[0]) : '';
+
+            if (editId) {
+                const existing = transactions.find(t => t.id === editId);
+                if (existing && !proofBase64) proofBase64 = existing.proof || '';
+
+                firebaseDb.ref(`kasRt/transactions/${editId}`).update({
+                    type: 'expense',
+                    date,
+                    description: desc,
+                    amount,
+                    proof: proofBase64
+                });
+                cancelEditTransaction();
+                showToast('Pengeluaran diperbarui!');
+            } else {
+                firebaseDb.ref('kasRt/transactions').push({
+                    type: 'expense',
+                    date,
+                    description: desc,
+                    amount,
+                    proof: proofBase64
+                });
+                this.reset();
+                document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+                showToast('Pengeluaran disimpan!');
+            }
+        });
+
+        document.getElementById('form-house').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!requireAdmin()) return;
+            const houseId = document.getElementById('modal-house-id').value;
+            const no = document.getElementById('modal-house-no').value.trim().toUpperCase();
+            const owner = document.getElementById('modal-house-owner').value.trim();
+            const phone = document.getElementById('modal-house-phone').value.trim();
+
+            if (!no || !owner) return;
+
+            if (houseId) {
+                firebaseDb.ref(`kasRt/houses/${houseId}`).update({
+                    houseNumber: no,
+                    ownerName: owner,
+                    phone
+                });
+                closeHouseModal();
+                showToast('Data rumah diperbarui!');
+            } else {
+                addHouseToFirebase({ houseNumber: no, ownerName: owner, phone });
+                closeHouseModal();
+                showToast('Rumah ditambahkan!');
+            }
+        });
+
+        function requireAdmin() {
+            if (!isAdmin) {
+                showToast('Login Admin terlebih dahulu.', 'error');
+                return false;
+            }
+            return true;
+        }
+
+        function openAdminLogin() {
+            const modal=document.getElementById('admin-login-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            document.getElementById('admin-pin').value='';
+            setTimeout(()=>document.getElementById('admin-pin').focus(),50);
+        }
+        function closeAdminLogin() {
+            const modal=document.getElementById('admin-login-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        }
+
+        function openChangePin() {
+            if (!requireAdmin()) return;
+            const modal=document.getElementById('change-pin-modal');
+            modal.classList.remove('hidden'); modal.classList.add('flex');
+            document.getElementById('old-pin').value='';
+            document.getElementById('new-pin').value='';
+            document.getElementById('confirm-pin').value='';
+            setTimeout(()=>document.getElementById('old-pin').focus(),50);
+        }
+        function closeChangePin() {
+            const modal=document.getElementById('change-pin-modal');
+            modal.classList.add('hidden'); modal.classList.remove('flex');
+        }
+
+        function logoutAdmin() {
+            isAdmin=false; 
+            sessionStorage.removeItem('kasRtIsAdmin');
+            updateAccessMode();
+            showToast('Logout Admin.');
+        }
+
+        function updateAccessMode() {
+            const lb=document.getElementById('admin-login-btn'), lo=document.getElementById('admin-logout-btn'), cp=document.getElementById('admin-change-pin-btn');
+            const lbm=document.getElementById('admin-login-btn-mb'), lom=document.getElementById('admin-logout-btn-mb'), cpm=document.getElementById('admin-change-pin-btn-mb');
+            
+            if(lb) lb.classList.toggle('hidden',isAdmin);
+            if(lo) lo.classList.toggle('hidden',!isAdmin);
+            if(cp) cp.classList.toggle('hidden',!isAdmin);
+            
+            if(lbm) lbm.classList.toggle('hidden',isAdmin);
+            if(lom) lom.classList.toggle('hidden',!isAdmin);
+            if(cpm) cpm.classList.toggle('hidden',!isAdmin);
+
+            document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin));
+            document.querySelectorAll('#form-income input, #form-income select, #form-income button, #form-expense input, #form-expense select, #form-expense button').forEach(el=>el.disabled=!isAdmin);
+        }
+
+        document.addEventListener('DOMContentLoaded',()=>{
+            const f=document.getElementById('admin-login-form');
+            if(f) f.addEventListener('submit',e=>{
+                e.preventDefault();
+                if(document.getElementById('admin-pin').value===ADMIN_PIN){
+                    isAdmin=true; 
+                    sessionStorage.setItem('kasRtIsAdmin', 'true');
+                    closeAdminLogin(); 
+                    updateAccessMode(); 
+                    renderAllViews();
+                    showToast('Login Admin berhasil.');
+                } else showToast('PIN salah.','error');
+            });
+
+            const fc=document.getElementById('change-pin-form');
+            if(fc) fc.addEventListener('submit',e=>{
+                e.preventDefault();
+                if(!isAdmin) return;
+                const oldPin=document.getElementById('old-pin').value;
+                const newPin=document.getElementById('new-pin').value;
+                const confirmPin=document.getElementById('confirm-pin').value;
+                if(oldPin!==ADMIN_PIN) return showToast('PIN lama salah.','error');
+                if(!/^\d{4}$/.test(newPin)) return showToast('PIN harus 4 digit.','error');
+                if(newPin!==confirmPin) return showToast('PIN tidak sama.','error');
+                
+                ADMIN_PIN=newPin;
+                localStorage.setItem('kasRtAdminPin',newPin);
+                if (firebaseReady) firebaseDb.ref('kasRt/adminPin').set(newPin);
+                closeChangePin();
+                showToast('PIN diubah.');
+            });
+        });
+
+        function initApp() {
+            const todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            const elDate = document.getElementById('current-date');
+            if (elDate) elDate.textContent = todayStr;
+
+            const todayISO = new Date().toISOString().split('T')[0];
+            document.getElementById('inc-date').value = todayISO;
+            document.getElementById('exp-date').value = todayISO;
+            document.getElementById('house-period-filter').value = currentYearMonth;
+
+            updateHouseDatalist();
+            renderDashboard();
+            renderHistory();
+            renderRecap();
+            renderHouseStatus();
+            updateAccessMode();
+        }
+
+        document.addEventListener('DOMContentLoaded', startFirebaseSync);
     </script>
+
+<!-- Admin PIN Modal -->
+<div id="admin-login-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] hidden items-center justify-center p-3">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-4">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs"><i class="fas fa-lock"></i></div>
+      <div><h3 class="font-bold text-slate-800 text-xs sm:text-sm">Login Admin</h3><p class="text-[10px] text-slate-500">Masukkan PIN Admin.</p></div>
+    </div>
+    <form id="admin-login-form">
+      <input id="admin-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-center text-xl tracking-[.4em] outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••" required>
+      <div class="flex gap-2 justify-end mt-3 text-xs">
+        <button type="button" onclick="closeAdminLogin()" class="px-3 py-1.5 rounded-lg bg-slate-100">Batal</button>
+        <button type="submit" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white font-semibold">Masuk</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Change Admin PIN Modal -->
+<div id="change-pin-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[101] hidden items-center justify-center p-3">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-4">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs"><i class="fas fa-key"></i></div>
+      <div><h3 class="font-bold text-slate-800 text-xs sm:text-sm">Ubah PIN Admin</h3><p class="text-[10px] text-slate-500">PIN baru 4 digit.</p></div>
+    </div>
+    <form id="change-pin-form">
+      <input id="old-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 mb-2 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="PIN lama" required>
+      <input id="new-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 mb-2 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="PIN baru" required>
+      <input id="confirm-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="Ulangi PIN baru" required>
+      <div class="flex gap-2 justify-end mt-3 text-xs">
+        <button type="button" onclick="closeChangePin()" class="px-3 py-1.5 rounded-lg bg-slate-100">Batal</button>
+        <button type="submit" class="px-4 py-1.5 rounded-lg bg-amber-500 text-white font-semibold">Simpan</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 </body>
 </html>
