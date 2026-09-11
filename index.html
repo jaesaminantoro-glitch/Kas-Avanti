@@ -36,7 +36,6 @@
         .admin-only.hidden { display:none !important; }
         .readonly-overlay { pointer-events:none; opacity:.65; }
         
-        /* Agar teks pada tabel otomatis terbungkus rapi di layar kecil */
         th, td {
             white-space: normal !important;
             word-break: break-word;
@@ -49,33 +48,31 @@
 <body class="text-slate-800 min-h-screen flex flex-col overflow-x-hidden">
 
     <nav class="bg-blue-700 text-white shadow-md sticky top-0 z-30">
-        <div class="max-w-6xl mx-auto px-3 sm:px-4 py-3 flex flex-col sm:flex-row justify-between items-center gap-3">
-            <div class="flex items-center gap-2.5 w-full sm:w-auto justify-between sm:justify-start">
-                <div class="flex items-center gap-2.5">
-                    <div class="w-9 h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-inner shrink-0">
-                        <i class="fas fa-building text-lg"></i>
+        <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-2.5">
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-inner shrink-0">
+                        <i class="fas fa-building text-sm sm:text-lg"></i>
                     </div>
-                    <div>
-                        <h1 class="font-bold text-base leading-tight">Kas RT 01 RW 12</h1>
-                        <p class="text-blue-200 text-[10px] sm:text-xs">Manajemen Keuangan & Status Iuran</p>
+                    <div class="min-w-0 flex-1">
+                        <h1 class="font-bold text-xs sm:text-base leading-tight truncate">Puri Avanti RT 01 RW 12</h1>
+                        <p class="text-blue-200 text-[10px] sm:text-xs truncate">Manajemen Keuangan & Status Iuran</p>
                     </div>
                 </div>
                 
-                <!-- Login/Logout Admin di Mobile Header -->
-                <div class="flex items-center sm:hidden">
-                    <button id="admin-login-btn-mb" onclick="openAdminLogin()" class="px-2.5 py-1.5 rounded-lg bg-white/15 text-xs font-semibold">
+                <div class="flex items-center shrink-0 sm:hidden">
+                    <button id="admin-login-btn-mb" onclick="openAdminLogin()" class="px-2 py-1 rounded-lg bg-white/15 text-xs font-semibold">
                         <i class="fas fa-lock"></i>
                     </button>
-                    <button id="admin-change-pin-btn-mb" onclick="openChangePin()" class="admin-only ml-1 px-2.5 py-1.5 rounded-lg bg-amber-500 text-xs font-semibold hidden">
+                    <button id="admin-change-pin-btn-mb" onclick="openChangePin()" class="admin-only ml-1 px-2 py-1 rounded-lg bg-amber-500 text-xs font-semibold hidden">
                         <i class="fas fa-key"></i>
                     </button>
-                    <button id="admin-logout-btn-mb" onclick="logoutAdmin()" class="admin-only ml-1 px-2.5 py-1.5 rounded-lg bg-rose-500 text-xs font-semibold hidden">
+                    <button id="admin-logout-btn-mb" onclick="logoutAdmin()" class="admin-only ml-1 px-2 py-1 rounded-lg bg-rose-500 text-xs font-semibold hidden">
                         <i class="fas fa-sign-out-alt"></i>
                     </button>
                 </div>
             </div>
             
-            <!-- Menu Navigasi Utama -->
             <div class="flex items-center bg-blue-800/60 p-1 rounded-xl border border-blue-500/30 w-full sm:w-auto justify-center">
                 <button onclick="switchMainPage('dashboard')" id="nav-btn-dashboard" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center">
                     <i class="fas fa-chart-pie mr-1"></i> Kas & Transaksi
@@ -103,14 +100,11 @@
 
     <main class="max-w-6xl mx-auto px-2 sm:px-4 py-4 flex-1 w-full space-y-4">
         
-        <!-- Status koneksi Firebase -->
         <div id="firebase-status" class="text-[11px] text-slate-500 font-medium px-1"></div>
 
-        <!-- ================= HALAMAN 1: DASHBOARD KAS & TRANSAKSI ================= -->
+        <!-- DASHBOARD KAS & TRANSAKSI -->
         <div id="page-dashboard" class="space-y-4 sm:space-y-6">
-            <!-- Summary Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5">
-                <!-- Saldo Utama -->
                 <div class="bg-gradient-to-br from-blue-700 to-indigo-800 text-white rounded-2xl p-4 sm:p-6 shadow-md relative overflow-hidden flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-1">
@@ -125,7 +119,6 @@
                     </div>
                 </div>
 
-                <!-- Total Pemasukan -->
                 <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-1">
@@ -153,7 +146,6 @@
                     </div>
                 </div>
 
-                <!-- Total Pengeluaran -->
                 <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-1">
@@ -172,10 +164,8 @@
                 </div>
             </div>
 
-            <!-- Form Input & Tabel Riwayat Grid -->
+            <!-- Form Input & Tabel Riwayat -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                
-                <!-- Form Input Transaksi -->
                 <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                         <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2" id="form-title">
@@ -186,7 +176,6 @@
                         </button>
                     </div>
 
-                    <!-- Switcher Tipe Transaksi -->
                     <div id="form-type-switcher" class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-4">
                         <button type="button" onclick="switchForm('income')" id="btn-form-income" class="py-1.5 text-xs font-bold rounded-lg transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1">
                             <i class="fas fa-plus-circle"></i> Pemasukan
@@ -196,7 +185,6 @@
                         </button>
                     </div>
 
-                    <!-- Form Pemasukan -->
                     <form id="form-income" class="space-y-3">
                         <input type="hidden" id="inc-id" value="">
                         <div>
@@ -240,7 +228,6 @@
                         </button>
                     </form>
 
-                    <!-- Form Pengeluaran -->
                     <form id="form-expense" class="space-y-3 hidden">
                         <input type="hidden" id="exp-id" value="">
                         <div>
@@ -270,10 +257,7 @@
                     </form>
                 </div>
 
-                <!-- Data Buku Kas & Rekap Keseluruhan -->
                 <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]">
-                    
-                    <!-- Navigasi Tab Tabel -->
                     <div class="flex px-3 sm:px-6 pt-3 border-b border-slate-200 gap-4 bg-slate-50/50">
                         <button onclick="switchDataTab('history')" id="tab-data-history" class="pb-2.5 text-xs sm:text-sm transition-all tab-active">
                             <i class="fas fa-list-ul mr-1"></i> Buku Kas
@@ -283,7 +267,6 @@
                         </button>
                     </div>
 
-                    <!-- Konten Tab 1: Riwayat Transaksi -->
                     <div id="view-history" class="p-0 overflow-hidden flex-1 flex flex-col">
                         <div class="overflow-y-auto custom-scrollbar flex-1">
                             <table class="w-full text-left border-collapse">
@@ -295,9 +278,7 @@
                                         <th class="px-1 py-2 font-semibold text-center w-12">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody id="history-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm">
-                                    <!-- Data Riwayat Disisipkan via JS -->
-                                </tbody>
+                                <tbody id="history-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
                             </table>
                         </div>
                         <div id="history-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400 my-auto">
@@ -306,7 +287,6 @@
                         </div>
                     </div>
 
-                    <!-- Konten Tab 2: Rekap Bulanan -->
                     <div id="view-recap" class="p-0 overflow-hidden hidden flex-1 flex-col">
                         <div class="bg-blue-50/80 px-3 py-1.5 border-b border-blue-100 flex justify-between items-center text-[10px] sm:text-xs text-blue-800">
                             <span><i class="fas fa-info-circle mr-1"></i> Akumulasi kas per periode bulan.</span>
@@ -321,9 +301,7 @@
                                         <th class="px-2 py-2 font-semibold text-right">Bersih</th>
                                     </tr>
                                 </thead>
-                                <tbody id="recap-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm">
-                                    <!-- Data Rekap Disisipkan via JS -->
-                                </tbody>
+                                <tbody id="recap-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
                             </table>
                         </div>
                         <div id="recap-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400 my-auto">
@@ -331,15 +309,12 @@
                             <p class="font-medium text-xs">Belum ada data rekapitulasi.</p>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
 
-        <!-- ================= HALAMAN 2: DAFTAR RUMAH WARGA & STATUS IURAN ================= -->
+        <!-- DAFTAR RUMAH WARGA & STATUS IURAN -->
         <div id="page-houses" class="hidden space-y-4">
-            
-            <!-- Ringkasan Status Iuran Warga -->
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
                     <div class="text-slate-500 text-[10px] font-semibold uppercase">Total Warga</div>
@@ -362,9 +337,7 @@
                 </div>
             </div>
 
-            <!-- Header Kontrol & Filter Status Warga -->
             <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
-                
                 <div class="grid grid-cols-2 gap-2">
                     <div>
                         <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">Periode Bulan</label>
@@ -391,7 +364,6 @@
                 </div>
             </div>
 
-            <!-- Tabel Status Warga -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
@@ -403,9 +375,7 @@
                                 <th class="px-2 py-2 font-semibold text-center w-16">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="houses-tbody" class="divide-y divide-slate-100 text-xs">
-                            <!-- Data Warga Disisipkan via JS -->
-                        </tbody>
+                        <tbody id="houses-tbody" class="divide-y divide-slate-100 text-xs"></tbody>
                     </table>
                 </div>
                 <div id="houses-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400">
@@ -416,7 +386,7 @@
         </div>
     </main>
 
-    <!-- Modal Tambah / Edit Warga -->
+    <!-- Modal Modals & Toast -->
     <div id="house-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
         <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
             <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -449,7 +419,6 @@
         </div>
     </div>
 
-    <!-- Modal Pratinjau Bukti Transaksi -->
     <div id="proof-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
         <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
             <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
@@ -470,28 +439,25 @@
         </div>
     </div>
 
-    <!-- Toast Notification -->
     <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-3 py-2 rounded-xl shadow-xl flex items-center gap-2 z-50 pointer-events-none text-xs">
         <i id="toast-icon" class="fas fa-check-circle text-emerald-400 text-sm"></i>
         <span id="toast-message" class="font-medium">Notifikasi</span>
     </div>
 
     <script>
-        // Data Master Rumah Warga Default
-        const defaultHouses = [
-            { id: 'h1', houseNumber: 'A-01', ownerName: 'Bpk. Budi Santoso', phone: '08123456781' },
-            { id: 'h2', houseNumber: 'A-02', ownerName: 'Ibu Siti Aminah', phone: '08123456782' },
-            { id: 'h3', houseNumber: 'A-03', ownerName: 'Bpk. Ahmad Dahlan', phone: '' },
-            { id: 'h4', houseNumber: 'A-04', ownerName: 'Bpk. Hendra Gunawan', phone: '08123456784' },
-            { id: 'h5', houseNumber: 'A-05', ownerName: 'Ibu Ratna Dewi', phone: '' },
-            { id: 'h6', houseNumber: 'B-01', ownerName: 'Bpk. Joko Widodo', phone: '08123456786' },
-            { id: 'h7', houseNumber: 'B-02', ownerName: 'Bpk. Agus Yudhoyono', phone: '' },
-            { id: 'h8', houseNumber: 'B-03', ownerName: 'Ibu Megawati', phone: '08123456788' },
-            { id: 'h9', houseNumber: 'B-04', ownerName: 'Bpk. Prabowo Subianto', phone: '' },
-            { id: 'h10', houseNumber: 'B-05', ownerName: 'Bpk. Anies Baswedan', phone: '' }
+        const defaultHousesArray = [
+            { houseNumber: 'A-01', ownerName: 'Bpk. Budi Santoso', phone: '08123456781' },
+            { houseNumber: 'A-02', ownerName: 'Ibu Siti Aminah', phone: '08123456782' },
+            { houseNumber: 'A-03', ownerName: 'Bpk. Ahmad Dahlan', phone: '' },
+            { houseNumber: 'A-04', ownerName: 'Bpk. Hendra Gunawan', phone: '08123456784' },
+            { houseNumber: 'A-05', ownerName: 'Ibu Ratna Dewi', phone: '' },
+            { houseNumber: 'B-01', ownerName: 'Bpk. Joko Widodo', phone: '08123456786' },
+            { houseNumber: 'B-02', ownerName: 'Bpk. Agus Yudhoyono', phone: '' },
+            { houseNumber: 'B-03', ownerName: 'Ibu Megawati', phone: '08123456788' },
+            { houseNumber: 'B-04', ownerName: 'Bpk. Prabowo Subianto', phone: '' },
+            { houseNumber: 'B-05', ownerName: 'Bpk. Anies Baswedan', phone: '' }
         ];
 
-        // Global State - Firebase Realtime Database
         const firebaseConfig = {
             apiKey: "AIzaSyA5XIhdeyBJw4MDNebedRKDcjsVcuR1Zx8",
             authDomain: "jaes-c1b52.firebaseapp.com",
@@ -505,20 +471,17 @@
 
         let firebaseReady = false;
         let firebaseDb = null;
-        let transactions = [];
-        let houses = defaultHouses.slice();
+        let transactions = []; 
+        let houses = [];       
         let editingTransactionId = null;
 
-        // Access control: Default ADMIN PIN & Status Session
         const DEFAULT_ADMIN_PIN = '1234';
         let ADMIN_PIN = localStorage.getItem('kasRtAdminPin') || DEFAULT_ADMIN_PIN;
         let isAdmin = sessionStorage.getItem('kasRtIsAdmin') === 'true';
 
-        // Current Period Setup
         const now = new Date();
         const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-        // Helper: Update Datalist Pilihan Rumah
         function updateHouseDatalist() {
             const datalist = document.getElementById('house-list');
             if (!datalist) return;
@@ -527,7 +490,6 @@
             ).join('');
         }
 
-        // Helper: Format IDR
         window.formatRupiah = function(number) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',
@@ -537,7 +499,6 @@
             }).format(number || 0);
         };
 
-        // Helper: Format Date
         window.formatDate = function(dateString) {
             if (!dateString) return '-';
             const d = new Date(dateString);
@@ -545,7 +506,6 @@
             return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
         };
 
-        // Helper: Escape HTML
         window.escapeHTML = function(str) {
             if (!str) return '';
             return String(str).replace(/[&<>'"]/g, tag => ({
@@ -557,12 +517,6 @@
             }[tag] || tag));
         };
 
-        // Helper: Generate ID
-        window.generateId = function() {
-            return 'id_' + Math.random().toString(36).substr(2, 9);
-        };
-
-        // Helper: Toast Notification
         let toastTimer;
         window.showToast = function(message, type = 'success') {
             const toast = document.getElementById('toast');
@@ -583,7 +537,6 @@
             }, 3000);
         };
 
-        // Navigasi Halaman Utama
         window.switchMainPage = function(page) {
             const pageDashboard = document.getElementById('page-dashboard');
             const pageHouses = document.getElementById('page-houses');
@@ -606,7 +559,6 @@
 
         window.switchMainView = window.switchMainPage;
 
-        // Switcher Form Input Transaksi (Income vs Expense)
         window.switchForm = function(type) {
             const formIncome = document.getElementById('form-income');
             const formExpense = document.getElementById('form-expense');
@@ -626,7 +578,6 @@
             }
         };
 
-        // Switcher Tab Tabel Data (Buku Kas vs Rekap)
         window.switchDataTab = function(tab) {
             const viewHistory = document.getElementById('view-history');
             const viewRecap = document.getElementById('view-recap');
@@ -651,13 +602,8 @@
             }
         };
 
-        // Render Dashboard Stats
         window.renderDashboard = function() {
-            let totalInc = 0;
-            let incCash = 0;
-            let incMandiri = 0;
-            let incBca = 0;
-            let totalExp = 0;
+            let totalInc = 0, incCash = 0, incMandiri = 0, incBca = 0, totalExp = 0;
 
             transactions.forEach(t => {
                 const amt = parseFloat(t.amount) || 0;
@@ -672,9 +618,7 @@
                 }
             });
 
-            const netBalance = totalInc - totalExp;
-
-            document.getElementById('total-balance').textContent = formatRupiah(netBalance);
+            document.getElementById('total-balance').textContent = formatRupiah(totalInc - totalExp);
             document.getElementById('total-income').textContent = formatRupiah(totalInc);
             document.getElementById('income-cash').textContent = formatRupiah(incCash);
             document.getElementById('income-mandiri').textContent = formatRupiah(incMandiri);
@@ -682,7 +626,6 @@
             document.getElementById('total-expense').textContent = formatRupiah(totalExp);
         };
 
-        // Render Tabel Buku Kas (Desain Ringkas Responsif)
         window.renderHistory = function() {
             const tbody = document.getElementById('history-tbody');
             const emptyEl = document.getElementById('history-empty');
@@ -748,11 +691,13 @@
             });
         };
 
-        // Render Tabel Rekapitulasi Per Bulan
         window.renderRecap = function() {
             const tbody = document.getElementById('recap-tbody');
             const emptyEl = document.getElementById('recap-empty');
             tbody.innerHTML = '';
+
+            let tfoot = document.getElementById('recap-tfoot');
+            if (tfoot) tfoot.innerHTML = '';
 
             if (transactions.length === 0) {
                 emptyEl.classList.remove('hidden');
@@ -764,6 +709,8 @@
             emptyEl.classList.remove('flex');
 
             const monthlyData = {};
+            let grandTotalIncome = 0;
+            let grandTotalExpense = 0;
 
             transactions.forEach(t => {
                 const d = new Date(t.date);
@@ -775,8 +722,13 @@
                 }
 
                 const amt = parseFloat(t.amount) || 0;
-                if (t.type === 'income') monthlyData[key].income += amt;
-                else if (t.type === 'expense') monthlyData[key].expense += amt;
+                if (t.type === 'income') {
+                    monthlyData[key].income += amt;
+                    grandTotalIncome += amt;
+                } else if (t.type === 'expense') {
+                    monthlyData[key].expense += amt;
+                    grandTotalExpense += amt;
+                }
             });
 
             const sortedKeys = Object.keys(monthlyData).sort().reverse();
@@ -797,14 +749,31 @@
                 `;
                 tbody.appendChild(tr);
             });
+
+            const grandNet = grandTotalIncome - grandTotalExpense;
+            if (!tfoot) {
+                const table = tbody.closest('table');
+                tfoot = document.createElement('tfoot');
+                tfoot.id = 'recap-tfoot';
+                tfoot.className = "bg-slate-100 font-bold border-t-2 border-slate-300 sticky bottom-0 shadow-inner";
+                table.appendChild(tfoot);
+            } else {
+                tfoot.className = "bg-slate-100 font-bold border-t-2 border-slate-300 sticky bottom-0 shadow-inner";
+            }
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td class="px-2 py-2.5 text-slate-800 text-xs uppercase tracking-wider">Total</td>
+                    <td class="px-2 py-2.5 text-right text-emerald-700 text-xs">${formatRupiah(grandTotalIncome)}</td>
+                    <td class="px-2 py-2.5 text-right text-rose-700 text-xs">${formatRupiah(grandTotalExpense)}</td>
+                    <td class="px-2 py-2.5 text-right text-xs ${grandNet >= 0 ? 'text-blue-700' : 'text-rose-700'}">${formatRupiah(grandNet)}</td>
+                </tr>
+            `;
         };
 
-        // Render Halaman Status Iuran Warga
         window.renderHouseStatus = function() {
             const periodInput = document.getElementById('house-period-filter');
-            if (!periodInput.value) {
-                periodInput.value = currentYearMonth;
-            }
+            if (!periodInput.value) periodInput.value = currentYearMonth;
 
             const selectedPeriod = periodInput.value;
             const statusFilter = document.getElementById('house-status-filter').value;
@@ -814,12 +783,11 @@
             const emptyEl = document.getElementById('houses-empty');
             tbody.innerHTML = '';
 
-            let paidCount = 0;
-            let unpaidCount = 0;
+            let paidCount = 0, unpaidCount = 0;
 
             const filteredHouses = houses.filter(h => 
-                h.houseNumber.toLowerCase().includes(searchQuery) || 
-                h.ownerName.toLowerCase().includes(searchQuery)
+                (h.houseNumber && h.houseNumber.toLowerCase().includes(searchQuery)) || 
+                (h.ownerName && h.ownerName.toLowerCase().includes(searchQuery))
             );
 
             let visibleRows = 0;
@@ -862,9 +830,7 @@
                         <div class="text-xs">${escapeHTML(h.ownerName)}</div>
                         ${h.phone ? `<a href="https://wa.me/${h.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-[10px] text-emerald-600 flex items-center gap-0.5 mt-0.5"><i class="fab fa-whatsapp"></i> ${escapeHTML(h.phone)}</a>` : ''}
                     </td>
-                    <td class="px-2 py-2.5 text-center">
-                        ${statusBadge}
-                    </td>
+                    <td class="px-2 py-2.5 text-center">${statusBadge}</td>
                     <td class="px-2 py-2.5 text-right font-medium text-xs ${isPaid ? 'text-emerald-600 font-bold' : 'text-slate-300'}">
                         ${isPaid ? formatRupiah(payment.amount) : '-'}
                     </td>
@@ -883,7 +849,6 @@
                 tbody.appendChild(tr);
             });
 
-            // Update Ringkasan Stat
             const totalHouses = houses.length;
             document.getElementById('stat-total-houses').textContent = totalHouses;
             document.getElementById('stat-paid-houses').textContent = paidCount;
@@ -892,7 +857,6 @@
             const percentage = totalHouses > 0 ? Math.round((paidCount / totalHouses) * 100) : 0;
             document.getElementById('stat-percentage').textContent = `${percentage}%`;
 
-            // Badge Navbar
             const unpaidBadge = document.getElementById('unpaid-badge');
             if (unpaidBadge) {
                 unpaidBadge.textContent = unpaidCount;
@@ -909,7 +873,6 @@
             }
         };
 
-        // Quick record payment from status table
         window.quickRecordPayment = function(houseNo) { 
             if (!requireAdmin()) return;
             switchMainPage('dashboard');
@@ -939,7 +902,6 @@
             showToast(`Mencatat iuran rumah ${houseNo}`);
         };
 
-        // Edit Transaksi
         window.editTransaction = function(id) {
             if (!requireAdmin()) return;
             const t = transactions.find(item => item.id === id);
@@ -1006,7 +968,6 @@
             document.getElementById('exp-date').value = todayISO;
         };
 
-        // Modals & House Actions
         window.openAddHouseModal = function() { 
             if (!requireAdmin()) return;
             document.getElementById('modal-house-id').value = '';
@@ -1039,10 +1000,9 @@
             const house = houses.find(h => h.id === id);
             const houseName = house ? `Rumah ${house.houseNumber}` : 'data ini';
             if (confirm(`Hapus ${houseName}?`)) {
-                houses = houses.filter(h => h.id !== id);
-                persistHouses();
-                updateHouseDatalist();
-                renderHouseStatus();
+                if (firebaseReady) {
+                    firebaseDb.ref(`kasRt/houses/${id}`).remove();
+                }
                 showToast('Data rumah terhapus', 'delete');
             }
         };
@@ -1073,8 +1033,9 @@
             if (!requireAdmin()) return;
             if (confirm('Hapus transaksi ini?')) {
                 if (editingTransactionId === id) cancelEditTransaction();
-                transactions = transactions.filter(t => t.id !== id);
-                saveToLocalStorage();
+                if (firebaseReady) {
+                    firebaseDb.ref(`kasRt/transactions/${id}`).remove();
+                }
                 showToast('Transaksi dihapus', 'delete');
             }
         };
@@ -1087,24 +1048,14 @@
             renderHouseStatus();
         }
 
-        function persistTransactions() {
+        function addHouseToFirebase(houseData) {
             if (!firebaseReady) return;
-            firebaseDb.ref('kasRt/transactions').set(transactions).catch(err => console.error(err));
-        }
-
-        function persistHouses() {
-            if (!firebaseReady) return;
-            firebaseDb.ref('kasRt/houses').set(houses).catch(err => console.error(err));
-        }
-
-        function persistPin(newPin) {
-            if (!firebaseReady) return;
-            firebaseDb.ref('kasRt/adminPin').set(newPin).catch(err => console.error(err));
-        }
-
-        function saveToLocalStorage() {
-            persistTransactions();
-            renderAllViews();
+            const newRef = firebaseDb.ref('kasRt/houses').push();
+            newRef.set({
+                houseNumber: houseData.houseNumber,
+                ownerName: houseData.ownerName,
+                phone: houseData.phone || ''
+            });
         }
 
         function isFirebaseConfigured() {
@@ -1127,20 +1078,31 @@
                         ADMIN_PIN = String(pinVal);
                         localStorage.setItem('kasRtAdminPin', ADMIN_PIN);
                     } else {
-                        persistPin(DEFAULT_ADMIN_PIN);
+                        firebaseDb.ref('kasRt/adminPin').set(DEFAULT_ADMIN_PIN);
                     }
                 });
 
                 firebaseDb.ref('kasRt/transactions').on('value', snap => {
                     const data = snap.val();
-                    transactions = Array.isArray(data) ? data : (data ? Object.values(data) : []);
+                    transactions = [];
+                    if (data) {
+                        Object.keys(data).forEach(key => {
+                            transactions.push({ id: key, ...data[key] });
+                        });
+                    }
                     renderAllViews();
                 });
 
                 firebaseDb.ref('kasRt/houses').on('value', snap => {
                     const data = snap.val();
-                    houses = Array.isArray(data) && data.length ? data : (data ? Object.values(data) : defaultHouses.slice());
-                    if (!data) persistHouses();
+                    houses = [];
+                    if (data) {
+                        Object.keys(data).forEach(key => {
+                            houses.push({ id: key, ...data[key] });
+                        });
+                    } else {
+                        defaultHousesArray.forEach(h => addHouseToFirebase(h));
+                    }
                     renderAllViews();
                 });
 
@@ -1164,7 +1126,6 @@
             });
         }
 
-        // Form Submit Listeners
         document.getElementById('form-income').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!requireAdmin()) return;
@@ -1179,25 +1140,36 @@
             if (!date || !desc || isNaN(amount) || amount <= 0) return;
 
             if (house && !houses.some(h => h.houseNumber.toUpperCase() === house)) {
-                houses.push({ id: generateId(), houseNumber: house, ownerName: `Warga Rumah ${house}`, phone: '' });
-                persistHouses();
-                updateHouseDatalist();
+                addHouseToFirebase({ houseNumber: house, ownerName: `Warga Rumah ${house}`, phone: '' });
             }
 
             let proofBase64 = fileInput.files.length > 0 ? await readFileAsBase64(fileInput.files[0]) : '';
 
             if (editId) {
-                const index = transactions.findIndex(t => t.id === editId);
-                if (index !== -1) {
-                    if (!proofBase64 && transactions[index].proof) proofBase64 = transactions[index].proof;
-                    transactions[index] = { ...transactions[index], date, paymentMethod: method, houseNumber: house, description: desc, amount, proof: proofBase64 };
-                    cancelEditTransaction();
-                    saveToLocalStorage();
-                    showToast('Pemasukan diperbarui!');
-                }
+                const existing = transactions.find(t => t.id === editId);
+                if (existing && !proofBase64) proofBase64 = existing.proof || '';
+                
+                firebaseDb.ref(`kasRt/transactions/${editId}`).update({
+                    type: 'income',
+                    date,
+                    paymentMethod: method,
+                    houseNumber: house,
+                    description: desc,
+                    amount,
+                    proof: proofBase64
+                });
+                cancelEditTransaction();
+                showToast('Pemasukan diperbarui!');
             } else {
-                transactions.unshift({ id: generateId(), type: 'income', date, paymentMethod: method, houseNumber: house, description: desc, amount, proof: proofBase64 });
-                saveToLocalStorage();
+                firebaseDb.ref('kasRt/transactions').push({
+                    type: 'income',
+                    date,
+                    paymentMethod: method,
+                    houseNumber: house,
+                    description: desc,
+                    amount,
+                    proof: proofBase64
+                });
                 this.reset();
                 document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
                 showToast('Pemasukan disimpan!');
@@ -1218,17 +1190,26 @@
             let proofBase64 = fileInput.files.length > 0 ? await readFileAsBase64(fileInput.files[0]) : '';
 
             if (editId) {
-                const index = transactions.findIndex(t => t.id === editId);
-                if (index !== -1) {
-                    if (!proofBase64 && transactions[index].proof) proofBase64 = transactions[index].proof;
-                    transactions[index] = { ...transactions[index], date, description: desc, amount, proof: proofBase64 };
-                    cancelEditTransaction();
-                    saveToLocalStorage();
-                    showToast('Pengeluaran diperbarui!');
-                }
+                const existing = transactions.find(t => t.id === editId);
+                if (existing && !proofBase64) proofBase64 = existing.proof || '';
+
+                firebaseDb.ref(`kasRt/transactions/${editId}`).update({
+                    type: 'expense',
+                    date,
+                    description: desc,
+                    amount,
+                    proof: proofBase64
+                });
+                cancelEditTransaction();
+                showToast('Pengeluaran diperbarui!');
             } else {
-                transactions.unshift({ id: generateId(), type: 'expense', date, description: desc, amount, proof: proofBase64 });
-                saveToLocalStorage();
+                firebaseDb.ref('kasRt/transactions').push({
+                    type: 'expense',
+                    date,
+                    description: desc,
+                    amount,
+                    proof: proofBase64
+                });
                 this.reset();
                 document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
                 showToast('Pengeluaran disimpan!');
@@ -1246,21 +1227,16 @@
             if (!no || !owner) return;
 
             if (houseId) {
-                const index = houses.findIndex(h => h.id === houseId);
-                if (index !== -1) {
-                    houses[index] = { ...houses[index], houseNumber: no, ownerName: owner, phone };
-                    persistHouses();
-                    closeHouseModal();
-                    updateHouseDatalist();
-                    renderHouseStatus();
-                    showToast('Data rumah diperbarui!');
-                }
-            } else {
-                houses.push({ id: generateId(), houseNumber: no, ownerName: owner, phone });
-                persistHouses();
+                firebaseDb.ref(`kasRt/houses/${houseId}`).update({
+                    houseNumber: no,
+                    ownerName: owner,
+                    phone
+                });
                 closeHouseModal();
-                updateHouseDatalist();
-                renderHouseStatus();
+                showToast('Data rumah diperbarui!');
+            } else {
+                addHouseToFirebase({ houseNumber: no, ownerName: owner, phone });
+                closeHouseModal();
                 showToast('Rumah ditambahkan!');
             }
         });
@@ -1348,7 +1324,7 @@
                 
                 ADMIN_PIN=newPin;
                 localStorage.setItem('kasRtAdminPin',newPin);
-                persistPin(newPin);
+                if (firebaseReady) firebaseDb.ref('kasRt/adminPin').set(newPin);
                 closeChangePin();
                 showToast('PIN diubah.');
             });
