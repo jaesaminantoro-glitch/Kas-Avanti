@@ -166,7 +166,7 @@
 
             <!-- Form Input & Tabel Riwayat -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-                <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col">
+                <div id="transaction-form-container" class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col admin-only hidden">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
                         <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2" id="form-title">
                             <i class="fas fa-pen-to-square text-blue-600"></i> Catat Transaksi Baru
@@ -257,7 +257,7 @@
                     </form>
                 </div>
 
-                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]">
+                <div id="transaction-history-container" class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]">
                     <div class="flex px-3 sm:px-6 pt-3 border-b border-slate-200 gap-4 bg-slate-50/50">
                         <button onclick="switchDataTab('history')" id="tab-data-history" class="pb-2.5 text-xs sm:text-sm transition-all tab-active">
                             <i class="fas fa-list-ul mr-1"></i> Buku Kas
@@ -359,7 +359,7 @@
                         <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                         <input type="text" id="house-search-input" onkeyup="renderHouseStatus()" placeholder="Cari No. Rumah / Nama..." class="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
-                    <button onclick="openAddHouseModal()" class="admin-only px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0">
+                    <button onclick="openAddHouseModal()" class="admin-only px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0 hidden">
                         <i class="fas fa-plus"></i> Warga
                     </button>
                 </div>
@@ -832,9 +832,14 @@
                     ? `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Lunas</span>`
                     : `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">Belum</span>`;
 
-                const actionBtn = isPaid 
-                    ? `<button onclick="openProofModal('${payment.id}')" class="text-[11px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded ${payment.proof ? '' : 'opacity-40 cursor-not-allowed'}" ${payment.proof ? '' : 'disabled'}>Bukti</button>`
-                    : `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[11px] px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded shadow-sm">Bayar</button>`;
+                let actionBtn = '';
+                if (isPaid) {
+                    actionBtn = `<button onclick="openProofModal('${payment.id}')" class="text-[11px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded ${payment.proof ? '' : 'opacity-40 cursor-not-allowed'}" ${payment.proof ? '' : 'disabled'}>Bukti</button>`;
+                } else if (isAdmin) {
+                    actionBtn = `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[11px] px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded shadow-sm">Bayar</button>`;
+                } else {
+                    actionBtn = `<span class="text-[11px] text-slate-400 font-medium">-</span>`;
+                }
 
                 tr.innerHTML = `
                     <td class="px-3 py-2.5 font-medium text-slate-800">
@@ -1335,6 +1340,7 @@
             isAdmin=false; 
             sessionStorage.removeItem('kasRtIsAdmin');
             updateAccessMode();
+            renderAllViews();
             showToast('Logout Admin.');
         }
 
@@ -1352,6 +1358,15 @@
 
             document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin));
             document.querySelectorAll('#form-income input, #form-income select, #form-income button, #form-expense input, #form-expense select, #form-expense button').forEach(el=>el.disabled=!isAdmin);
+
+            const historyContainer = document.getElementById('transaction-history-container');
+            if (historyContainer) {
+                if (isAdmin) {
+                    historyContainer.className = "lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]";
+                } else {
+                    historyContainer.className = "lg:col-span-3 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]";
+                }
+            }
         }
 
         document.addEventListener('DOMContentLoaded',()=>{
