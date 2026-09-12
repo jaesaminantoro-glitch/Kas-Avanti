@@ -275,6 +275,29 @@
                     </div>
 
                     <div id="view-history" class="p-0 overflow-hidden flex-1 flex flex-col">
+                        <!-- BARU: Filter Pencarian & Tipe Transaksi untuk Buku Kas -->
+                        <div class="p-2 sm:px-4 sm:py-2.5 bg-slate-50 border-b border-slate-200 flex flex-wrap gap-2 items-center justify-between">
+                            <div class="flex items-center gap-2 flex-1 min-w-[180px]">
+                                <div class="relative w-full">
+                                    <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                                    <input type="text" id="history-search-input" onkeyup="renderHistory()" placeholder="Cari keterangan / No. Rumah..." class="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <select id="history-type-filter" onchange="renderHistory()" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-white outline-none">
+                                    <option value="all">Semua Jenis</option>
+                                    <option value="income">Pemasukan</option>
+                                    <option value="expense">Pengeluaran</option>
+                                </select>
+                                <select id="history-method-filter" onchange="renderHistory()" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-white outline-none">
+                                    <option value="all">Semua Metode</option>
+                                    <option value="Cash">Cash</option>
+                                    <option value="Bank Mandiri">Mandiri</option>
+                                    <option value="Bank BCA">BCA</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div class="overflow-y-auto custom-scrollbar flex-1 p-2 sm:p-0">
                             <!-- Tabel Tampilan Desktop/Tablet dengan Pemisahan Pemasukan & Pengeluaran -->
                             <table class="hidden sm:table w-full text-left border-collapse">
@@ -296,7 +319,7 @@
                         </div>
                         <div id="history-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400 my-auto">
                             <i class="fas fa-inbox text-3xl mb-2 text-slate-300"></i>
-                            <p class="font-medium text-xs">Belum ada transaksi kas tercatat.</p>
+                            <p class="font-medium text-xs">Belum ada transaksi kas yang sesuai dengan pencarian.</p>
                         </div>
                     </div>
 
@@ -649,6 +672,12 @@
             const tbody = document.getElementById('history-tbody');
             const mobileList = document.getElementById('history-mobile-list');
             const emptyEl = document.getElementById('history-empty');
+            
+            // Ambil nilai filter pencarian buku kas
+            const searchQuery = (document.getElementById('history-search-input')?.value || '').toLowerCase().trim();
+            const typeFilter = document.getElementById('history-type-filter')?.value || 'all';
+            const methodFilter = document.getElementById('history-method-filter')?.value || 'all';
+
             tbody.innerHTML = '';
             mobileList.innerHTML = '';
 
@@ -658,10 +687,36 @@
                 return;
             }
 
+            // Filter transaksi berdasarkan input pencarian & pilihan dropdown
+            const filteredTransactions = transactions.filter(t => {
+                const desc = (t.description || '').toLowerCase();
+                const house = (t.houseNumber || '').toLowerCase();
+                const matchSearch = desc.includes(searchQuery) || house.includes(searchQuery);
+                
+                const matchType = typeFilter === 'all' || t.type === typeFilter;
+                
+                let matchMethod = true;
+                if (methodFilter !== 'all') {
+                    if (t.type === 'income') {
+                        matchMethod = (t.paymentMethod || 'Cash') === methodFilter;
+                    } else {
+                        matchMethod = false; // Pengeluaran tidak memiliki metode bayar khusus bank/tunai ini
+                    }
+                }
+
+                return matchSearch && matchType && matchMethod;
+            });
+
+            if (filteredTransactions.length === 0) {
+                emptyEl.classList.remove('hidden');
+                emptyEl.classList.add('flex');
+                return;
+            }
+
             emptyEl.classList.add('hidden');
             emptyEl.classList.remove('flex');
 
-            const sorted = [...transactions].sort((a, b) => {
+            const sorted = [...filteredTransactions].sort((a, b) => {
                 const dateDiff = new Date(b.date) - new Date(a.date);
                 if (dateDiff !== 0) return dateDiff;
                 return (b.id || '').localeCompare(a.id || '');
@@ -1378,7 +1433,6 @@
                 cancelEditTransaction();
                 showToast('Pemasukan diperbarui!');
             } else {
-                // Menggunakan .push() untuk mencegah overwrite jika banyak admin mengedit bersamaan
                 firebaseDb.ref('kasRt/transactions').push({
                     type: 'income',
                     date,
@@ -1422,7 +1476,6 @@
                 cancelEditTransaction();
                 showToast('Pengeluaran diperbarui!');
             } else {
-                // Menggunakan .push() untuk konkurensi multi-admin yang aman
                 firebaseDb.ref('kasRt/transactions').push({
                     type: 'expense',
                     date,
