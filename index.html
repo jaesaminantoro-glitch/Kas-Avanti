@@ -45,7 +45,7 @@
     <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col overflow-x-hidden">
+<body class="text-slate-800 min-h-screen flex flex-col overflow-x-hidden relative">
 
     <nav class="bg-blue-700 text-white shadow-md sticky top-0 z-30">
         <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-2.5">
@@ -440,9 +440,10 @@
         </div>
     </div>
 
-    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-3 py-2 rounded-xl shadow-xl flex items-center gap-2 z-50 pointer-events-none text-xs">
+    <!-- Toast Notification (Diubah ke Atas Tengah) -->
+    <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 -translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 z-[200] pointer-events-none text-xs">
         <i id="toast-icon" class="fas fa-check-circle text-emerald-400 text-sm"></i>
-        <span id="toast-message" class="font-medium">Notifikasi</span>
+        <span id="toast-message" class="font-medium whitespace-nowrap">Notifikasi</span>
     </div>
 
     <script>
@@ -531,10 +532,10 @@
                 toastIcon.className = 'fas fa-check-circle text-emerald-400 text-sm';
             }
 
-            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.remove('-translate-y-20', 'opacity-0');
             clearTimeout(toastTimer);
             toastTimer = setTimeout(() => {
-                toast.classList.add('translate-y-20', 'opacity-0');
+                toast.classList.add('-translate-y-20', 'opacity-0');
             }, 3000);
         };
 
@@ -641,7 +642,6 @@
             emptyEl.classList.add('hidden');
             emptyEl.classList.remove('flex');
 
-            // Pengurutan: Tanggal terbaru di atas. Jika tanggal sama, kunci ID terbaru di atas.
             const sorted = [...transactions].sort((a, b) => {
                 const dateDiff = new Date(b.date) - new Date(a.date);
                 if (dateDiff !== 0) return dateDiff;
@@ -793,7 +793,6 @@
 
             let paidCount = 0, unpaidCount = 0;
 
-            // Pengurutan alfabetis (natural sorting) berdasarkan Nomor Rumah
             const sortedHouses = [...houses].sort((a, b) => 
                 (a.houseNumber || '').localeCompare(b.houseNumber || '', undefined, { numeric: true, sensitivity: 'base' })
             );
