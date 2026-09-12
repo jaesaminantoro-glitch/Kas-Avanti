@@ -7,6 +7,8 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- SheetJS CDN for Excel Export -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -258,12 +260,17 @@
                 </div>
 
                 <div id="transaction-history-container" class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]">
-                    <div class="flex px-3 sm:px-6 pt-3 border-b border-slate-200 gap-4 bg-slate-50/50">
-                        <button onclick="switchDataTab('history')" id="tab-data-history" class="pb-2.5 text-xs sm:text-sm transition-all tab-active">
-                            <i class="fas fa-list-ul mr-1"></i> Buku Kas
-                        </button>
-                        <button onclick="switchDataTab('recap')" id="tab-data-recap" class="pb-2.5 text-xs sm:text-sm transition-all tab-inactive">
-                            <i class="fas fa-chart-line mr-1"></i> Rekap Bulanan
+                    <div class="flex items-center justify-between px-3 sm:px-6 pt-3 border-b border-slate-200 bg-slate-50/50">
+                        <div class="flex gap-4">
+                            <button onclick="switchDataTab('history')" id="tab-data-history" class="pb-2.5 text-xs sm:text-sm transition-all tab-active">
+                                <i class="fas fa-list-ul mr-1"></i> Buku Kas
+                            </button>
+                            <button onclick="switchDataTab('recap')" id="tab-data-recap" class="pb-2.5 text-xs sm:text-sm transition-all tab-inactive">
+                                <i class="fas fa-chart-line mr-1"></i> Rekap Bulanan
+                            </button>
+                        </div>
+                        <button onclick="exportToExcel()" class="mb-2 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                            <i class="fas fa-file-excel"></i> Ekspor Excel
                         </button>
                     </div>
 
@@ -359,6 +366,9 @@
                         <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
                         <input type="text" id="house-search-input" onkeyup="renderHouseStatus()" placeholder="Cari No. Rumah / Nama..." class="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
+                    <button onclick="exportHouseStatusToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0 shadow-sm">
+                        <i class="fas fa-file-excel"></i> Ekspor
+                    </button>
                     <button onclick="openAddHouseModal()" class="admin-only px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0 hidden">
                         <i class="fas fa-plus"></i> Warga
                     </button>
@@ -440,7 +450,7 @@
         </div>
     </div>
 
-    <!-- Toast Notification (Diubah ke Atas Tengah) -->
+    <!-- Toast Notification -->
     <div id="toast" class="fixed top-4 left-1/2 -translate-x-1/2 -translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-4 py-2.5 rounded-xl shadow-2xl flex items-center gap-2.5 z-[200] pointer-events-none text-xs">
         <i id="toast-icon" class="fas fa-check-circle text-emerald-400 text-sm"></i>
         <span id="toast-message" class="font-medium whitespace-nowrap">Notifikasi</span>
@@ -580,7 +590,9 @@
             }
         };
 
+        let currentActiveTab = 'history';
         window.switchDataTab = function(tab) {
+            currentActiveTab = tab;
             const viewHistory = document.getElementById('view-history');
             const viewRecap = document.getElementById('view-recap');
             const tabHistory = document.getElementById('tab-data-history');
@@ -888,6 +900,112 @@
                 emptyEl.classList.add('hidden');
                 emptyEl.classList.remove('flex');
             }
+        };
+
+        // --- FUNGSI EKSPOR EXCEL ---
+        window.exportToExcel = function() {
+            if (typeof XLSX === 'undefined') {
+                showToast('Pustaka Excel belum siap. Coba lagi.', 'error');
+                return;
+            }
+
+            if (currentActiveTab === 'history') {
+                if (transactions.length === 0) {
+                    showToast('Tidak ada data transaksi untuk diekspor.', 'error');
+                    return;
+                }
+                const exportData = transactions.map((t, index) => ({
+                    "No": index + 1,
+                    "Tanggal": t.date || '-',
+                    "Tipe": t.type === 'income' ? 'Pemasukan' : 'Pengeluaran',
+                    "No. Rumah": t.houseNumber || '-',
+                    "Keterangan": t.description || '-',
+                    "Metode": t.paymentMethod || '-',
+                    "Nominal (Rp)": parseFloat(t.amount) || 0
+                }));
+
+                const worksheet = XLSX.utils.json_to_sheet(exportData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Buku Kas");
+                XLSX.writeFile(workbook, `Buku_Kas_RT_${new Date().toISOString().split('T')[0]}.xlsx`);
+                showToast('Buku Kas berhasil diekspor!');
+            } else {
+                const monthlyData = {};
+                transactions.forEach(t => {
+                    const d = new Date(t.date);
+                    if (isNaN(d.getTime())) return;
+                    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                    if (!monthlyData[key]) monthlyData[key] = { income: 0, expense: 0 };
+                    const amt = parseFloat(t.amount) || 0;
+                    if (t.type === 'income') monthlyData[key].income += amt;
+                    else if (t.type === 'expense') monthlyData[key].expense += amt;
+                });
+
+                const sortedKeys = Object.keys(monthlyData).sort().reverse();
+                if (sortedKeys.length === 0) {
+                    showToast('Tidak ada data rekap untuk diekspor.', 'error');
+                    return;
+                }
+
+                const exportData = sortedKeys.map((key, index) => {
+                    const item = monthlyData[key];
+                    return {
+                        "No": index + 1,
+                        "Periode": key,
+                        "Pemasukan (Rp)": item.income,
+                        "Pengeluaran (Rp)": item.expense,
+                        "Bersih (Rp)": item.income - item.expense
+                    };
+                });
+
+                const worksheet = XLSX.utils.json_to_sheet(exportData);
+                const workbook = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Bulanan");
+                XLSX.writeFile(workbook, `Rekap_Kas_RT_${new Date().toISOString().split('T')[0]}.xlsx`);
+                showToast('Rekap bulanan berhasil diekspor!');
+            }
+        };
+
+        window.exportHouseStatusToExcel = function() {
+            if (typeof XLSX === 'undefined') {
+                showToast('Pustaka Excel belum siap. Coba lagi.', 'error');
+                return;
+            }
+
+            const periodInput = document.getElementById('house-period-filter').value || currentYearMonth;
+            const sortedHouses = [...houses].sort((a, b) => 
+                (a.houseNumber || '').localeCompare(b.houseNumber || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+
+            if (sortedHouses.length === 0) {
+                showToast('Tidak ada data warga untuk diekspor.', 'error');
+                return;
+            }
+
+            const exportData = sortedHouses.map((h, index) => {
+                const payment = transactions.find(t => {
+                    if (t.type !== 'income' || !t.houseNumber) return false;
+                    if (t.houseNumber.trim().toUpperCase() !== h.houseNumber.trim().toUpperCase()) return false;
+                    const tDate = new Date(t.date);
+                    if (isNaN(tDate.getTime())) return false;
+                    return `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}` === periodInput;
+                });
+
+                return {
+                    "No": index + 1,
+                    "No. Rumah": h.houseNumber || '-',
+                    "Nama Penghuni": h.ownerName || '-',
+                    "No. Telepon": h.phone || '-',
+                    "Status": payment ? 'Lunas' : 'Belum Bayar',
+                    "Nominal (Rp)": payment ? parseFloat(payment.amount) || 0 : 0
+                };
+            });
+
+            const worksheet = XLSX.utils.json_to_sheet(exportData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, `Status Iuran ${periodInput}`);
+            XLSX.writeFile(workbook, `Status_Iuran_RT_${periodInput}.xlsx`);
+            showToast(`Status iuran periode ${periodInput} berhasil diekspor!`);
         };
 
         window.quickRecordPayment = function(houseNo) { 
