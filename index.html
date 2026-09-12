@@ -93,7 +93,7 @@
                 <button id="admin-change-pin-btn" onclick="openChangePin()" class="admin-only ml-2 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-xs font-semibold hidden">
                     <i class="fas fa-key mr-1"></i> Ubah PIN
                 </button>
-                <button id="admin-logout-btn" onclick="logoutAdmin()" class="ml-2 px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-xs font-semibold hidden">
+                <button id="admin-logout-btn" onclick="logoutAdmin()" class="admin-only ml-2 px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-xs font-semibold hidden">
                     <i class="fas fa-sign-out-alt mr-1"></i> Logout
                 </button>
             </div>
@@ -1630,7 +1630,6 @@
 
                 connectedRef.on('value', (snap) => {
                     if (snap.val() === true) {
-                        // Menggunakan onDisconnect().remove() agar otomatis terhapus saat koneksi terputus/tab ditutup
                         myPresenceRef.onDisconnect().remove();
                         myPresenceRef.set({
                             joinedAt: firebase.database.ServerValue.TIMESTAMP,
@@ -1639,7 +1638,6 @@
                     }
                 });
 
-                // Tambahan event listener pagehide/beforeunload untuk memastikan data terhapus instan saat tab ditutup
                 window.addEventListener('beforeunload', () => {
                     if (firebaseReady) {
                         myPresenceRef.remove();
