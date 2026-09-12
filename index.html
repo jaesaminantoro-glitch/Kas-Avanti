@@ -641,15 +641,10 @@
             emptyEl.classList.add('hidden');
             emptyEl.classList.remove('flex');
 
-            // Pengurutan: Tanggal & Waktu/ID terbaru berada paling atas
+            // Pengurutan: Tanggal terbaru di atas. Jika tanggal sama, kunci ID terbaru di atas.
             const sorted = [...transactions].sort((a, b) => {
-                const timeA = a.createdAt || a.timestamp || 0;
-                const timeB = b.createdAt || b.timestamp || 0;
-                if (timeA !== timeB) return timeB - timeA;
-
                 const dateDiff = new Date(b.date) - new Date(a.date);
                 if (dateDiff !== 0) return dateDiff;
-
                 return (b.id || '').localeCompare(a.id || '');
             });
 
@@ -798,7 +793,12 @@
 
             let paidCount = 0, unpaidCount = 0;
 
-            const filteredHouses = houses.filter(h => 
+            // Pengurutan alfabetis (natural sorting) berdasarkan Nomor Rumah
+            const sortedHouses = [...houses].sort((a, b) => 
+                (a.houseNumber || '').localeCompare(b.houseNumber || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+
+            const filteredHouses = sortedHouses.filter(h => 
                 (h.houseNumber && h.houseNumber.toLowerCase().includes(searchQuery)) || 
                 (h.ownerName && h.ownerName.toLowerCase().includes(searchQuery))
             );
@@ -1200,7 +1200,6 @@
                 normalizedDesc.includes('keamanan')
             ) ? 'monthly_fee' : 'other_income';
 
-            const nowTimestamp = Date.now();
 
             if (editId) {
                 const existing = transactions.find(t => t.id === editId);
@@ -1227,8 +1226,7 @@
                     description: desc,
                     amount,
                     proof: proofBase64,
-                    paymentType,
-                    createdAt: nowTimestamp
+                    paymentType
                 });
                 this.reset();
                 document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
@@ -1248,7 +1246,6 @@
             if (!date || !desc || isNaN(amount) || amount <= 0) return;
 
             let proofBase64 = fileInput.files.length > 0 ? await readFileAsBase64(fileInput.files[0]) : '';
-            const nowTimestamp = Date.now();
 
             if (editId) {
                 const existing = transactions.find(t => t.id === editId);
@@ -1269,8 +1266,7 @@
                     date,
                     description: desc,
                     amount,
-                    proof: proofBase64,
-                    createdAt: nowTimestamp
+                    proof: proofBase64
                 });
                 this.reset();
                 document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
