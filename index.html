@@ -492,7 +492,7 @@
         let houses = [];       
         let editingTransactionId = null;
 
-        const DEFAULT_ADMIN_PIN = '1234';
+        const DEFAULT_ADMIN_PIN = '123456';
         let ADMIN_PIN = localStorage.getItem('kasRtAdminPin') || DEFAULT_ADMIN_PIN;
         let isAdmin = sessionStorage.getItem('kasRtIsAdmin') === 'true';
 
@@ -1230,23 +1230,6 @@
             }
         };
 
-        function isMonthlyFeeTransaction(t) {
-            if (!t) return false;
-            if (String(t.type || '').toLowerCase() !== 'income') return false;
-            if (!String(t.houseNumber || '').trim()) return false;
-
-            const paymentType = String(t.paymentType || '').toLowerCase().trim();
-            if (paymentType === 'monthly_fee') return true;
-
-            const description = String(t.description || '').toLowerCase().trim();
-            return (
-                description.includes('iuran') ||
-                description.includes('kas rt') ||
-                description.includes('kebersihan') ||
-                description.includes('keamanan')
-            );
-        }
-
         let renderScheduled = false;
 
         function scheduleRenderAllViews() {
@@ -1395,6 +1378,7 @@
                 cancelEditTransaction();
                 showToast('Pemasukan diperbarui!');
             } else {
+                // Menggunakan .push() untuk mencegah overwrite jika banyak admin mengedit bersamaan
                 firebaseDb.ref('kasRt/transactions').push({
                     type: 'income',
                     date,
@@ -1438,6 +1422,7 @@
                 cancelEditTransaction();
                 showToast('Pengeluaran diperbarui!');
             } else {
+                // Menggunakan .push() untuk konkurensi multi-admin yang aman
                 firebaseDb.ref('kasRt/transactions').push({
                     type: 'expense',
                     date,
@@ -1564,7 +1549,7 @@
                 const newPin=document.getElementById('new-pin').value;
                 const confirmPin=document.getElementById('confirm-pin').value;
                 if(oldPin!==ADMIN_PIN) return showToast('PIN lama salah.','error');
-                if(!/^\d{4}$/.test(newPin)) return showToast('PIN harus 4 digit.','error');
+                if(!/^\d{6}$/.test(newPin)) return showToast('PIN harus 6 digit.','error');
                 if(newPin!==confirmPin) return showToast('PIN tidak sama.','error');
                 
                 ADMIN_PIN=newPin;
@@ -1601,10 +1586,10 @@
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-4">
     <div class="flex items-center gap-2 mb-3">
       <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs"><i class="fas fa-lock"></i></div>
-      <div><h3 class="font-bold text-slate-800 text-xs sm:text-sm">Login Admin</h3><p class="text-[10px] text-slate-500">Masukkan PIN Admin.</p></div>
+      <div><h3 class="font-bold text-slate-800 text-xs sm:text-sm">Login Admin</h3><p class="text-[10px] text-slate-500">Masukkan PIN Admin (6 digit).</p></div>
     </div>
     <form id="admin-login-form">
-      <input id="admin-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-center text-xl tracking-[.4em] outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••" required>
+      <input id="admin-pin" type="password" inputmode="numeric" maxlength="6" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-center text-xl tracking-[.4em] outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••••" required>
       <div class="flex gap-2 justify-end mt-3 text-xs">
         <button type="button" onclick="closeAdminLogin()" class="px-3 py-1.5 rounded-lg bg-slate-100">Batal</button>
         <button type="submit" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white font-semibold">Masuk</button>
@@ -1618,12 +1603,12 @@
   <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-4">
     <div class="flex items-center gap-2 mb-3">
       <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs"><i class="fas fa-key"></i></div>
-      <div><h3 class="font-bold text-slate-800 text-xs sm:text-sm">Ubah PIN Admin</h3><p class="text-[10px] text-slate-500">PIN baru 4 digit.</p></div>
+      <div><h3 class="font-bold text-slate-800 text-xs sm:text-sm">Ubah PIN Admin</h3><p class="text-[10px] text-slate-500">PIN baru harus 6 digit.</p></div>
     </div>
     <form id="change-pin-form">
-      <input id="old-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 mb-2 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="PIN lama" required>
-      <input id="new-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 mb-2 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="PIN baru" required>
-      <input id="confirm-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="Ulangi PIN baru" required>
+      <input id="old-pin" type="password" inputmode="numeric" maxlength="6" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 mb-2 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="PIN lama (6 digit)" required>
+      <input id="new-pin" type="password" inputmode="numeric" maxlength="6" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 mb-2 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="PIN baru (6 digit)" required>
+      <input id="confirm-pin" type="password" inputmode="numeric" maxlength="6" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="Ulangi PIN baru" required>
       <div class="flex gap-2 justify-end mt-3 text-xs">
         <button type="button" onclick="closeChangePin()" class="px-3 py-1.5 rounded-lg bg-slate-100">Batal</button>
         <button type="submit" class="px-4 py-1.5 rounded-lg bg-amber-500 text-white font-semibold">Simpan</button>
