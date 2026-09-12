@@ -641,10 +641,15 @@
             emptyEl.classList.add('hidden');
             emptyEl.classList.remove('flex');
 
-            // Pengurutan: Tanggal terbaru di atas. Jika tanggal sama, kunci ID terbaru di atas.
+            // Pengurutan: Tanggal & Waktu/ID terbaru berada paling atas
             const sorted = [...transactions].sort((a, b) => {
+                const timeA = a.createdAt || a.timestamp || 0;
+                const timeB = b.createdAt || b.timestamp || 0;
+                if (timeA !== timeB) return timeB - timeA;
+
                 const dateDiff = new Date(b.date) - new Date(a.date);
                 if (dateDiff !== 0) return dateDiff;
+
                 return (b.id || '').localeCompare(a.id || '');
             });
 
@@ -1195,6 +1200,7 @@
                 normalizedDesc.includes('keamanan')
             ) ? 'monthly_fee' : 'other_income';
 
+            const nowTimestamp = Date.now();
 
             if (editId) {
                 const existing = transactions.find(t => t.id === editId);
@@ -1221,7 +1227,8 @@
                     description: desc,
                     amount,
                     proof: proofBase64,
-                    paymentType
+                    paymentType,
+                    createdAt: nowTimestamp
                 });
                 this.reset();
                 document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
@@ -1241,6 +1248,7 @@
             if (!date || !desc || isNaN(amount) || amount <= 0) return;
 
             let proofBase64 = fileInput.files.length > 0 ? await readFileAsBase64(fileInput.files[0]) : '';
+            const nowTimestamp = Date.now();
 
             if (editId) {
                 const existing = transactions.find(t => t.id === editId);
@@ -1261,7 +1269,8 @@
                     date,
                     description: desc,
                     amount,
-                    proof: proofBase64
+                    proof: proofBase64,
+                    createdAt: nowTimestamp
                 });
                 this.reset();
                 document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
