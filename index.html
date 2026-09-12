@@ -282,7 +282,8 @@
                                         <th class="px-2 sm:px-3 py-2 font-semibold w-16 sm:w-20">Tanggal</th>
                                         <th class="px-2 sm:px-3 py-2 font-semibold w-16 sm:w-20">Blok</th>
                                         <th class="px-2 sm:px-3 py-2 font-semibold">Keterangan</th>
-                                        <th class="px-2 sm:px-3 py-2 font-semibold text-right w-20 sm:w-24">Nominal</th>
+                                        <th class="px-2 sm:px-3 py-2 font-semibold text-right w-20 sm:w-24 text-emerald-600">Pemasukan</th>
+                                        <th class="px-2 sm:px-3 py-2 font-semibold text-right w-20 sm:w-24 text-rose-600">Pengeluaran</th>
                                         <th class="px-1 py-2 font-semibold text-center w-12">Aksi</th>
                                     </tr>
                                 </thead>
@@ -693,8 +694,11 @@
                                 : ''}
                         </div>
                     </td>
-                    <td class="px-2 sm:px-3 py-2 text-right font-bold text-xs sm:text-sm ${isInc ? 'text-emerald-600' : 'text-rose-600'}">
-                        ${isInc ? '+' : '-'}${formatRupiah(t.amount)}
+                    <td class="px-2 sm:px-3 py-2 text-right font-bold text-xs sm:text-sm text-emerald-600">
+                        ${isInc ? formatRupiah(t.amount) : '<span class="text-slate-300 font-normal">-</span>'}
+                    </td>
+                    <td class="px-2 sm:px-3 py-2 text-right font-bold text-xs sm:text-sm text-rose-600">
+                        ${!isInc ? formatRupiah(t.amount) : '<span class="text-slate-300 font-normal">-</span>'}
                     </td>
                     <td class="px-1 py-2 text-center">
                         <div class="flex items-center justify-center gap-1">
@@ -921,7 +925,8 @@
                     "No. Rumah": t.houseNumber || '-',
                     "Keterangan": t.description || '-',
                     "Metode": t.paymentMethod || '-',
-                    "Nominal (Rp)": parseFloat(t.amount) || 0
+                    "Pemasukan (Rp)": t.type === 'income' ? parseFloat(t.amount) || 0 : 0,
+                    "Pengeluaran (Rp)": t.type === 'expense' ? parseFloat(t.amount) || 0 : 0
                 }));
 
                 const worksheet = XLSX.utils.json_to_sheet(exportData);
