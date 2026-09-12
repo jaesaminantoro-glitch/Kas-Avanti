@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistem Manajemen Kas RT & Iuran Warga</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Sistem Manajemen Kas RT & Iuran Warga - Puri Avanti RT 1 RW 12</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -11,10 +11,11 @@
         body {
             font-family: 'Inter', sans-serif;
             background-color: #f8fafc;
+            overflow-x: hidden;
         }
         .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
+            width: 4px;
+            height: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f5f9;
@@ -22,9 +23,6 @@
         .custom-scrollbar::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 4px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
         }
         .tab-active {
             border-bottom: 2px solid #2563eb;
@@ -35,46 +33,58 @@
             color: #64748b;
             font-weight: 500;
         }
-        .tab-inactive:hover {
-            color: #1e293b;
-        }
-    
         .admin-only.hidden { display:none !important; }
         .readonly-overlay { pointer-events:none; opacity:.65; }
-</style>
+        
+        th, td {
+            white-space: normal !important;
+            word-break: break-word;
+        }
+    </style>
     <!-- Firebase Realtime Database -->
     <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-storage-compat.js"></script>
 </head>
-<body class="text-slate-800 min-h-screen flex flex-col">
+<body class="text-slate-800 min-h-screen flex flex-col overflow-x-hidden">
 
     <nav class="bg-blue-700 text-white shadow-md sticky top-0 z-30">
-        <div class="max-w-6xl mx-auto px-4 py-3.5 flex flex-col md:flex-row justify-between items-center gap-4">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-inner">
-                    <i class="fas fa-building text-xl"></i>
+        <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-2.5">
+            <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
+                <div class="flex items-center gap-2 min-w-0">
+                    <div class="w-8 h-8 sm:w-9 sm:h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-inner shrink-0">
+                        <i class="fas fa-building text-sm sm:text-lg"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h1 class="font-bold text-xs sm:text-base leading-tight truncate">Puri Avanti RT 01 RW 12</h1>
+                        <p class="text-blue-200 text-[10px] sm:text-xs truncate">Manajemen Keuangan & Status Iuran</p>
+                    </div>
                 </div>
-                <div>
-                    <h1 class="font-bold text-lg leading-tight">Sistem Kas RT</h1>
-                    <p class="text-blue-200 text-xs">Manajemen Keuangan & Status Iuran Warga</p>
+                
+                <div class="flex items-center shrink-0 sm:hidden">
+                    <button id="admin-login-btn-mb" onclick="openAdminLogin()" class="px-2 py-1 rounded-lg bg-white/15 text-xs font-semibold">
+                        <i class="fas fa-lock"></i>
+                    </button>
+                    <button id="admin-change-pin-btn-mb" onclick="openChangePin()" class="admin-only ml-1 px-2 py-1 rounded-lg bg-amber-500 text-xs font-semibold hidden">
+                        <i class="fas fa-key"></i>
+                    </button>
+                    <button id="admin-logout-btn-mb" onclick="logoutAdmin()" class="admin-only ml-1 px-2 py-1 rounded-lg bg-rose-500 text-xs font-semibold hidden">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
                 </div>
             </div>
             
-            <!-- Menu Navigasi Utama -->
-            <div class="flex items-center bg-blue-800/60 p-1 rounded-xl border border-blue-500/30">
-                <button onclick="switchMainPage('dashboard')" id="nav-btn-dashboard" class="px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all bg-white text-blue-800 shadow">
-                    <i class="fas fa-chart-pie mr-1.5"></i> Kas & Transaksi
+            <div class="flex items-center bg-blue-800/60 p-1 rounded-xl border border-blue-500/30 w-full sm:w-auto justify-center">
+                <button onclick="switchMainPage('dashboard')" id="nav-btn-dashboard" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center">
+                    <i class="fas fa-chart-pie mr-1"></i> Kas & Transaksi
                 </button>
-                <button onclick="switchMainPage('houses')" id="nav-btn-houses" class="px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative">
-                    <i class="fas fa-home mr-1.5"></i> Status Iuran Warga
-                    <span id="unpaid-badge" class="ml-1.5 px-2 py-0.5 text-[10px] bg-rose-500 text-white rounded-full font-bold inline-block">0 Belum</span>
+                <button onclick="switchMainPage('houses')" id="nav-btn-houses" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center">
+                    <i class="fas fa-home mr-1"></i> Status Iuran
+                    <span id="unpaid-badge" class="ml-1 px-1.5 py-0.5 text-[9px] bg-rose-500 text-white rounded-full font-bold inline-block">0</span>
                 </button>
             </div>
 
-            <div class="text-xs font-medium text-blue-100 hidden lg:block" id="current-date">
-                <!-- Tanggal diisi via JS -->
-            </div>
+            <div class="hidden sm:flex items-center">
+                <div class="text-xs font-medium text-blue-100 hidden lg:block mr-3" id="current-date"></div>
                 <button id="admin-login-btn" onclick="openAdminLogin()" class="ml-3 px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-semibold">
                     <i class="fas fa-lock mr-1"></i> Login Admin
                 </button>
@@ -84,111 +94,107 @@
                 <button id="admin-logout-btn" onclick="logoutAdmin()" class="ml-2 px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-xs font-semibold hidden">
                     <i class="fas fa-sign-out-alt mr-1"></i> Logout
                 </button>
+            </div>
         </div>
     </nav>
 
-    <main class="max-w-6xl mx-auto px-4 py-6 flex-1 w-full space-y-6">
+    <main class="max-w-6xl mx-auto px-2 sm:px-4 py-4 flex-1 w-full space-y-4">
         
-        <!-- ================= HALAMAN 1: DASHBOARD KAS & TRANSAKSI ================= -->
-        <div id="page-dashboard" class="space-y-6">
-            <!-- Summary Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-                <!-- Saldo Utama -->
-                <div class="bg-gradient-to-br from-blue-700 to-indigo-800 text-white rounded-2xl p-6 shadow-md relative overflow-hidden flex flex-col justify-between">
-                    <div class="absolute -right-6 -bottom-6 text-white/10 text-8xl pointer-events-none">
-                        <i class="fas fa-wallet"></i>
-                    </div>
+        <div id="firebase-status" class="text-[11px] text-slate-500 font-medium px-1"></div>
+
+        <!-- DASHBOARD KAS & TRANSAKSI -->
+        <div id="page-dashboard" class="space-y-4 sm:space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5">
+                <div class="bg-gradient-to-br from-blue-700 to-indigo-800 text-white rounded-2xl p-4 sm:p-6 shadow-md relative overflow-hidden flex flex-col justify-between">
                     <div>
                         <div class="flex justify-between items-center mb-1">
-                            <span class="text-xs uppercase tracking-wider text-blue-200 font-semibold">Total Saldo Kas RT</span>
-                            <span class="text-xs bg-white/20 px-2 py-0.5 rounded text-white backdrop-blur-sm">Aktif</span>
+                            <span class="text-[10px] sm:text-xs uppercase tracking-wider text-blue-200 font-semibold">Total Saldo Kas RT</span>
+                            <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded text-white">Aktif</span>
                         </div>
-                        <h2 class="text-3xl font-extrabold tracking-tight mt-1" id="total-balance">Rp 0</h2>
+                        <h2 class="text-2xl sm:text-3xl font-extrabold tracking-tight mt-1" id="total-balance">Rp 0</h2>
                     </div>
-                    <div class="mt-4 pt-3 border-t border-white/20 flex justify-between items-center text-xs text-blue-100">
+                    <div class="mt-3 pt-2 border-t border-white/20 flex justify-between items-center text-[11px] text-blue-100">
                         <span>Status Kas</span>
                         <span class="font-medium text-emerald-300 flex items-center gap-1"><i class="fas fa-check-circle"></i> Seimbang</span>
                     </div>
                 </div>
 
-                <!-- Total Pemasukan & Breakdown -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs uppercase tracking-wider text-slate-500 font-bold">Total Pemasukan</span>
-                            <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
-                                <i class="fas fa-arrow-down text-sm"></i>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] sm:text-xs uppercase tracking-wider text-slate-500 font-bold">Total Pemasukan</span>
+                            <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                                <i class="fas fa-arrow-down text-xs"></i>
                             </div>
                         </div>
-                        <h3 class="text-2xl font-bold text-emerald-600" id="total-income">Rp 0</h3>
+                        <h3 class="text-xl sm:text-2xl font-bold text-emerald-600" id="total-income">Rp 0</h3>
                     </div>
                     
-                    <div class="mt-4 pt-3 border-t border-slate-100 space-y-1.5 text-xs text-slate-600">
-                        <div class="flex justify-between">
-                            <span class="flex items-center gap-1.5"><i class="fas fa-money-bill-wave text-amber-500 w-4"></i> Tunai / Cash:</span>
+                    <div class="mt-3 pt-2 border-t border-slate-100 space-y-1 text-xs text-slate-600">
+                        <div class="flex justify-between text-[11px]">
+                            <span><i class="fas fa-money-bill-wave text-amber-500 w-3"></i> Tunai:</span>
                             <span class="font-semibold text-slate-800" id="income-cash">Rp 0</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="flex items-center gap-1.5"><i class="fas fa-university text-blue-500 w-4"></i> Bank Mandiri:</span>
+                        <div class="flex justify-between text-[11px]">
+                            <span><i class="fas fa-university text-blue-500 w-3"></i> Mandiri:</span>
                             <span class="font-semibold text-slate-800" id="income-mandiri">Rp 0</span>
                         </div>
-                        <div class="flex justify-between">
-                            <span class="flex items-center gap-1.5"><i class="fas fa-credit-card text-indigo-500 w-4"></i> Bank BCA:</span>
+                        <div class="flex justify-between text-[11px]">
+                            <span><i class="fas fa-credit-card text-indigo-500 w-3"></i> BCA:</span>
                             <span class="font-semibold text-slate-800" id="income-bca">Rp 0</span>
                         </div>
                     </div>
                 </div>
 
-                <!-- Total Pengeluaran -->
-                <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
+                <div class="bg-white rounded-2xl p-4 sm:p-6 shadow-sm border border-slate-200 flex flex-col justify-between">
                     <div>
-                        <div class="flex justify-between items-center mb-2">
-                            <span class="text-xs uppercase tracking-wider text-slate-500 font-bold">Total Pengeluaran</span>
-                            <div class="w-8 h-8 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
-                                <i class="fas fa-arrow-up text-sm"></i>
+                        <div class="flex justify-between items-center mb-1">
+                            <span class="text-[10px] sm:text-xs uppercase tracking-wider text-slate-500 font-bold">Total Pengeluaran</span>
+                            <div class="w-7 h-7 rounded-lg bg-rose-100 text-rose-600 flex items-center justify-center">
+                                <i class="fas fa-arrow-up text-xs"></i>
                             </div>
                         </div>
-                        <h3 class="text-2xl font-bold text-rose-600" id="total-expense">Rp 0</h3>
+                        <h3 class="text-xl sm:text-2xl font-bold text-rose-600" id="total-expense">Rp 0</h3>
                     </div>
 
-                    <div class="mt-4 pt-3 border-t border-slate-100 text-xs text-slate-500 flex items-center gap-2">
-                        <i class="fas fa-info-circle text-blue-500"></i>
-                        <span>Semua pengeluaran tercatat dan diverifikasi pengurus RT.</span>
+                    <div class="mt-3 pt-2 border-t border-slate-100 text-[10px] sm:text-xs text-slate-500 flex items-center gap-1.5">
+                        <i class="fas fa-info-circle text-blue-500 shrink-0"></i>
+                        <span>Tercatat & diverifikasi pengurus RT.</span>
                     </div>
                 </div>
             </div>
 
-            <!-- Form Input & Tabel Riwayat Grid -->
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                
-                <!-- Kolom Kiri: Form Input Transaksi -->
-                <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-6 flex flex-col">
-                    <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-100">
-                        <h3 class="font-bold text-slate-800 flex items-center gap-2">
+            <!-- Form Input & Tabel Riwayat -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col">
+                    <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
+                        <h3 class="font-bold text-slate-800 text-sm sm:text-base flex items-center gap-2" id="form-title">
                             <i class="fas fa-pen-to-square text-blue-600"></i> Catat Transaksi Baru
                         </h3>
+                        <button type="button" id="btn-cancel-edit" onclick="cancelEditTransaction()" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-600 px-2 py-1 rounded-lg font-medium hidden">
+                            Batal
+                        </button>
                     </div>
 
-                    <!-- Switcher Tipe Transaksi -->
-                    <div class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-5">
-                        <button type="button" onclick="switchForm('income')" id="btn-form-income" class="py-2 text-xs font-bold rounded-lg transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1.5">
+                    <div id="form-type-switcher" class="grid grid-cols-2 gap-2 p-1 bg-slate-100 rounded-xl mb-4">
+                        <button type="button" onclick="switchForm('income')" id="btn-form-income" class="py-1.5 text-xs font-bold rounded-lg transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1">
                             <i class="fas fa-plus-circle"></i> Pemasukan
                         </button>
-                        <button type="button" onclick="switchForm('expense')" id="btn-form-expense" class="py-2 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5">
+                        <button type="button" onclick="switchForm('expense')" id="btn-form-expense" class="py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1">
                             <i class="fas fa-minus-circle"></i> Pengeluaran
                         </button>
                     </div>
 
-                    <!-- Form Pemasukan -->
-                    <form id="form-income" class="space-y-4">
+                    <form id="form-income" class="space-y-3">
+                        <input type="hidden" id="inc-id" value="">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Transaksi <span class="text-rose-500">*</span></label>
-                            <input type="date" id="inc-date" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="date" id="inc-date" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Metode Pembayaran <span class="text-rose-500">*</span></label>
-                            <select id="inc-method" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
+                            <select id="inc-method" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-white">
                                 <option value="Cash">Cash / Tunai</option>
                                 <option value="Bank Mandiri">Bank Mandiri</option>
                                 <option value="Bank BCA">Bank BCA</option>
@@ -197,304 +203,261 @@
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">No. Rumah / Blok Warga</label>
-                            <input type="text" id="inc-house" list="house-list" placeholder="Pilih / ketik Misal: A-01" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase">
+                            <input type="text" id="inc-house" list="house-list" placeholder="Misal: A-01" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase">
                             <datalist id="house-list"></datalist>
                         </div>
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan / Keperluan <span class="text-rose-500">*</span></label>
-                            <input type="text" id="inc-desc" placeholder="Misal: Iuran Keamanan Bulan September" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="text" id="inc-desc" placeholder="Misal: Iuran Keamanan Bulan September" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Nominal (Rp) <span class="text-rose-500">*</span></label>
-                            <input type="number" id="inc-amount" min="1" placeholder="50000" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none">
+                            <input type="number" id="inc-amount" min="1" placeholder="50000" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload Bukti Transaksi <span class="text-slate-400 font-normal">(Opsional • maks. 500 KB)</span></label>
-                            <input type="file" id="inc-proof" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload Bukti Transaksi <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                            <input type="file" id="inc-proof" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer">
+                            <p id="inc-proof-info" class="text-[10px] text-emerald-600 font-medium mt-1 hidden"><i class="fas fa-check-circle"></i> Bukti transaksi tersimpan.</p>
                         </div>
 
-                        <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 mt-2">
+                        <button type="submit" id="inc-submit-btn" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs sm:text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
                             <i class="fas fa-save"></i> Simpan Pemasukan
                         </button>
                     </form>
 
-                    <!-- Form Pengeluaran (Default hidden) -->
-                    <form id="form-expense" class="space-y-4 hidden">
+                    <form id="form-expense" class="space-y-3 hidden">
+                        <input type="hidden" id="exp-id" value="">
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal Transaksi <span class="text-rose-500">*</span></label>
-                            <input type="date" id="exp-date" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-rose-500 outline-none">
+                            <input type="date" id="exp-date" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500 outline-none">
                         </div>
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan Pengeluaran <span class="text-rose-500">*</span></label>
-                            <input type="text" id="exp-desc" placeholder="Misal: Perbaikan Lampu Jalan Gang 2" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-rose-500 outline-none">
+                            <input type="text" id="exp-desc" placeholder="Misal: Perbaikan Lampu Jalan" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500 outline-none">
                         </div>
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-600 mb-1">Nominal Pengeluaran (Rp) <span class="text-rose-500">*</span></label>
-                            <input type="number" id="exp-amount" min="1" placeholder="150000" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-rose-500 outline-none">
+                            <input type="number" id="exp-amount" min="1" placeholder="150000" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-rose-500 outline-none">
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload Bukti / Struk / Nota <span class="text-slate-400 font-normal">(Opsional • maks. 500 KB)</span></label>
-                            <input type="file" id="exp-proof" accept="image/*" class="w-full text-xs text-slate-500 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 cursor-pointer">
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Upload Bukti / Nota <span class="text-slate-400 font-normal">(Opsional)</span></label>
+                            <input type="file" id="exp-proof" accept="image/*" class="w-full text-xs text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-rose-50 file:text-rose-700 hover:file:bg-rose-100 cursor-pointer">
+                            <p id="exp-proof-info" class="text-[10px] text-emerald-600 font-medium mt-1 hidden"><i class="fas fa-check-circle"></i> Bukti/Struk tersimpan.</p>
                         </div>
 
-                        <button type="submit" class="w-full py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-2 mt-2">
+                        <button type="submit" id="exp-submit-btn" class="w-full py-2 bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs sm:text-sm rounded-lg transition-colors shadow-sm flex items-center justify-center gap-1.5 mt-2">
                             <i class="fas fa-save"></i> Simpan Pengeluaran
                         </button>
                     </form>
-
                 </div>
 
-                <!-- Kolom Kanan: Data Buku Kas & Rekap Keseluruhan -->
-                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[580px]">
-                    
-                    <!-- Navigasi Tab Tabel -->
-                    <div class="flex px-6 pt-4 border-b border-slate-200 gap-6 bg-slate-50/50">
-                        <button onclick="switchDataTab('history')" id="tab-data-history" class="pb-3 text-sm transition-all tab-active">
-                            <i class="fas fa-list-ul mr-2"></i>Buku Kas (Riwayat)
+                <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]">
+                    <div class="flex px-3 sm:px-6 pt-3 border-b border-slate-200 gap-4 bg-slate-50/50">
+                        <button onclick="switchDataTab('history')" id="tab-data-history" class="pb-2.5 text-xs sm:text-sm transition-all tab-active">
+                            <i class="fas fa-list-ul mr-1"></i> Buku Kas
                         </button>
-                        <button onclick="switchDataTab('recap')" id="tab-data-recap" class="pb-3 text-sm transition-all tab-inactive">
-                            <i class="fas fa-chart-line mr-2"></i>Rekap Keseluruhan (Bulanan)
+                        <button onclick="switchDataTab('recap')" id="tab-data-recap" class="pb-2.5 text-xs sm:text-sm transition-all tab-inactive">
+                            <i class="fas fa-chart-line mr-1"></i> Rekap Bulanan
                         </button>
                     </div>
 
-                    <!-- Konten Tab 1: Riwayat Transaksi -->
                     <div id="view-history" class="p-0 overflow-hidden flex-1 flex flex-col">
-                        <div class="overflow-x-auto custom-scrollbar flex-1">
+                        <div class="overflow-y-auto custom-scrollbar flex-1">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider sticky top-0 shadow-sm border-b border-slate-200">
-                                        <th class="px-5 py-3 font.semibold whitespace-nowrap">Tanggal</th>
-                                        <th class="px-5 py-3 font-semibold">Keterangan & Detail</th>
-                                        <th class="px-5 py-3 font-semibold text-right">Masuk</th>
-                                        <th class="px-5 py-3 font-semibold text-right">Keluar</th>
-                                        <th class="px-5 py-3 font-semibold text-center">Bukti</th>
-                                        <th class="px-5 py-3 font-semibold text-center">Aksi</th>
+                                    <tr class="bg-slate-50 text-slate-500 text-[10px] sm:text-xs uppercase tracking-wider sticky top-0 shadow-sm border-b border-slate-200">
+                                        <th class="px-2 sm:px-3 py-2 font-semibold w-20">Tanggal</th>
+                                        <th class="px-2 sm:px-3 py-2 font-semibold">Keterangan</th>
+                                        <th class="px-2 sm:px-3 py-2 font-semibold text-right w-20 sm:w-24">Nominal</th>
+                                        <th class="px-1 py-2 font-semibold text-center w-12">Aksi</th>
                                     </tr>
                                 </thead>
-                                <tbody id="history-tbody" class="divide-y divide-slate-100 text-sm">
-                                    <!-- Data Riwayat Disisipkan via JS -->
-                                </tbody>
+                                <tbody id="history-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
                             </table>
                         </div>
-                        <!-- Empty State -->
-                        <div id="history-empty" class="hidden flex-col items-center justify-center p-12 text-slate-400 my-auto">
-                            <i class="fas fa-inbox text-4xl mb-3 text-slate-300"></i>
-                            <p class="font-medium">Belum ada transaksi kas tercatat.</p>
+                        <div id="history-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400 my-auto">
+                            <i class="fas fa-inbox text-3xl mb-2 text-slate-300"></i>
+                            <p class="font-medium text-xs">Belum ada transaksi kas tercatat.</p>
                         </div>
                     </div>
 
-                    <!-- Konten Tab 2: Rekap Bulanan -->
                     <div id="view-recap" class="p-0 overflow-hidden hidden flex-1 flex-col">
-                        <div class="bg-blue-50/80 px-6 py-2.5 border-b border-blue-100 flex justify-between items-center text-xs text-blue-800">
-                            <span><i class="fas fa-info-circle mr-1"></i> Rekapitulasi akumulasi kas per periode bulan secara keseluruhan.</span>
+                        <div class="bg-blue-50/80 px-3 py-1.5 border-b border-blue-100 flex justify-between items-center text-[10px] sm:text-xs text-blue-800">
+                            <span><i class="fas fa-info-circle mr-1"></i> Akumulasi kas per periode bulan.</span>
                         </div>
-                        <div class="overflow-x-auto custom-scrollbar flex-1">
+                        <div class="overflow-y-auto custom-scrollbar flex-1">
                             <table class="w-full text-left border-collapse">
                                 <thead>
-                                    <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider sticky top-0 shadow-sm border-b border-slate-200">
-                                        <th class="px-6 py-3 font-semibold w-16 text-center">No</th>
-                                        <th class="px-6 py-3 font-semibold">Periode (Bulan & Tahun)</th>
-                                        <th class="px-6 py-3 font-semibold text-right">Total Pemasukan</th>
-                                        <th class="px-6 py-3 font-semibold text-right">Total Pengeluaran</th>
-                                        <th class="px-6 py-3 font-semibold text-right">Saldo Bersih</th>
+                                    <tr class="bg-slate-50 text-slate-500 text-[10px] sm:text-xs uppercase tracking-wider sticky top-0 shadow-sm border-b border-slate-200">
+                                        <th class="px-2 py-2 font-semibold">Periode</th>
+                                        <th class="px-2 py-2 font-semibold text-right">Masuk</th>
+                                        <th class="px-2 py-2 font-semibold text-right">Keluar</th>
+                                        <th class="px-2 py-2 font-semibold text-right">Bersih</th>
                                     </tr>
                                 </thead>
-                                <tbody id="recap-tbody" class="divide-y divide-slate-100 text-sm">
-                                    <!-- Data Rekap Disisipkan via JS -->
-                                </tbody>
+                                <tbody id="recap-tbody" class="divide-y divide-slate-100 text-xs sm:text-sm"></tbody>
                             </table>
                         </div>
-                        <!-- Empty State -->
-                        <div id="recap-empty" class="hidden flex-col items-center justify-center p-12 text-slate-400 my-auto">
-                            <i class="fas fa-chart-pie text-4xl mb-3 text-slate-300"></i>
-                            <p class="font-medium">Belum ada data rekapitulasi.</p>
+                        <div id="recap-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400 my-auto">
+                            <i class="fas fa-chart-pie text-3xl mb-2 text-slate-300"></i>
+                            <p class="font-medium text-xs">Belum ada data rekapitulasi.</p>
                         </div>
                     </div>
-
                 </div>
             </div>
         </div>
 
-        <!-- ================= HALAMAN 2: DAFTAR RUMAH WARGA & STATUS IURAN ================= -->
-        <div id="page-houses" class="hidden space-y-6">
-            
-            <!-- Ringkasan Status Iuran Warga -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="bg-white rounded-xl p-5 border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center text-slate-500 mb-2 text-xs font-semibold uppercase">
-                        <span>Total Rumah Warga</span>
-                        <i class="fas fa-home text-blue-500 text-base"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-slate-800" id="stat-total-houses">0</h3>
+        <!-- DAFTAR RUMAH WARGA & STATUS IURAN -->
+        <div id="page-houses" class="hidden space-y-4">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
+                    <div class="text-slate-500 text-[10px] font-semibold uppercase">Total Warga</div>
+                    <h3 class="text-lg sm:text-2xl font-bold text-slate-800" id="stat-total-houses">0</h3>
                 </div>
                 
-                <div class="bg-emerald-50/70 rounded-xl p-5 border border-emerald-200/80 shadow-sm">
-                    <div class="flex justify-between items-center text-emerald-700 mb-2 text-xs font-semibold uppercase">
-                        <span>Sudah Bayar</span>
-                        <i class="fas fa-check-circle text-emerald-600 text-base"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-emerald-800" id="stat-paid-houses">0</h3>
+                <div class="bg-emerald-50/70 rounded-xl p-3 border border-emerald-200/80 shadow-sm">
+                    <div class="text-emerald-700 text-[10px] font-semibold uppercase">Sudah Bayar</div>
+                    <h3 class="text-lg sm:text-2xl font-bold text-emerald-800" id="stat-paid-houses">0</h3>
                 </div>
 
-                <div class="bg-rose-50/70 rounded-xl p-5 border border-rose-200/80 shadow-sm">
-                    <div class="flex justify-between items-center text-rose-700 mb-2 text-xs font-semibold uppercase">
-                        <span>Belum Bayar</span>
-                        <i class="fas fa-exclamation-circle text-rose-600 text-base"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-rose-800" id="stat-unpaid-houses">0</h3>
+                <div class="bg-rose-50/70 rounded-xl p-3 border border-rose-200/80 shadow-sm">
+                    <div class="text-rose-700 text-[10px] font-semibold uppercase">Belum Bayar</div>
+                    <h3 class="text-lg sm:text-2xl font-bold text-rose-800" id="stat-unpaid-houses">0</h3>
                 </div>
 
-                <div class="bg-blue-50/70 rounded-xl p-5 border border-blue-200/80 shadow-sm">
-                    <div class="flex justify-between items-center text-blue-700 mb-2 text-xs font-semibold uppercase">
-                        <span>Persentase Lunas</span>
-                        <i class="fas fa-percentage text-blue-600 text-base"></i>
-                    </div>
-                    <h3 class="text-2xl font-bold text-blue-800" id="stat-percentage">0%</h3>
+                <div class="bg-blue-50/70 rounded-xl p-3 border border-blue-200/80 shadow-sm">
+                    <div class="text-blue-700 text-[10px] font-semibold uppercase">Persentase</div>
+                    <h3 class="text-lg sm:text-2xl font-bold text-blue-800" id="stat-percentage">0%</h3>
                 </div>
             </div>
 
-            <!-- Header Kontrol & Filter Status Warga -->
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex flex-col md:flex-row gap-4 justify-between items-stretch md:items-center">
-                
-                <div class="flex flex-wrap items-center gap-3">
+            <div class="bg-white p-3 rounded-2xl border border-slate-200 shadow-sm flex flex-col gap-3">
+                <div class="grid grid-cols-2 gap-2">
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Periode Bulan</label>
-                        <input type="month" id="house-period-filter" onchange="renderHouseStatus()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 font-medium">
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">Periode Bulan</label>
+                        <input type="month" id="house-period-filter" onchange="renderHouseStatus()" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-slate-50">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-500 uppercase mb-1">Status Pembayaran</label>
-                        <select id="house-status-filter" onchange="renderHouseStatus()" class="px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 outline-none bg-slate-50 font-medium">
-                            <option value="all">Semua Status</option>
+                        <label class="block text-[10px] font-semibold text-slate-500 uppercase mb-0.5">Status Bayar</label>
+                        <select id="house-status-filter" onchange="renderHouseStatus()" class="w-full px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-slate-50">
+                            <option value="all">Semua</option>
                             <option value="unpaid">Belum Bayar</option>
                             <option value="paid">Sudah Bayar</option>
                         </select>
                     </div>
                 </div>
 
-                <div class="flex items-center gap-3">
-                    <div class="relative flex-1 md:w-64">
-                        <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-                        <input type="text" id="house-search-input" onkeyup="renderHouseStatus()" placeholder="Cari No. Rumah / Nama..." class="w-full pl-9 pr-3 py-2 text-sm border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
+                <div class="flex items-center gap-2">
+                    <div class="relative flex-1">
+                        <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+                        <input type="text" id="house-search-input" onkeyup="renderHouseStatus()" placeholder="Cari No. Rumah / Nama..." class="w-full pl-8 pr-2 py-1.5 text-xs border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
                     </div>
-                    <button onclick="openAddHouseModal()" class="admin-only px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-1.5 whitespace-nowrap shadow-sm">
-                        <i class="fas fa-plus"></i> Tambah Warga
+                    <button onclick="openAddHouseModal()" class="admin-only px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1 shrink-0">
+                        <i class="fas fa-plus"></i> Warga
                     </button>
                 </div>
             </div>
 
-            <!-- Tabel Status Warga -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <div class="overflow-x-auto custom-scrollbar">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="bg-slate-50 text-slate-500 text-xs uppercase tracking-wider border-b border-slate-200">
-                                <th class="px-6 py-4 font-semibold">Blok / No. Rumah</th>
-                                <th class="px-6 py-4 font-semibold">Nama Pemilik / Penghuni</th>
-                                <th class="px-6 py-4 font-semibold text-center">Status Pembayaran</th><th class="px-6 py-4 font-semibold text-center">Batas Bayar</th>
-                                <th class="px-6 py-4 font-semibold text-right">Nominal Bayar</th>
-                                <th class="px-6 py-4 font-semibold text-center">Tgl & Metode</th>
-                                <th class="px-6 py-4 font-semibold text-center">Aksi</th>
+                            <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200">
+                                <th class="px-3 py-2 font-semibold">Rumah & Penghuni</th>
+                                <th class="px-2 py-2 font-semibold text-center w-20">Status</th>
+                                <th class="px-2 py-2 font-semibold text-right w-20">Bayar</th>
+                                <th class="px-2 py-2 font-semibold text-center w-16">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="houses-tbody" class="divide-y divide-slate-100 text-sm">
-                            <!-- Data Warga Disisipkan via JS -->
-                        </tbody>
+                        <tbody id="houses-tbody" class="divide-y divide-slate-100 text-xs"></tbody>
                     </table>
                 </div>
-                <div id="houses-empty" class="hidden flex-col items-center justify-center p-12 text-slate-400">
-                    <i class="fas fa-users-slash text-4xl mb-3 text-slate-300"></i>
-                    <p class="font-medium">Tidak ada data warga ditemukan.</p>
+                <div id="houses-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400">
+                    <i class="fas fa-users-slash text-3xl mb-2 text-slate-300"></i>
+                    <p class="font-medium text-xs">Tidak ada data warga ditemukan.</p>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Modal Tambah Warga -->
-    <div id="house-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl transform transition-all">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2">
-                    <i class="fas fa-home text-blue-600"></i> Tambah Data Rumah Warga
+    <!-- Modal Modals & Toast -->
+    <div id="house-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
+            <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-1.5" id="house-modal-title">
+                    <i class="fas fa-home text-blue-600"></i> Tambah Data Warga
                 </h3>
-                <button onclick="closeHouseModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg transition-colors">
-                    <i class="fas fa-times text-lg"></i>
+                <button onclick="closeHouseModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
+                    <i class="fas fa-times text-base"></i>
                 </button>
             </div>
-            <form id="form-house" class="p-6 space-y-4">
+            <form id="form-house" class="p-4 space-y-3">
+                <input type="hidden" id="modal-house-id" value="">
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Blok / No. Rumah <span class="text-rose-500">*</span></label>
-                    <input type="text" id="modal-house-no" placeholder="Misal: A-01" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none uppercase font-semibold">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Blok / No. Rumah <span class="text-rose-500">*</span></label>
+                    <input type="text" id="modal-house-no" placeholder="Misal: A-01" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none uppercase font-semibold">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">Nama Pemilik / Penghuni <span class="text-rose-500">*</span></label>
-                    <input type="text" id="modal-house-owner" placeholder="Misal: Bpk. Bambang" required class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Nama Pemilik / Penghuni <span class="text-rose-500">*</span></label>
+                    <input type="text" id="modal-house-owner" placeholder="Misal: Bpk. Bambang" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-slate-700 mb-1">No. WhatsApp / Telepon <span class="text-xs text-slate-400">(Opsional)</span></label>
-                    <input type="tel" id="modal-house-phone" placeholder="Misal: 08123456789" class="w-full px-4 py-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-blue-500 outline-none">
+                    <label class="block text-xs font-medium text-slate-700 mb-1">No. WhatsApp / Telepon</label>
+                    <input type="tel" id="modal-house-phone" placeholder="Misal: 08123456789" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
-                <div class="pt-2 flex justify-end gap-3">
-                    <button type="button" onclick="closeHouseModal()" class="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-sm transition-colors">
-                        Batal
-                    </button>
-                    <button type="submit" class="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-sm transition-colors shadow-sm">
-                        Simpan Warga
-                    </button>
+                <div class="pt-2 flex justify-end gap-2">
+                    <button type="button" onclick="closeHouseModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs">Batal</button>
+                    <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs shadow-sm">Simpan</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Modal Pratinjau Bukti Transaksi -->
-    <div id="proof-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
-        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl">
-            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
-                <h3 class="font-bold text-slate-800 flex items-center gap-2">
+    <div id="proof-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+        <div class="bg-white rounded-2xl max-w-sm w-full overflow-hidden shadow-2xl">
+            <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
                     <i class="fas fa-receipt text-blue-600"></i> Bukti Transaksi
                 </h3>
                 <button onclick="closeProofModal()" class="text-slate-400 hover:text-slate-600 p-1 rounded-lg">
-                    <i class="fas fa-times text-lg"></i>
+                    <i class="fas fa-times text-base"></i>
                 </button>
             </div>
-            <div class="p-4 flex items-center justify-center bg-slate-900 min-h-[280px]">
-                <img id="proof-img" src="" alt="Bukti Transaksi" class="max-h-[70vh] object-contain rounded-lg hidden">
-                <p id="proof-empty-text" class="text-slate-400 text-sm hidden">Bukti transaksi tidak tersedia atau belum diunggah.</p>
+            <div class="p-3 flex items-center justify-center bg-slate-900 min-h-[220px]">
+                <img id="proof-img" src="" alt="Bukti Transaksi" class="max-h-[60vh] object-contain rounded-lg hidden">
+                <p id="proof-empty-text" class="text-slate-400 text-xs hidden">Bukti transaksi tidak tersedia.</p>
             </div>
-            <div class="p-3 bg-slate-50 text-right">
-                <button onclick="closeProofModal()" class="px-4 py-2 bg-slate-200 hover:bg-slate-300 text-slate-800 text-xs font-semibold rounded-lg">Tutup</button>
+            <div class="p-2 bg-slate-50 text-right">
+                <button onclick="closeProofModal()" class="px-3 py-1 bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg">Tutup</button>
             </div>
         </div>
     </div>
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed bottom-5 right-5 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-xl flex items-center gap-3 z-50 pointer-events-none">
-        <i id="toast-icon" class="fas fa-check-circle text-emerald-400 text-lg"></i>
-        <span id="toast-message" class="text-sm font-medium">Notifikasi</span>
+    <div id="toast" class="fixed bottom-4 right-4 transform translate-y-20 opacity-0 transition-all duration-300 bg-slate-800 text-white px-3 py-2 rounded-xl shadow-xl flex items-center gap-2 z-50 pointer-events-none text-xs">
+        <i id="toast-icon" class="fas fa-check-circle text-emerald-400 text-sm"></i>
+        <span id="toast-message" class="font-medium">Notifikasi</span>
     </div>
 
     <script>
-        // Data Master Rumah Warga Default
-        const defaultHouses = [
-            { id: 'h1', houseNumber: 'A-01', ownerName: 'Bpk. Budi Santoso', phone: '08123456781' },
-            { id: 'h2', houseNumber: 'A-02', ownerName: 'Ibu Siti Aminah', phone: '08123456782' },
-            { id: 'h3', houseNumber: 'A-03', ownerName: 'Bpk. Ahmad Dahlan', phone: '' },
-            { id: 'h4', houseNumber: 'A-04', ownerName: 'Bpk. Hendra Gunawan', phone: '08123456784' },
-            { id: 'h5', houseNumber: 'A-05', ownerName: 'Ibu Ratna Dewi', phone: '' },
-            { id: 'h6', houseNumber: 'B-01', ownerName: 'Bpk. Joko Widodo', phone: '08123456786' },
-            { id: 'h7', houseNumber: 'B-02', ownerName: 'Bpk. Agus Yudhoyono', phone: '' },
-            { id: 'h8', houseNumber: 'B-03', ownerName: 'Ibu Megawati', phone: '08123456788' },
-            { id: 'h9', houseNumber: 'B-04', ownerName: 'Bpk. Prabowo Subianto', phone: '' },
-            { id: 'h10', houseNumber: 'B-05', ownerName: 'Bpk. Anies Baswedan', phone: '' }
+        const defaultHousesArray = [
+            { houseNumber: 'A-01', ownerName: 'Bpk. Budi Santoso', phone: '08123456781' },
+            { houseNumber: 'A-02', ownerName: 'Ibu Siti Aminah', phone: '08123456782' },
+            { houseNumber: 'A-03', ownerName: 'Bpk. Ahmad Dahlan', phone: '' },
+            { houseNumber: 'A-04', ownerName: 'Bpk. Hendra Gunawan', phone: '08123456784' },
+            { houseNumber: 'A-05', ownerName: 'Ibu Ratna Dewi', phone: '' },
+            { houseNumber: 'B-01', ownerName: 'Bpk. Joko Widodo', phone: '08123456786' },
+            { houseNumber: 'B-02', ownerName: 'Bpk. Agus Yudhoyono', phone: '' },
+            { houseNumber: 'B-03', ownerName: 'Ibu Megawati', phone: '08123456788' },
+            { houseNumber: 'B-04', ownerName: 'Bpk. Prabowo Subianto', phone: '' },
+            { houseNumber: 'B-05', ownerName: 'Bpk. Anies Baswedan', phone: '' }
         ];
 
-        // Global State - Firebase Realtime Database
-        // Setelah membuat project Firebase, ganti semua nilai ISI_... dengan config project Anda.
         const firebaseConfig = {
             apiKey: "AIzaSyA5XIhdeyBJw4MDNebedRKDcjsVcuR1Zx8",
             authDomain: "jaes-c1b52.firebaseapp.com",
@@ -508,15 +471,17 @@
 
         let firebaseReady = false;
         let firebaseDb = null;
-        let firebaseStorage = null;
-        let transactions = [];
-        let houses = defaultHouses.slice();
+        let transactions = []; 
+        let houses = [];       
+        let editingTransactionId = null;
 
-        // Current Period Setup
+        const DEFAULT_ADMIN_PIN = '1234';
+        let ADMIN_PIN = localStorage.getItem('kasRtAdminPin') || DEFAULT_ADMIN_PIN;
+        let isAdmin = sessionStorage.getItem('kasRtIsAdmin') === 'true';
+
         const now = new Date();
         const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-        // Helper: Update Datalist Pilihan Rumah
         function updateHouseDatalist() {
             const datalist = document.getElementById('house-list');
             if (!datalist) return;
@@ -525,7 +490,6 @@
             ).join('');
         }
 
-        // Helper: Format IDR
         window.formatRupiah = function(number) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency',
@@ -535,15 +499,13 @@
             }).format(number || 0);
         };
 
-        // Helper: Format Date
         window.formatDate = function(dateString) {
             if (!dateString) return '-';
             const d = new Date(dateString);
             if (isNaN(d.getTime())) return dateString;
-            return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+            return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
         };
 
-        // Helper: Escape HTML
         window.escapeHTML = function(str) {
             if (!str) return '';
             return String(str).replace(/[&<>'"]/g, tag => ({
@@ -555,12 +517,6 @@
             }[tag] || tag));
         };
 
-        // Helper: Generate ID
-        window.generateId = function() {
-            return 'id_' + Math.random().toString(36).substr(2, 9);
-        };
-
-        // Helper: Toast Notification
         let toastTimer;
         window.showToast = function(message, type = 'success') {
             const toast = document.getElementById('toast');
@@ -569,9 +525,9 @@
 
             toastMessage.textContent = message;
             if (type === 'delete' || type === 'error') {
-                toastIcon.className = 'fas fa-exclamation-circle text-rose-400 text-lg';
+                toastIcon.className = 'fas fa-exclamation-circle text-rose-400 text-sm';
             } else {
-                toastIcon.className = 'fas fa-check-circle text-emerald-400 text-lg';
+                toastIcon.className = 'fas fa-check-circle text-emerald-400 text-sm';
             }
 
             toast.classList.remove('translate-y-20', 'opacity-0');
@@ -581,7 +537,6 @@
             }, 3000);
         };
 
-        // Navigasi Halaman Utama
         window.switchMainPage = function(page) {
             const pageDashboard = document.getElementById('page-dashboard');
             const pageHouses = document.getElementById('page-houses');
@@ -591,21 +546,19 @@
             if (page === 'dashboard') {
                 pageDashboard.classList.remove('hidden');
                 pageHouses.classList.add('hidden');
-                navBtnDash.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all bg-white text-blue-800 shadow";
-                navBtnHouses.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative";
+                navBtnDash.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center";
+                navBtnHouses.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
             } else {
                 pageDashboard.classList.add('hidden');
                 pageHouses.classList.remove('hidden');
-                navBtnHouses.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all bg-white text-blue-800 shadow";
-                navBtnDash.className = "px-4 py-2 rounded-lg text-xs md:text-sm font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative";
+                navBtnHouses.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center";
+                navBtnDash.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
                 renderHouseStatus();
             }
         };
 
-        // Alias switchMainView -> switchMainPage
         window.switchMainView = window.switchMainPage;
 
-        // Switcher Form Input Transaksi (Income vs Expense)
         window.switchForm = function(type) {
             const formIncome = document.getElementById('form-income');
             const formExpense = document.getElementById('form-expense');
@@ -615,17 +568,16 @@
             if (type === 'income') {
                 formIncome.classList.remove('hidden');
                 formExpense.classList.add('hidden');
-                btnInc.className = "py-2 text-xs font-bold rounded-lg transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1.5";
-                btnExp.className = "py-2 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5";
+                btnInc.className = "py-1.5 text-xs font-bold rounded-lg transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1";
+                btnExp.className = "py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1";
             } else {
                 formIncome.classList.add('hidden');
                 formExpense.classList.remove('hidden');
-                btnExp.className = "py-2 text-xs font-bold rounded-lg transition-all bg-rose-600 text-white shadow-sm flex items-center justify-center gap-1.5";
-                btnInc.className = "py-2 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1.5";
+                btnExp.className = "py-1.5 text-xs font-bold rounded-lg transition-all bg-rose-600 text-white shadow-sm flex items-center justify-center gap-1";
+                btnInc.className = "py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1";
             }
         };
 
-        // Switcher Tab Tabel Data (Buku Kas vs Rekap)
         window.switchDataTab = function(tab) {
             const viewHistory = document.getElementById('view-history');
             const viewRecap = document.getElementById('view-recap');
@@ -637,26 +589,21 @@
                 viewHistory.classList.add('flex');
                 viewRecap.classList.add('hidden');
                 viewRecap.classList.remove('flex');
-                tabHistory.className = "pb-3 text-sm transition-all tab-active";
-                tabRecap.className = "pb-3 text-sm transition-all tab-inactive";
+                tabHistory.className = "pb-2.5 text-xs sm:text-sm transition-all tab-active";
+                tabRecap.className = "pb-2.5 text-xs sm:text-sm transition-all tab-inactive";
             } else {
                 viewHistory.classList.add('hidden');
                 viewHistory.classList.remove('flex');
                 viewRecap.classList.remove('hidden');
                 viewRecap.classList.add('flex');
-                tabRecap.className = "pb-3 text-sm transition-all tab-active";
-                tabHistory.className = "pb-3 text-sm transition-all tab-inactive";
+                tabRecap.className = "pb-2.5 text-xs sm:text-sm transition-all tab-active";
+                tabHistory.className = "pb-2.5 text-xs sm:text-sm transition-all tab-inactive";
                 renderRecap();
             }
         };
 
-        // Render Dashboard Stats
         window.renderDashboard = function() {
-            let totalInc = 0;
-            let incCash = 0;
-            let incMandiri = 0;
-            let incBca = 0;
-            let totalExp = 0;
+            let totalInc = 0, incCash = 0, incMandiri = 0, incBca = 0, totalExp = 0;
 
             transactions.forEach(t => {
                 const amt = parseFloat(t.amount) || 0;
@@ -671,9 +618,7 @@
                 }
             });
 
-            const netBalance = totalInc - totalExp;
-
-            document.getElementById('total-balance').textContent = formatRupiah(netBalance);
+            document.getElementById('total-balance').textContent = formatRupiah(totalInc - totalExp);
             document.getElementById('total-income').textContent = formatRupiah(totalInc);
             document.getElementById('income-cash').textContent = formatRupiah(incCash);
             document.getElementById('income-mandiri').textContent = formatRupiah(incMandiri);
@@ -681,7 +626,6 @@
             document.getElementById('total-expense').textContent = formatRupiah(totalExp);
         };
 
-        // Render Tabel Buku Kas (Riwayat Transaksi)
         window.renderHistory = function() {
             const tbody = document.getElementById('history-tbody');
             const emptyEl = document.getElementById('history-empty');
@@ -696,7 +640,6 @@
             emptyEl.classList.add('hidden');
             emptyEl.classList.remove('flex');
 
-            // Sort descending by date
             const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
 
             sorted.forEach(t => {
@@ -711,48 +654,50 @@
                     if (m.includes('Mandiri')) badgeBg = 'bg-blue-100 text-blue-700';
                     else if (m.includes('BCA')) badgeBg = 'bg-indigo-100 text-indigo-700';
                     else badgeBg = 'bg-amber-100 text-amber-800';
-                    methodBadge = `<span class="inline-block px-2 py-0.5 text-[10px] rounded font-semibold ${badgeBg}">${escapeHTML(m)}</span>`;
+                    methodBadge = `<span class="inline-block px-1.5 py-0.2 text-[9px] rounded font-semibold ${badgeBg}">${escapeHTML(m)}</span>`;
                 }
 
                 tr.innerHTML = `
-                    <td class="px-5 py-3 font-medium text-slate-600 whitespace-nowrap text-xs">
+                    <td class="px-2 sm:px-3 py-2 font-medium text-slate-500 text-[11px]">
                         ${formatDate(t.date)}
                     </td>
-                    <td class="px-5 py-3">
-                        <div class="font-semibold text-slate-800">${escapeHTML(t.description)}</div>
-                        <div class="flex items-center gap-2 mt-0.5">
-                            ${t.houseNumber ? `<span class="bg-slate-100 text-slate-700 px-1.5 py-0.5 rounded text-[10px] font-bold border border-slate-200">Rumah ${escapeHTML(t.houseNumber)}</span>` : ''}
+                    <td class="px-2 sm:px-3 py-2">
+                        <div class="font-semibold text-slate-800 text-xs sm:text-sm leading-tight">${escapeHTML(t.description)}</div>
+                        <div class="flex items-center gap-1.5 mt-1 flex-wrap">
+                            ${t.houseNumber ? `<span class="bg-slate-100 text-slate-700 px-1 py-0.2 rounded text-[9px] font-bold border border-slate-200">Blok ${escapeHTML(t.houseNumber)}</span>` : ''}
                             ${methodBadge}
+                            ${t.proof 
+                                ? `<button onclick="openProofModal('${t.id}')" class="text-blue-600 hover:text-blue-800 text-[10px] font-semibold underline flex items-center gap-0.5">
+                                    <i class="fas fa-image"></i> Bukti
+                                   </button>` 
+                                : ''}
                         </div>
                     </td>
-                    <td class="px-5 py-3 text-right font-bold text-emerald-600 whitespace-nowrap">
-                        ${isInc ? formatRupiah(t.amount) : '-'}
+                    <td class="px-2 sm:px-3 py-2 text-right font-bold text-xs sm:text-sm ${isInc ? 'text-emerald-600' : 'text-rose-600'}">
+                        ${isInc ? '+' : '-'}${formatRupiah(t.amount)}
                     </td>
-                    <td class="px-5 py-3 text-right font-bold text-rose-600 whitespace-nowrap">
-                        ${!isInc ? formatRupiah(t.amount) : '-'}
-                    </td>
-                    <td class="px-5 py-3 text-center">
-                        ${t.proof 
-                            ? `<button onclick="openProofModal('${t.id}')" class="text-blue-600 hover:text-blue-800 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-lg text-xs font-semibold transition-colors flex items-center gap-1 mx-auto">
-                                <i class="fas fa-image"></i> Lihat
-                               </button>` 
-                            : '<span class="text-slate-300 text-xs">-</span>'}
-                    </td>
-                    <td class="px-5 py-3 text-center">
-                        <button onclick="deleteTransaction('${t.id}')" class="admin-only text-slate-300 hover:text-rose-600 transition-colors p-1" title="Hapus Transaksi">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
+                    <td class="px-1 py-2 text-center">
+                        <div class="flex items-center justify-center gap-1">
+                            <button onclick="editTransaction('${t.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                                <i class="fas fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteTransaction('${t.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         };
 
-        // Render Tabel Rekapitulasi Per Bulan
         window.renderRecap = function() {
             const tbody = document.getElementById('recap-tbody');
             const emptyEl = document.getElementById('recap-empty');
             tbody.innerHTML = '';
+
+            let tfoot = document.getElementById('recap-tfoot');
+            if (tfoot) tfoot.innerHTML = '';
 
             if (transactions.length === 0) {
                 emptyEl.classList.remove('hidden');
@@ -763,8 +708,9 @@
             emptyEl.classList.add('hidden');
             emptyEl.classList.remove('flex');
 
-            // Group by YYYY-MM
             const monthlyData = {};
+            let grandTotalIncome = 0;
+            let grandTotalExpense = 0;
 
             transactions.forEach(t => {
                 const d = new Date(t.date);
@@ -776,53 +722,58 @@
                 }
 
                 const amt = parseFloat(t.amount) || 0;
-                if (t.type === 'income') monthlyData[key].income += amt;
-                else if (t.type === 'expense') monthlyData[key].expense += amt;
+                if (t.type === 'income') {
+                    monthlyData[key].income += amt;
+                    grandTotalIncome += amt;
+                } else if (t.type === 'expense') {
+                    monthlyData[key].expense += amt;
+                    grandTotalExpense += amt;
+                }
             });
 
             const sortedKeys = Object.keys(monthlyData).sort().reverse();
 
-            sortedKeys.forEach((key, index) => {
+            sortedKeys.forEach((key) => {
                 const item = monthlyData[key];
                 const net = item.income - item.expense;
-                const monthName = item.dateObj.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+                const monthName = item.dateObj.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors";
 
                 tr.innerHTML = `
-                    <td class="px-6 py-3.5 text-center font-medium text-slate-400 text-xs">${index + 1}</td>
-                    <td class="px-6 py-3.5 font-bold text-slate-800">${monthName}</td>
-                    <td class="px-6 py-3.5 text-right font-bold text-emerald-600">${formatRupiah(item.income)}</td>
-                    <td class="px-6 py-3.5 text-right font-bold text-rose-600">${formatRupiah(item.expense)}</td>
-                    <td class="px-6 py-3.5 text-right font-bold ${net >= 0 ? 'text-blue-600' : 'text-rose-600'}">${formatRupiah(net)}</td>
+                    <td class="px-2 py-2.5 font-bold text-slate-800 text-xs">${monthName}</td>
+                    <td class="px-2 py-2.5 text-right font-semibold text-emerald-600 text-xs">${formatRupiah(item.income)}</td>
+                    <td class="px-2 py-2.5 text-right font-semibold text-rose-600 text-xs">${formatRupiah(item.expense)}</td>
+                    <td class="px-2 py-2.5 text-right font-bold text-xs ${net >= 0 ? 'text-blue-600' : 'text-rose-600'}">${formatRupiah(net)}</td>
                 `;
                 tbody.appendChild(tr);
             });
+
+            const grandNet = grandTotalIncome - grandTotalExpense;
+            if (!tfoot) {
+                const table = tbody.closest('table');
+                tfoot = document.createElement('tfoot');
+                tfoot.id = 'recap-tfoot';
+                tfoot.className = "bg-slate-100 font-bold border-t-2 border-slate-300 sticky bottom-0 shadow-inner";
+                table.appendChild(tfoot);
+            } else {
+                tfoot.className = "bg-slate-100 font-bold border-t-2 border-slate-300 sticky bottom-0 shadow-inner";
+            }
+
+            tfoot.innerHTML = `
+                <tr>
+                    <td class="px-2 py-2.5 text-slate-800 text-xs uppercase tracking-wider">Total</td>
+                    <td class="px-2 py-2.5 text-right text-emerald-700 text-xs">${formatRupiah(grandTotalIncome)}</td>
+                    <td class="px-2 py-2.5 text-right text-rose-700 text-xs">${formatRupiah(grandTotalExpense)}</td>
+                    <td class="px-2 py-2.5 text-right text-xs ${grandNet >= 0 ? 'text-blue-700' : 'text-rose-700'}">${formatRupiah(grandNet)}</td>
+                </tr>
+            `;
         };
 
-        // Menentukan transaksi yang dianggap sebagai pembayaran iuran bulanan.
-        // Deskripsi "Iuran...", "Kas RT", "Kebersihan", dan "Keamanan" tetap dikenali.
-        function isMonthlyFeeDescription(desc) {
-            const text = String(desc || '').toLowerCase();
-            return text.includes('iuran') || text.includes('kas rt') ||
-                   text.includes('kebersihan') || text.includes('keamanan');
-        }
-
-        function isMonthlyFeeTransaction(t) {
-            if (!t || t.type !== 'income') return false;
-            if (t.paymentType === 'monthly_fee') return true;
-            const desc = String(t.description || '').toLowerCase();
-            return desc.includes('iuran') || desc.includes('kas rt') ||
-                   desc.includes('kebersihan') || desc.includes('keamanan');
-        }
-
-        // Render Halaman Status Iuran Warga
         window.renderHouseStatus = function() {
             const periodInput = document.getElementById('house-period-filter');
-            if (!periodInput.value) {
-                periodInput.value = currentYearMonth;
-            }
+            if (!periodInput.value) periodInput.value = currentYearMonth;
 
             const selectedPeriod = periodInput.value;
             const statusFilter = document.getElementById('house-status-filter').value;
@@ -832,18 +783,16 @@
             const emptyEl = document.getElementById('houses-empty');
             tbody.innerHTML = '';
 
-            let paidCount = 0;
-            let unpaidCount = 0;
+            let paidCount = 0, unpaidCount = 0;
 
             const filteredHouses = houses.filter(h => 
-                h.houseNumber.toLowerCase().includes(searchQuery) || 
-                h.ownerName.toLowerCase().includes(searchQuery)
+                (h.houseNumber && h.houseNumber.toLowerCase().includes(searchQuery)) || 
+                (h.ownerName && h.ownerName.toLowerCase().includes(searchQuery))
             );
 
             let visibleRows = 0;
 
             filteredHouses.forEach(h => {
-                // Find if paid for selected month period
                 const payment = transactions.find(t => {
                     if (t.type !== 'income' || !t.houseNumber) return false;
                     if (t.houseNumber.trim().toUpperCase() !== h.houseNumber.trim().toUpperCase()) return false;
@@ -852,13 +801,10 @@
                     if (isNaN(tDate.getTime())) return false;
                     
                     const tPeriod = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
-                    return tPeriod === selectedPeriod && isMonthlyFeeTransaction(t);
+                    return tPeriod === selectedPeriod;
                 });
 
                 const isPaid = !!payment;
-                const dueDate = `${selectedPeriod}-10`;
-                const todayISO = getLocalISODate();
-                const isLate = !isPaid && todayISO > dueDate;
                 if (isPaid) paidCount++;
                 else unpaidCount++;
 
@@ -871,47 +817,31 @@
                 tr.className = "hover:bg-slate-50 transition-colors";
 
                 const statusBadge = isPaid
-                    ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-100 text-emerald-700"><i class="fas fa-check-circle"></i> Lunas</span>`
-                    : isLate
-                    ? `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-rose-100 text-rose-700"><i class="fas fa-clock"></i> Terlambat</span>`
-                    : `<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-amber-100 text-amber-700"><i class="fas fa-hourglass-half"></i> Belum Bayar</span>`;
+                    ? `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Lunas</span>`
+                    : `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">Belum</span>`;
 
                 const actionBtn = isPaid 
-                    ? `<button onclick="openProofModal('${payment.id}')" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg transition-colors ${payment.proof ? '' : 'opacity-50 cursor-not-allowed'}" ${payment.proof ? '' : 'disabled'}>
-                        <i class="fas fa-receipt mr-1"></i> Bukti
-                       </button>`
-                    : `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-xs px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded-lg transition-colors shadow-sm">
-                        <i class="fas fa-plus-circle mr-1"></i> Catat Bayar
-                       </button>`;
+                    ? `<button onclick="openProofModal('${payment.id}')" class="text-[11px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded ${payment.proof ? '' : 'opacity-40 cursor-not-allowed'}" ${payment.proof ? '' : 'disabled'}>Bukti</button>`
+                    : `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[11px] px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-medium rounded shadow-sm">Bayar</button>`;
 
                 tr.innerHTML = `
-                    <td class="px-6 py-4 font-bold text-slate-800">
-                        <span class="inline-block bg-slate-100 text-slate-700 px-2.5 py-1 rounded-md text-xs font-semibold border border-slate-200">
-                            ${escapeHTML(h.houseNumber)}
-                        </span>
+                    <td class="px-3 py-2.5 font-medium text-slate-800">
+                        <div class="font-bold text-blue-700 text-xs">${escapeHTML(h.houseNumber)}</div>
+                        <div class="text-xs">${escapeHTML(h.ownerName)}</div>
+                        ${h.phone ? `<a href="https://wa.me/${h.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-[10px] text-emerald-600 flex items-center gap-0.5 mt-0.5"><i class="fab fa-whatsapp"></i> ${escapeHTML(h.phone)}</a>` : ''}
                     </td>
-                    <td class="px-6 py-4 font-medium text-slate-800">
-                        <div>${escapeHTML(h.ownerName)}</div>
-                        ${h.phone ? `<a href="https://wa.me/${h.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-[11px] text-emerald-600 hover:underline flex items-center gap-1 mt-0.5"><i class="fab fa-whatsapp"></i> ${escapeHTML(h.phone)}</a>` : ''}
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        ${statusBadge}
-                    </td>
-                    <td class="px-6 py-4 text-right font-medium ${isPaid ? 'text-emerald-600 font-bold' : 'text-slate-300'}">
+                    <td class="px-2 py-2.5 text-center">${statusBadge}</td>
+                    <td class="px-2 py-2.5 text-right font-medium text-xs ${isPaid ? 'text-emerald-600 font-bold' : 'text-slate-300'}">
                         ${isPaid ? formatRupiah(payment.amount) : '-'}
                     </td>
-                    <td class="px-6 py-4 text-center text-xs text-slate-500">
-                        ${isPaid ? `${formatDate(payment.date)} <br><span class="text-[10px] bg-slate-100 px-2 py-0.5 rounded text-slate-600 font-medium">${escapeHTML(payment.paymentMethod || 'Cash')}</span>` : '<span class="text-slate-300">-</span>'}
-                    </td>
-                    <td class="px-6 py-4 text-center text-xs">
-                        <div class="font-semibold text-slate-700">${formatDate(dueDate)}</div>
-                        <div class="${isLate ? 'text-rose-500 font-semibold' : 'text-slate-400'} text-[10px]">${isLate ? 'Lewat jatuh tempo' : 'Maks. tanggal 10'}</div>
-                    </td>
-                    <td class="px-6 py-4 text-center">
-                        <div class="flex items-center justify-center gap-2">
+                    <td class="px-2 py-2.5 text-center">
+                        <div class="flex items-center justify-center gap-1">
                             ${actionBtn}
-                            <button onclick="deleteHouse('${h.id}')" class="admin-only text-slate-300 hover:text-rose-600 transition-colors p-1" title="Hapus Rumah Warga">
-                                <i class="fas fa-trash-alt"></i>
+                            <button onclick="editHouse('${h.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                                <i class="fas fa-pen text-xs"></i>
+                            </button>
+                            <button onclick="deleteHouse('${h.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                                <i class="fas fa-trash-alt text-xs"></i>
                             </button>
                         </div>
                     </td>
@@ -919,7 +849,6 @@
                 tbody.appendChild(tr);
             });
 
-            // Update Ringkasan Stat
             const totalHouses = houses.length;
             document.getElementById('stat-total-houses').textContent = totalHouses;
             document.getElementById('stat-paid-houses').textContent = paidCount;
@@ -928,10 +857,9 @@
             const percentage = totalHouses > 0 ? Math.round((paidCount / totalHouses) * 100) : 0;
             document.getElementById('stat-percentage').textContent = `${percentage}%`;
 
-            // Badge Navbar
             const unpaidBadge = document.getElementById('unpaid-badge');
             if (unpaidBadge) {
-                unpaidBadge.textContent = `${unpaidCount} Belum`;
+                unpaidBadge.textContent = unpaidCount;
                 if (unpaidCount > 0) unpaidBadge.classList.remove('hidden');
                 else unpaidBadge.classList.add('hidden');
             }
@@ -945,9 +873,10 @@
             }
         };
 
-        // Quick record payment from status table
-        window.quickRecordPayment = function(houseNo) { if (!requireAdmin()) return;
+        window.quickRecordPayment = function(houseNo) { 
+            if (!requireAdmin()) return;
             switchMainPage('dashboard');
+            cancelEditTransaction();
             switchForm('income');
             const houseInput = document.getElementById('inc-house');
             const descInput = document.getElementById('inc-desc');
@@ -969,16 +898,96 @@
             }
             
             descInput.value = `Iuran Kebersihan & Keamanan Bulan ${monthName}`;
-            
             document.getElementById('inc-amount').focus();
-            showToast(`Mencatat iuran untuk rumah ${houseNo}`);
+            showToast(`Mencatat iuran rumah ${houseNo}`);
         };
 
-        // Modals & House Actions
-        window.openAddHouseModal = function() { if (!requireAdmin()) return;
+        window.editTransaction = function(id) {
+            if (!requireAdmin()) return;
+            const t = transactions.find(item => item.id === id);
+            if (!t) return;
+
+            editingTransactionId = id;
+            switchMainPage('dashboard');
+
+            document.getElementById('form-type-switcher').classList.add('hidden');
+            document.getElementById('btn-cancel-edit').classList.remove('hidden');
+
+            if (t.type === 'income') {
+                switchForm('income');
+                document.getElementById('form-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Pemasukan';
+                document.getElementById('inc-id').value = t.id;
+                document.getElementById('inc-date').value = t.date || '';
+                document.getElementById('inc-method').value = t.paymentMethod || 'Cash';
+                document.getElementById('inc-house').value = t.houseNumber || '';
+                document.getElementById('inc-desc').value = t.description || '';
+                document.getElementById('inc-amount').value = t.amount || '';
+                document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Perbarui Pemasukan';
+
+                const proofInfo = document.getElementById('inc-proof-info');
+                if (t.proof) proofInfo.classList.remove('hidden');
+                else proofInfo.classList.add('hidden');
+
+            } else {
+                switchForm('expense');
+                document.getElementById('form-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Pengeluaran';
+                document.getElementById('exp-id').value = t.id;
+                document.getElementById('exp-date').value = t.date || '';
+                document.getElementById('exp-desc').value = t.description || '';
+                document.getElementById('exp-amount').value = t.amount || '';
+                document.getElementById('exp-submit-btn').innerHTML = '<i class="fas fa-save"></i> Perbarui Pengeluaran';
+
+                const proofInfo = document.getElementById('exp-proof-info');
+                if (t.proof) proofInfo.classList.remove('hidden');
+                else proofInfo.classList.add('hidden');
+            }
+
+            document.getElementById('form-title').scrollIntoView({ behavior: 'smooth' });
+        };
+
+        window.cancelEditTransaction = function() {
+            editingTransactionId = null;
+            document.getElementById('form-type-switcher').classList.remove('hidden');
+            document.getElementById('btn-cancel-edit').classList.add('hidden');
+            document.getElementById('form-title').innerHTML = '<i class="fas fa-pen-to-square text-blue-600"></i> Catat Transaksi Baru';
+
+            const formInc = document.getElementById('form-income');
+            formInc.reset();
+            document.getElementById('inc-id').value = '';
+            document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Simpan Pemasukan';
+            document.getElementById('inc-proof-info').classList.add('hidden');
+
+            const formExp = document.getElementById('form-expense');
+            formExp.reset();
+            document.getElementById('exp-id').value = '';
+            document.getElementById('exp-submit-btn').innerHTML = '<i class="fas fa-save"></i> Simpan Pengeluaran';
+            document.getElementById('exp-proof-info').classList.add('hidden');
+
+            const todayISO = new Date().toISOString().split('T')[0];
+            document.getElementById('inc-date').value = todayISO;
+            document.getElementById('exp-date').value = todayISO;
+        };
+
+        window.openAddHouseModal = function() { 
+            if (!requireAdmin()) return;
+            document.getElementById('modal-house-id').value = '';
             document.getElementById('modal-house-no').value = '';
             document.getElementById('modal-house-owner').value = '';
             document.getElementById('modal-house-phone').value = '';
+            document.getElementById('house-modal-title').innerHTML = '<i class="fas fa-home text-blue-600"></i> Tambah Data Warga';
+            document.getElementById('house-modal').classList.remove('hidden');
+        };
+
+        window.editHouse = function(id) {
+            if (!requireAdmin()) return;
+            const house = houses.find(h => h.id === id);
+            if (!house) return;
+
+            document.getElementById('modal-house-id').value = house.id;
+            document.getElementById('modal-house-no').value = house.houseNumber || '';
+            document.getElementById('modal-house-owner').value = house.ownerName || '';
+            document.getElementById('modal-house-phone').value = house.phone || '';
+            document.getElementById('house-modal-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Data Warga';
             document.getElementById('house-modal').classList.remove('hidden');
         };
 
@@ -986,12 +995,16 @@
             document.getElementById('house-modal').classList.add('hidden');
         };
 
-        window.deleteHouse = function(id) { if (!requireAdmin()) return;
-            houses = houses.filter(h => h.id !== id);
-            persistHouses();
-            updateHouseDatalist();
-            renderHouseStatus();
-            showToast('Data rumah warga dihapus', 'delete');
+        window.deleteHouse = function(id) { 
+            if (!requireAdmin()) return;
+            const house = houses.find(h => h.id === id);
+            const houseName = house ? `Rumah ${house.houseNumber}` : 'data ini';
+            if (confirm(`Hapus ${houseName}?`)) {
+                if (firebaseReady) {
+                    firebaseDb.ref(`kasRt/houses/${id}`).remove();
+                }
+                showToast('Data rumah terhapus', 'delete');
+            }
         };
 
         window.openProofModal = function(id) {
@@ -1016,13 +1029,51 @@
             document.getElementById('proof-modal').classList.add('hidden');
         };
 
-        window.deleteTransaction = async function(id) { if (!requireAdmin()) return;
-            const target = transactions.find(t => t.id === id);
-            transactions = transactions.filter(t => t.id !== id);
-            saveToLocalStorage();
-            await deleteProofFromStorage(id);
-            showToast('Transaksi berhasil dihapus', 'delete');
+        window.deleteTransaction = function(id) { 
+            if (!requireAdmin()) return;
+            if (confirm('Hapus transaksi ini?')) {
+                if (editingTransactionId === id) cancelEditTransaction();
+                if (firebaseReady) {
+                    firebaseDb.ref(`kasRt/transactions/${id}`).remove();
+                }
+                showToast('Transaksi dihapus', 'delete');
+            }
         };
+
+        function isMonthlyFeeTransaction(t) {
+            if (!t) return false;
+            if (String(t.type || '').toLowerCase() !== 'income') return false;
+            if (!String(t.houseNumber || '').trim()) return false;
+
+            const paymentType = String(t.paymentType || '').toLowerCase().trim();
+            if (paymentType === 'monthly_fee') return true;
+
+            const description = String(t.description || '').toLowerCase().trim();
+            return (
+                description.includes('iuran') ||
+                description.includes('kas rt') ||
+                description.includes('kebersihan') ||
+                description.includes('keamanan')
+            );
+        }
+
+        let renderScheduled = false;
+
+        function scheduleRenderAllViews() {
+            if (renderScheduled) return;
+            renderScheduled = true;
+
+            const runRender = () => {
+                renderScheduled = false;
+                renderAllViews();
+            };
+
+            if (window.requestAnimationFrame) {
+                requestAnimationFrame(runRender);
+            } else {
+                setTimeout(runRender, 0);
+            }
+        }
 
         function renderAllViews() {
             updateHouseDatalist();
@@ -1032,398 +1083,212 @@
             renderHouseStatus();
         }
 
-        function persistTransactions() {
-            if (!firebaseReady) {
-                showToast('Database online belum terhubung.', 'error');
-                return;
-            }
-            firebaseDb.ref('kasRt/transactions').set(transactions).catch(err => {
-                console.error(err);
-                showToast('Gagal menyimpan data ke database.', 'error');
+        function addHouseToFirebase(houseData) {
+            if (!firebaseReady) return;
+            const newRef = firebaseDb.ref('kasRt/houses').push();
+            newRef.set({
+                houseNumber: houseData.houseNumber,
+                ownerName: houseData.ownerName,
+                phone: houseData.phone || ''
             });
-        }
-
-        function persistHouses() {
-            if (!firebaseReady) {
-                showToast('Database online belum terhubung.', 'error');
-                return;
-            }
-            firebaseDb.ref('kasRt/houses').set(houses).catch(err => {
-                console.error(err);
-                showToast('Gagal menyimpan data rumah.', 'error');
-            });
-        }
-
-        // Nama fungsi lama dipertahankan agar fitur yang sudah ada tetap berjalan.
-        function saveToLocalStorage() {
-            persistTransactions();
-            renderAllViews();
         }
 
         function isFirebaseConfigured() {
-            return firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('ISI_') &&
-                   firebaseConfig.projectId && !firebaseConfig.projectId.startsWith('ISI_') &&
-                   firebaseConfig.databaseURL && !firebaseConfig.databaseURL.includes('ISI_PROJECT_ID');
+            return firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('ISI_');
         }
 
         function startFirebaseSync() {
             if (!isFirebaseConfigured()) {
-                const el = document.getElementById('firebase-status');
-                if (el) {
-                    el.textContent = 'Belum terhubung — Firebase Config belum diisi.';
-                    el.className = 'text-xs text-amber-700';
-                }
                 initApp();
                 return;
             }
             try {
                 firebase.initializeApp(firebaseConfig);
                 firebaseDb = firebase.database();
-                firebaseStorage = firebase.storage();
                 firebaseReady = true;
-                const el = document.getElementById('firebase-status');
-                if (el) {
-                    el.textContent = 'Terhubung • Database online • Real-time aktif';
-                    el.className = 'text-xs text-emerald-700';
-                }
+
+                firebaseDb.ref('kasRt/adminPin').on('value', snap => {
+                    const pinVal = snap.val();
+                    if (pinVal) {
+                        ADMIN_PIN = String(pinVal);
+                        localStorage.setItem('kasRtAdminPin', ADMIN_PIN);
+                    } else {
+                        firebaseDb.ref('kasRt/adminPin').set(DEFAULT_ADMIN_PIN);
+                    }
+                });
 
                 firebaseDb.ref('kasRt/transactions').on('value', snap => {
                     const data = snap.val();
-                    transactions = Array.isArray(data) ? data : (data ? Object.values(data) : []);
-                    renderAllViews();
+                    transactions = [];
+                    if (data) {
+                        Object.keys(data).forEach(key => {
+                            transactions.push({ id: key, ...data[key] });
+                        });
+                    }
+                    scheduleRenderAllViews();
                 });
 
                 firebaseDb.ref('kasRt/houses').on('value', snap => {
                     const data = snap.val();
-                    houses = Array.isArray(data) && data.length ? data : (data ? Object.values(data) : defaultHouses.slice());
-                    if (!data) persistHouses();
-                    renderAllViews();
+                    houses = [];
+                    if (data) {
+                        Object.keys(data).forEach(key => {
+                            houses.push({ id: key, ...data[key] });
+                        });
+                    } else {
+                        defaultHousesArray.forEach(h => addHouseToFirebase(h));
+                    }
+                    scheduleRenderAllViews();
                 });
 
                 initApp();
             } catch (err) {
                 console.error(err);
-                const el = document.getElementById('firebase-status');
-                if (el) {
-                    el.textContent = 'Firebase gagal terhubung — periksa Config.';
-                    el.className = 'text-xs text-red-700';
-                }
                 initApp();
             }
         }
 
-        // ============================================================
-        // BUKTI TRANSAKSI - Firebase Storage + Kompres Maks. 500 KB
-        // ============================================================
-        const MAX_PROOF_SIZE = 500 * 1024; // 500 KB
-
-        function compressImage(file, maxWidth, maxHeight, quality) {
-            return new Promise((resolve, reject) => {
+        function readFileAsBase64(file) {
+            return new Promise((resolve) => {
                 if (!file) {
-                    resolve(null);
+                    resolve('');
                     return;
                 }
-
-                if (!file.type || !file.type.startsWith('image/')) {
-                    reject(new Error('File bukti harus berupa gambar.'));
-                    return;
-                }
-
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    const img = new Image();
-                    img.onload = function() {
-                        let width = img.naturalWidth || img.width;
-                        let height = img.naturalHeight || img.height;
-
-                        if (!width || !height) {
-                            reject(new Error('Ukuran gambar tidak dapat dibaca.'));
-                            return;
-                        }
-
-                        const scale = Math.min(1, maxWidth / width, maxHeight / height);
-                        width = Math.max(1, Math.round(width * scale));
-                        height = Math.max(1, Math.round(height * scale));
-
-                        const canvas = document.createElement('canvas');
-                        canvas.width = width;
-                        canvas.height = height;
-
-                        const ctx = canvas.getContext('2d', { alpha: false });
-                        if (!ctx) {
-                            reject(new Error('Browser tidak mendukung kompresi gambar.'));
-                            return;
-                        }
-
-                        ctx.fillStyle = '#ffffff';
-                        ctx.fillRect(0, 0, width, height);
-                        ctx.drawImage(img, 0, 0, width, height);
-
-                        canvas.toBlob(function(blob) {
-                            if (!blob) {
-                                reject(new Error('Gagal mengompres gambar.'));
-                                return;
-                            }
-                            resolve(blob);
-                        }, 'image/jpeg', quality);
-                    };
-
-                    img.onerror = function() {
-                        reject(new Error('Gambar tidak dapat dibaca oleh browser. Pilih foto JPG/PNG yang lain.'));
-                    };
-                    img.src = e.target.result;
-                };
-
-                reader.onerror = function() {
-                    reject(new Error('Gagal membaca file bukti.'));
-                };
+                reader.onload = (e) => resolve(e.target.result);
+                reader.onerror = () => resolve('');
                 reader.readAsDataURL(file);
             });
         }
 
-        async function prepareProofImage(file) {
-            if (!file) return null;
-
-            // Kompres bertahap sampai <= 500 KB.
-            const attempts = [
-                { maxWidth: 1600, maxHeight: 1600, quality: 0.82 },
-                { maxWidth: 1400, maxHeight: 1400, quality: 0.76 },
-                { maxWidth: 1200, maxHeight: 1200, quality: 0.70 },
-                { maxWidth: 1000, maxHeight: 1000, quality: 0.62 },
-                { maxWidth: 850,  maxHeight: 850,  quality: 0.52 },
-                { maxWidth: 700,  maxHeight: 700,  quality: 0.42 }
-            ];
-
-            let lastBlob = null;
-            for (const attempt of attempts) {
-                lastBlob = await compressImage(file, attempt.maxWidth, attempt.maxHeight, attempt.quality);
-                if (lastBlob && lastBlob.size <= MAX_PROOF_SIZE) {
-                    return lastBlob;
-                }
-            }
-
-            const finalSize = lastBlob ? (lastBlob.size / 1024).toFixed(0) : 'lebih dari';
-            throw new Error(`Foto terlalu besar untuk diproses. Setelah kompresi ukurannya masih sekitar ${finalSize} KB. Silakan pilih foto yang lebih sederhana.`);
-        }
-
-        async function uploadProofToStorage(file, transactionId) {
-            if (!file) return '';
-            if (!firebaseStorage) {
-                throw new Error('Firebase Storage belum siap. Pastikan Firebase Storage sudah diaktifkan.');
-            }
-
-            const blob = await prepareProofImage(file);
-            if (!blob || blob.size > MAX_PROOF_SIZE) {
-                throw new Error('Ukuran bukti transaksi harus maksimal 500 KB setelah kompresi.');
-            }
-
-            const storagePath = `kasRt/proofs/${transactionId}.jpg`;
-            const storageRef = firebaseStorage.ref(storagePath);
-            const metadata = {
-                contentType: 'image/jpeg',
-                cacheControl: 'public,max-age=31536000'
-            };
-
-            await storageRef.put(blob, metadata);
-            const downloadURL = await storageRef.getDownloadURL();
-            return downloadURL;
-        }
-
-        async function deleteProofFromStorage(transactionId) {
-            if (!firebaseStorage || !transactionId) return;
-            try {
-                await firebaseStorage.ref(`kasRt/proofs/${transactionId}.jpg`).delete();
-            } catch (err) {
-                // File yang tidak ada tidak perlu dianggap sebagai error.
-                if (err && err.code !== 'storage/object-not-found') {
-                    console.warn('Bukti Storage tidak dapat dihapus:', err);
-                }
-            }
-        }
-
-        function setSubmitLoading(button, loading, defaultText) {
-            if (!button) return;
-            button.disabled = loading;
-            if (loading) {
-                button.dataset.originalText = button.innerHTML;
-                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Menyimpan...';
-            } else {
-                button.innerHTML = button.dataset.originalText || defaultText;
-                delete button.dataset.originalText;
-            }
-        }
-
-        // Event Listener Form Income
         document.getElementById('form-income').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!requireAdmin()) return;
-
-            const form = this;
-            const submitButton = form.querySelector('button[type="submit"]');
+            const editId = document.getElementById('inc-id').value;
             const date = document.getElementById('inc-date').value;
             const method = document.getElementById('inc-method').value;
             const house = document.getElementById('inc-house').value.trim().toUpperCase();
             const desc = document.getElementById('inc-desc').value.trim();
             const amount = parseFloat(document.getElementById('inc-amount').value);
             const fileInput = document.getElementById('inc-proof');
-            const file = fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
 
             if (!date || !desc || isNaN(amount) || amount <= 0) return;
-            if (!firebaseReady || !firebaseDb || !firebaseStorage) {
-                showToast('Firebase Database/Storage belum siap.', 'error');
-                return;
+
+            if (house && !houses.some(h => h.houseNumber.toUpperCase() === house)) {
+                addHouseToFirebase({ houseNumber: house, ownerName: `Warga Rumah ${house}`, phone: '' });
             }
 
-            setSubmitLoading(submitButton, true);
+            let proofBase64 = fileInput.files.length > 0 ? await readFileAsBase64(fileInput.files[0]) : '';
+            const normalizedDesc = desc.toLowerCase().trim();
+            const paymentType = (
+                normalizedDesc.includes('iuran') ||
+                normalizedDesc.includes('kas rt') ||
+                normalizedDesc.includes('kebersihan') ||
+                normalizedDesc.includes('keamanan')
+            ) ? 'monthly_fee' : 'other_income';
 
-            try {
-                // Jika memasukkan no rumah dan belum terdaftar di master warga, otomatis daftarkan.
-                if (house && !houses.some(h => h.houseNumber.toUpperCase() === house)) {
-                    houses.push({
-                        id: generateId(),
-                        houseNumber: house,
-                        ownerName: `Warga Rumah ${house}`,
-                        phone: ''
-                    });
-                    persistHouses();
-                    updateHouseDatalist();
-                }
 
-                // Atur filter periode rumah agar menyesuaikan bulan transaksi yang diinput.
-                if (date) {
-                    const tDate = new Date(date);
-                    if (!isNaN(tDate.getTime())) {
-                        const tPeriod = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
-                        const periodInput = document.getElementById('house-period-filter');
-                        if (periodInput) periodInput.value = tPeriod;
-                    }
-                }
-
-                const transactionId = generateId();
-                let proofURL = '';
-
-                if (file) {
-                    showToast('Mengompres & mengunggah bukti foto...');
-                    proofURL = await uploadProofToStorage(file, transactionId);
-                }
-
-                transactions.unshift({
-                    id: transactionId,
+            if (editId) {
+                const existing = transactions.find(t => t.id === editId);
+                if (existing && !proofBase64) proofBase64 = existing.proof || '';
+                
+                firebaseDb.ref(`kasRt/transactions/${editId}`).update({
                     type: 'income',
-                    date: date,
+                    date,
                     paymentMethod: method,
                     houseNumber: house,
                     description: desc,
-                    amount: amount,
-                    proof: proofURL,
-                    paymentType: isMonthlyFeeDescription(desc) ? 'monthly_fee' : 'other_income'
+                    amount,
+                    proof: proofBase64,
+                    paymentType
                 });
-
-                saveToLocalStorage();
-                form.reset();
-                document.getElementById('inc-date').value = getLocalISODate();
-
-                const msg = house
-                    ? `Pemasukan dicatat & status iuran ${house} otomatis LUNAS!`
-                    : 'Pemasukan kas berhasil dicatat!';
-                showToast(msg);
-            } catch (err) {
-                console.error(err);
-                showToast(err.message || 'Gagal menyimpan pemasukan.', 'error');
-            } finally {
-                setSubmitLoading(submitButton, false);
+                cancelEditTransaction();
+                showToast('Pemasukan diperbarui!');
+            } else {
+                firebaseDb.ref('kasRt/transactions').push({
+                    type: 'income',
+                    date,
+                    paymentMethod: method,
+                    houseNumber: house,
+                    description: desc,
+                    amount,
+                    proof: proofBase64,
+                    paymentType
+                });
+                this.reset();
+                document.getElementById('inc-date').value = new Date().toISOString().split('T')[0];
+                showToast('Pemasukan disimpan!');
             }
         });
 
-        // Event Listener Form Expense
         document.getElementById('form-expense').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!requireAdmin()) return;
-
-            const form = this;
-            const submitButton = form.querySelector('button[type="submit"]');
+            const editId = document.getElementById('exp-id').value;
             const date = document.getElementById('exp-date').value;
             const desc = document.getElementById('exp-desc').value.trim();
             const amount = parseFloat(document.getElementById('exp-amount').value);
             const fileInput = document.getElementById('exp-proof');
-            const file = fileInput.files && fileInput.files.length ? fileInput.files[0] : null;
 
             if (!date || !desc || isNaN(amount) || amount <= 0) return;
-            if (!firebaseReady || !firebaseDb || !firebaseStorage) {
-                showToast('Firebase Database/Storage belum siap.', 'error');
-                return;
-            }
 
-            setSubmitLoading(submitButton, true);
+            let proofBase64 = fileInput.files.length > 0 ? await readFileAsBase64(fileInput.files[0]) : '';
 
-            try {
-                const transactionId = generateId();
-                let proofURL = '';
+            if (editId) {
+                const existing = transactions.find(t => t.id === editId);
+                if (existing && !proofBase64) proofBase64 = existing.proof || '';
 
-                if (file) {
-                    showToast('Mengompres & mengunggah bukti foto...');
-                    proofURL = await uploadProofToStorage(file, transactionId);
-                }
-
-                transactions.unshift({
-                    id: transactionId,
+                firebaseDb.ref(`kasRt/transactions/${editId}`).update({
                     type: 'expense',
-                    date: date,
+                    date,
                     description: desc,
-                    amount: amount,
-                    proof: proofURL
+                    amount,
+                    proof: proofBase64
                 });
-
-                saveToLocalStorage();
-                form.reset();
-                document.getElementById('exp-date').value = getLocalISODate();
-                showToast('Pengeluaran kas berhasil dicatat!');
-            } catch (err) {
-                console.error(err);
-                showToast(err.message || 'Gagal menyimpan pengeluaran.', 'error');
-            } finally {
-                setSubmitLoading(submitButton, false);
+                cancelEditTransaction();
+                showToast('Pengeluaran diperbarui!');
+            } else {
+                firebaseDb.ref('kasRt/transactions').push({
+                    type: 'expense',
+                    date,
+                    description: desc,
+                    amount,
+                    proof: proofBase64
+                });
+                this.reset();
+                document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+                showToast('Pengeluaran disimpan!');
             }
         });
 
-        // Event Listener Form House
         document.getElementById('form-house').addEventListener('submit', function(e) {
             e.preventDefault();
             if (!requireAdmin()) return;
+            const houseId = document.getElementById('modal-house-id').value;
             const no = document.getElementById('modal-house-no').value.trim().toUpperCase();
             const owner = document.getElementById('modal-house-owner').value.trim();
             const phone = document.getElementById('modal-house-phone').value.trim();
 
             if (!no || !owner) return;
 
-            if (houses.some(h => h.houseNumber.toUpperCase() === no)) {
-                showToast('Nomor rumah tersebut sudah ada.', 'error');
-                return;
+            if (houseId) {
+                firebaseDb.ref(`kasRt/houses/${houseId}`).update({
+                    houseNumber: no,
+                    ownerName: owner,
+                    phone
+                });
+                closeHouseModal();
+                showToast('Data rumah diperbarui!');
+            } else {
+                addHouseToFirebase({ houseNumber: no, ownerName: owner, phone });
+                closeHouseModal();
+                showToast('Rumah ditambahkan!');
             }
-
-            houses.push({
-                id: generateId(),
-                houseNumber: no,
-                ownerName: owner,
-                phone: phone
-            });
-
-            persistHouses();
-            closeHouseModal();
-            updateHouseDatalist();
-            renderHouseStatus();
-            showToast(`Rumah ${no} berhasil ditambahkan!`);
         });
-
-
-        // Access control: default READ ONLY. Admin PIN = 1234.
-        const DEFAULT_ADMIN_PIN = '1234';
-        let ADMIN_PIN = localStorage.getItem('kasRtAdminPin') || DEFAULT_ADMIN_PIN;
-        let isAdmin = false;
 
         function requireAdmin() {
             if (!isAdmin) {
-                showToast('Mode Read Only. Login Admin terlebih dahulu.', 'error');
+                showToast('Login Admin terlebih dahulu.', 'error');
                 return false;
             }
             return true;
@@ -1455,14 +1320,24 @@
         }
 
         function logoutAdmin() {
-            isAdmin=false; updateAccessMode();
-            showToast('Logout Admin. Mode Read Only aktif.');
+            isAdmin=false; 
+            sessionStorage.removeItem('kasRtIsAdmin');
+            updateAccessMode();
+            showToast('Logout Admin.');
         }
+
         function updateAccessMode() {
             const lb=document.getElementById('admin-login-btn'), lo=document.getElementById('admin-logout-btn'), cp=document.getElementById('admin-change-pin-btn');
+            const lbm=document.getElementById('admin-login-btn-mb'), lom=document.getElementById('admin-logout-btn-mb'), cpm=document.getElementById('admin-change-pin-btn-mb');
+            
             if(lb) lb.classList.toggle('hidden',isAdmin);
             if(lo) lo.classList.toggle('hidden',!isAdmin);
             if(cp) cp.classList.toggle('hidden',!isAdmin);
+            
+            if(lbm) lbm.classList.toggle('hidden',isAdmin);
+            if(lom) lom.classList.toggle('hidden',!isAdmin);
+            if(cpm) cpm.classList.toggle('hidden',!isAdmin);
+
             document.querySelectorAll('.admin-only').forEach(el=>el.classList.toggle('hidden',!isAdmin));
             document.querySelectorAll('#form-income input, #form-income select, #form-income button, #form-expense input, #form-expense select, #form-expense button').forEach(el=>el.disabled=!isAdmin);
         }
@@ -1472,41 +1347,40 @@
             if(f) f.addEventListener('submit',e=>{
                 e.preventDefault();
                 if(document.getElementById('admin-pin').value===ADMIN_PIN){
-                    isAdmin=true; closeAdminLogin(); updateAccessMode(); showToast('Login Admin berhasil.');
+                    isAdmin=true; 
+                    sessionStorage.setItem('kasRtIsAdmin', 'true');
+                    closeAdminLogin(); 
+                    updateAccessMode(); 
+                    renderAllViews();
+                    showToast('Login Admin berhasil.');
                 } else showToast('PIN salah.','error');
             });
-        });
 
-        document.addEventListener('DOMContentLoaded',()=>{
-            const f=document.getElementById('change-pin-form');
-            if(f) f.addEventListener('submit',e=>{
+            const fc=document.getElementById('change-pin-form');
+            if(fc) fc.addEventListener('submit',e=>{
                 e.preventDefault();
                 if(!isAdmin) return;
                 const oldPin=document.getElementById('old-pin').value;
                 const newPin=document.getElementById('new-pin').value;
                 const confirmPin=document.getElementById('confirm-pin').value;
                 if(oldPin!==ADMIN_PIN) return showToast('PIN lama salah.','error');
-                if(!/^\d{4}$/.test(newPin)) return showToast('PIN baru harus 4 digit angka.','error');
-                if(newPin!==confirmPin) return showToast('Konfirmasi PIN tidak sama.','error');
+                if(!/^\d{4}$/.test(newPin)) return showToast('PIN harus 4 digit.','error');
+                if(newPin!==confirmPin) return showToast('PIN tidak sama.','error');
+                
                 ADMIN_PIN=newPin;
                 localStorage.setItem('kasRtAdminPin',newPin);
+                if (firebaseReady) firebaseDb.ref('kasRt/adminPin').set(newPin);
                 closeChangePin();
-                showToast('PIN Admin berhasil diubah.');
+                showToast('PIN diubah.');
             });
         });
 
-        // Gunakan tanggal lokal Indonesia agar tidak bergeser ke hari sebelumnya.
-        function getLocalISODate() {
-            const d = new Date();
-            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-        }
-
-        // Initialize App
         function initApp() {
-            const todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-            document.getElementById('current-date').textContent = todayStr;
+            const todayStr = new Date().toLocaleDateString('id-ID', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' });
+            const elDate = document.getElementById('current-date');
+            if (elDate) elDate.textContent = todayStr;
 
-            const todayISO = getLocalISODate();
+            const todayISO = new Date().toISOString().split('T')[0];
             document.getElementById('inc-date').value = todayISO;
             document.getElementById('exp-date').value = todayISO;
             document.getElementById('house-period-filter').value = currentYearMonth;
@@ -1523,52 +1397,40 @@
     </script>
 
 <!-- Admin PIN Modal -->
-<div id="admin-login-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] hidden items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="w-10 h-10 rounded-xl bg-blue-100 text-blue-600 flex items-center justify-center"><i class="fas fa-lock"></i></div>
-      <div><h3 class="font-bold text-slate-800">Login Admin</h3><p class="text-xs text-slate-500">Masukkan PIN untuk mengubah data.</p></div>
+<div id="admin-login-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] hidden items-center justify-center p-3">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-4">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center text-xs"><i class="fas fa-lock"></i></div>
+      <div><h3 class="font-bold text-slate-800 text-xs sm:text-sm">Login Admin</h3><p class="text-[10px] text-slate-500">Masukkan PIN Admin.</p></div>
     </div>
     <form id="admin-login-form">
-      <input id="admin-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-center text-2xl tracking-[.5em] outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••" required>
-      <div class="flex gap-2 justify-end mt-4">
-        <button type="button" onclick="closeAdminLogin()" class="px-4 py-2 rounded-lg bg-slate-100">Batal</button>
-        <button type="submit" class="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold">Masuk</button>
+      <input id="admin-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-2 text-center text-xl tracking-[.4em] outline-none focus:ring-2 focus:ring-blue-500" placeholder="••••" required>
+      <div class="flex gap-2 justify-end mt-3 text-xs">
+        <button type="button" onclick="closeAdminLogin()" class="px-3 py-1.5 rounded-lg bg-slate-100">Batal</button>
+        <button type="submit" class="px-4 py-1.5 rounded-lg bg-blue-600 text-white font-semibold">Masuk</button>
       </div>
     </form>
   </div>
 </div>
 
 <!-- Change Admin PIN Modal -->
-<div id="change-pin-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[101] hidden items-center justify-center p-4">
-  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
-    <div class="flex items-center gap-3 mb-4">
-      <div class="w-10 h-10 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center"><i class="fas fa-key"></i></div>
-      <div><h3 class="font-bold text-slate-800">Ubah PIN Admin</h3><p class="text-xs text-slate-500">Buat PIN baru 4 digit.</p></div>
+<div id="change-pin-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[101] hidden items-center justify-center p-3">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-xs p-4">
+    <div class="flex items-center gap-2 mb-3">
+      <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-600 flex items-center justify-center text-xs"><i class="fas fa-key"></i></div>
+      <div><h3 class="font-bold text-slate-800 text-xs sm:text-sm">Ubah PIN Admin</h3><p class="text-[10px] text-slate-500">PIN baru 4 digit.</p></div>
     </div>
     <form id="change-pin-form">
-      <input id="old-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-4 py-3 mb-2 text-center tracking-[.4em] outline-none focus:ring-2 focus:ring-amber-500" placeholder="PIN lama" required>
-      <input id="new-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-4 py-3 mb-2 text-center tracking-[.4em] outline-none focus:ring-2 focus:ring-amber-500" placeholder="PIN baru (4 digit)" required>
-      <input id="confirm-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-4 py-3 text-center tracking-[.4em] outline-none focus:ring-2 focus:ring-amber-500" placeholder="Ulangi PIN baru" required>
-      <div class="flex gap-2 justify-end mt-4">
-        <button type="button" onclick="closeChangePin()" class="px-4 py-2 rounded-lg bg-slate-100">Batal</button>
-        <button type="submit" class="px-5 py-2 rounded-lg bg-amber-500 text-white font-semibold">Simpan PIN</button>
+      <input id="old-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 mb-2 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="PIN lama" required>
+      <input id="new-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 mb-2 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="PIN baru" required>
+      <input id="confirm-pin" type="password" inputmode="numeric" maxlength="4" class="w-full border border-slate-300 rounded-xl px-3 py-1.5 text-center tracking-[.3em] outline-none text-xs focus:ring-2 focus:ring-amber-500" placeholder="Ulangi PIN baru" required>
+      <div class="flex gap-2 justify-end mt-3 text-xs">
+        <button type="button" onclick="closeChangePin()" class="px-3 py-1.5 rounded-lg bg-slate-100">Batal</button>
+        <button type="submit" class="px-4 py-1.5 rounded-lg bg-amber-500 text-white font-semibold">Simpan</button>
       </div>
     </form>
   </div>
 </div>
-<!--
-SETUP FIREBASE:
-1. Buat Firebase Project.
-2. Tambahkan Web App.
-3. Aktifkan Realtime Database.
-4. Aktifkan Firebase Storage.
-5. Salin firebaseConfig dari Firebase ke bagian firebaseConfig di atas.
-6. Sesuaikan databaseURL dengan URL Realtime Database project Anda.
-7. Atur Firebase Storage Rules agar pengguna yang berwenang dapat mengunggah bukti.
 
-PENTING: PIN saat ini masih merupakan pengunci UI browser. Untuk keamanan
-admin yang benar-benar kuat, gunakan Firebase Authentication + Security Rules.
--->
 </body>
 </html>
