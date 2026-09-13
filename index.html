@@ -2112,9 +2112,10 @@
 
                 visibleRows++;
 
+                // Badge status — MERAH untuk "Belum"
                 const statusBadge = isPaid
                     ? `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Lunas</span>`
-                    : `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-700">Belum</span>`;
+                    : `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">Belum</span>`;
 
                 // ========== DESKTOP: Tabel ==========
                 let actionBtn = '';
@@ -2155,10 +2156,10 @@
 
                 // ========== MOBILE: Card ==========
                 const card = document.createElement('div');
-                const leftBorder = isPaid ? 'border-l-4 border-emerald-400' : 'border-l-4 border-amber-400';
+                // Border kiri — MERAH untuk "Belum"
+                const leftBorder = isPaid ? 'border-l-4 border-emerald-400' : 'border-l-4 border-rose-400';
                 card.className = `p-3 flex flex-col gap-2 ${leftBorder} bg-white hover:bg-slate-50 transition-colors`;
 
-                // Tombol aksi mobile
                 let mobileActionBtn = '';
                 if (isPaid) {
                     const hasProof = (payment.proofs && payment.proofs.length > 0) || payment.proof;
@@ -2179,10 +2180,10 @@
                     ${h.phone ? `<a href="https://wa.me/${h.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-[10px] text-emerald-600 flex items-center gap-1 -mt-1 ml-1"><i class="fab fa-whatsapp"></i> ${escapeHTML(h.phone)}</a>` : ''}
 
                     <div class="flex items-center justify-between pt-1.5 border-t border-slate-100">
-                        <div class="text-[10px] font-medium text-slate-500">
+                        <div class="text-[10px] font-medium ${isPaid ? 'text-slate-500' : 'text-rose-600'}">
                             <i class="fas fa-money-bill-wave mr-1"></i>Nominal Bayar
                         </div>
-                        <div class="text-sm font-extrabold ${isPaid ? 'text-emerald-600' : 'text-slate-400'}">
+                        <div class="text-sm font-extrabold ${isPaid ? 'text-emerald-600' : 'text-rose-600'}">
                             ${isPaid ? formatRupiah(payment.amount) : 'Belum Bayar'}
                         </div>
                     </div>
