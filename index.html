@@ -555,25 +555,19 @@
                 </div>
             </div>
 
-            <!-- Container Status Iuran -->
+            <!-- Container Status Iuran — Tabel 4 kolom compact -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-                <!-- Tabel Desktop -->
-                <div class="hidden sm:block overflow-x-auto custom-scrollbar">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="bg-slate-50 text-slate-500 text-[10px] uppercase tracking-wider border-b border-slate-200">
-                                <th class="px-3 py-2 font-semibold">Rumah & Penghuni</th>
-                                <th class="px-2 py-2 font-semibold text-center w-20">Status</th>
-                                <th class="px-2 py-2 font-semibold text-right w-24">Bayar</th>
-                                <th class="px-2 py-2 font-semibold text-center w-32">Aksi</th>
-                            </tr>
-                        </thead>
-                        <tbody id="houses-tbody" class="divide-y divide-slate-100 text-xs"></tbody>
-                    </table>
-                </div>
-
-                <!-- Card Mobile -->
-                <div id="houses-mobile-list" class="sm:hidden divide-y divide-slate-100"></div>
+                <table class="w-full text-left border-collapse table-fixed">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-500 text-[9px] sm:text-[10px] uppercase tracking-wider border-b border-slate-200">
+                            <th class="px-1.5 sm:px-3 py-2 font-semibold">Rumah & Penghuni</th>
+                            <th class="px-0.5 sm:px-2 py-2 font-semibold text-center w-[52px] sm:w-20">Status</th>
+                            <th class="px-0.5 sm:px-2 py-2 font-semibold text-right w-[68px] sm:w-24">Bayar</th>
+                            <th class="px-0.5 sm:px-2 py-2 font-semibold text-center w-[100px] sm:w-32">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="houses-tbody" class="divide-y divide-slate-100 text-[10px] sm:text-xs"></tbody>
+                </table>
 
                 <div id="houses-empty" class="hidden flex-col items-center justify-center p-8 text-slate-400">
                     <i class="fas fa-users-slash text-3xl mb-2 text-slate-300"></i>
@@ -2062,7 +2056,7 @@
         };
 
         // ============================================================
-        // RENDER HOUSE STATUS (Card di HP, Tabel di Desktop)
+        // RENDER HOUSE STATUS — Tabel Compact 4 Kolom
         // ============================================================
         window.renderHouseStatus = function() {
             const periodInput = document.getElementById('house-period-filter');
@@ -2073,10 +2067,8 @@
             const searchQuery = (document.getElementById('house-search-input').value || '').toLowerCase().trim();
 
             const tbody = document.getElementById('houses-tbody');
-            const mobileList = document.getElementById('houses-mobile-list');
             const emptyEl = document.getElementById('houses-empty');
             tbody.innerHTML = '';
-            mobileList.innerHTML = '';
 
             let paidCount = 0, unpaidCount = 0;
 
@@ -2112,97 +2104,61 @@
 
                 visibleRows++;
 
-                // Badge status — MERAH untuk "Belum"
+                // Badge status — hijau untuk Lunas, merah untuk Belum
                 const statusBadge = isPaid
-                    ? `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700">Lunas</span>`
-                    : `<span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-700">Belum</span>`;
+                    ? `<span class="inline-block px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700">Lunas</span>`
+                    : `<span class="inline-block px-1 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-700">Belum</span>`;
 
-                // ========== DESKTOP: Tabel ==========
-                let actionBtn = '';
+                // Nominal dipersingkat untuk HP (50rb, 1jt, dst)
+                let nominalDisplay = '-';
+                if (isPaid) {
+                    const amt = parseFloat(payment.amount) || 0;
+                    if (amt >= 1000000) {
+                        nominalDisplay = (amt / 1000000).toFixed(1).replace('.0', '') + 'jt';
+                    } else if (amt >= 1000) {
+                        nominalDisplay = (amt / 1000).toFixed(0) + 'rb';
+                    } else {
+                        nominalDisplay = amt.toString();
+                    }
+                }
+
+                // Tombol aksi — teks di desktop, ikon di HP
+                let actionBtnMobile = '';
+                let actionBtnDesktop = '';
                 if (isPaid) {
                     const hasProof = (payment.proofs && payment.proofs.length > 0) || payment.proof;
-                    actionBtn = `<button onclick="openProofModal('${payment.id}')" class="text-[10px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded whitespace-nowrap ${hasProof ? '' : 'opacity-40 cursor-not-allowed'}" ${hasProof ? '' : 'disabled'}>Bukti</button>`;
+                    actionBtnMobile = `<button onclick="openProofModal('${payment.id}')" class="text-[9px] px-1 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded whitespace-nowrap ${hasProof ? '' : 'opacity-40 cursor-not-allowed'}" ${hasProof ? '' : 'disabled'} title="Bukti">📷</button>`;
+                    actionBtnDesktop = `<button onclick="openProofModal('${payment.id}')" class="text-[10px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded whitespace-nowrap ${hasProof ? '' : 'opacity-40 cursor-not-allowed'}" ${hasProof ? '' : 'disabled'}>Bukti</button>`;
                 } else if (isAdmin) {
-                    actionBtn = `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[10px] px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded shadow-sm whitespace-nowrap">Bayar</button>`;
-                } else {
-                    actionBtn = `<span class="text-[10px] text-slate-400 font-medium">-</span>`;
+                    actionBtnMobile = `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[9px] px-1 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded shadow-sm whitespace-nowrap" title="Bayar">✓</button>`;
+                    actionBtnDesktop = `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[10px] px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded shadow-sm whitespace-nowrap">Bayar</button>`;
                 }
 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors";
                 tr.innerHTML = `
-                    <td class="px-3 py-2.5 font-medium text-slate-800">
-                        <div class="font-bold text-blue-700 text-xs">${escapeHTML(h.houseNumber)}</div>
-                        <div class="text-xs truncate max-w-[180px]" title="${escapeHTML(h.ownerName)}">${escapeHTML(h.ownerName)}</div>
-                        ${h.phone ? `<a href="https://wa.me/${h.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-[10px] text-emerald-600 flex items-center gap-0.5 mt-0.5"><i class="fab fa-whatsapp"></i> ${escapeHTML(h.phone)}</a>` : ''}
+                    <td class="px-1.5 sm:px-3 py-2 font-medium text-slate-800">
+                        <div class="font-bold text-blue-700 text-[10px] sm:text-xs">${escapeHTML(h.houseNumber)}</div>
+                        <div class="text-[10px] sm:text-xs truncate" title="${escapeHTML(h.ownerName)}">${escapeHTML(h.ownerName)}</div>
                     </td>
-                    <td class="px-2 py-2.5 text-center">${statusBadge}</td>
-                    <td class="px-2 py-2.5 text-right font-medium text-xs ${isPaid ? 'text-emerald-600 font-bold' : 'text-slate-300'}">
-                        ${isPaid ? formatRupiah(payment.amount) : '-'}
+                    <td class="px-0.5 sm:px-2 py-2 text-center">${statusBadge}</td>
+                    <td class="px-0.5 sm:px-2 py-2 text-right font-bold text-[10px] sm:text-xs ${isPaid ? 'text-emerald-600' : 'text-slate-300'}" title="${isPaid ? formatRupiah(payment.amount) : 'Belum Bayar'}">
+                        ${nominalDisplay}
                     </td>
-                    <td class="px-2 py-2.5 text-center">
-                        <div class="flex items-center justify-center gap-1 flex-nowrap">
-                            ${actionBtn}
-                            <button onclick="editHouse('${h.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-1 shrink-0 ${isAdmin ? '' : 'hidden'}" title="Edit">
-                                <i class="fas fa-pen text-xs"></i>
+                    <td class="px-0.5 sm:px-2 py-2 text-center">
+                        <div class="flex items-center justify-center gap-0.5 sm:gap-1 flex-nowrap">
+                            <span class="sm:hidden">${actionBtnMobile}</span>
+                            <span class="hidden sm:inline">${actionBtnDesktop}</span>
+                            <button onclick="editHouse('${h.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-0.5 sm:p-1 shrink-0 ${isAdmin ? '' : 'hidden'}" title="Edit">
+                                <i class="fas fa-pen text-[10px] sm:text-xs"></i>
                             </button>
-                            <button onclick="deleteHouse('${h.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-1 shrink-0 ${isAdmin ? '' : 'hidden'}" title="Hapus">
-                                <i class="fas fa-trash-alt text-xs"></i>
+                            <button onclick="deleteHouse('${h.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-0.5 sm:p-1 shrink-0 ${isAdmin ? '' : 'hidden'}" title="Hapus">
+                                <i class="fas fa-trash-alt text-[10px] sm:text-xs"></i>
                             </button>
                         </div>
                     </td>
                 `;
                 tbody.appendChild(tr);
-
-                // ========== MOBILE: Card ==========
-                const card = document.createElement('div');
-                // Border kiri — MERAH untuk "Belum"
-                const leftBorder = isPaid ? 'border-l-4 border-emerald-400' : 'border-l-4 border-rose-400';
-                card.className = `p-3 flex flex-col gap-2 ${leftBorder} bg-white hover:bg-slate-50 transition-colors`;
-
-                let mobileActionBtn = '';
-                if (isPaid) {
-                    const hasProof = (payment.proofs && payment.proofs.length > 0) || payment.proof;
-                    mobileActionBtn = `<button onclick="openProofModal('${payment.id}')" class="text-[10px] px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded whitespace-nowrap ${hasProof ? '' : 'opacity-40 cursor-not-allowed'}" ${hasProof ? '' : 'disabled'}><i class="fas fa-image mr-1"></i>Bukti</button>`;
-                } else if (isAdmin) {
-                    mobileActionBtn = `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[10px] px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded shadow-sm whitespace-nowrap"><i class="fas fa-check mr-1"></i>Bayar</button>`;
-                }
-
-                card.innerHTML = `
-                    <div class="flex items-center justify-between gap-2">
-                        <div class="flex items-center gap-2 min-w-0 flex-1">
-                            <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[11px] font-bold border border-blue-200 shrink-0">${escapeHTML(h.houseNumber)}</span>
-                            <span class="text-sm font-semibold text-slate-800 truncate" title="${escapeHTML(h.ownerName)}">${escapeHTML(h.ownerName)}</span>
-                        </div>
-                        ${statusBadge}
-                    </div>
-
-                    ${h.phone ? `<a href="https://wa.me/${h.phone.replace(/[^0-9]/g, '')}" target="_blank" class="text-[10px] text-emerald-600 flex items-center gap-1 -mt-1 ml-1"><i class="fab fa-whatsapp"></i> ${escapeHTML(h.phone)}</a>` : ''}
-
-                    <div class="flex items-center justify-between pt-1.5 border-t border-slate-100">
-                        <div class="text-[10px] font-medium ${isPaid ? 'text-slate-500' : 'text-rose-600'}">
-                            <i class="fas fa-money-bill-wave mr-1"></i>Nominal Bayar
-                        </div>
-                        <div class="text-sm font-extrabold ${isPaid ? 'text-emerald-600' : 'text-rose-600'}">
-                            ${isPaid ? formatRupiah(payment.amount) : 'Belum Bayar'}
-                        </div>
-                    </div>
-
-                    <div class="flex items-center justify-between gap-2 pt-1">
-                        <div class="flex items-center gap-1">
-                            ${mobileActionBtn}
-                        </div>
-                        <div class="flex items-center gap-1 admin-only ${isAdmin ? '' : 'hidden'}">
-                            <button onclick="editHouse('${h.id}')" class="text-[10px] px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-600 font-medium rounded" title="Edit">
-                                <i class="fas fa-pen"></i>
-                            </button>
-                            <button onclick="deleteHouse('${h.id}')" class="text-[10px] px-2 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-600 font-medium rounded" title="Hapus">
-                                <i class="fas fa-trash-alt"></i>
-                            </button>
-                        </div>
-                    </div>
-                `;
-                mobileList.appendChild(card);
             });
 
             const totalHouses = houses.length;
