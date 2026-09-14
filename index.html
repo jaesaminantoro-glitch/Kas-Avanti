@@ -25,6 +25,11 @@
             overflow: hidden;
         }
         .smooth-hscroll { -webkit-overflow-scrolling: touch; }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-slide-down { animation: slideDown 0.4s ease-out; }
     </style>
     <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
@@ -693,6 +698,9 @@
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                <!-- NOTIFIKASI STATUS BULAN INI -->
+                <div id="info-notif-bulan-ini" class="hidden animate-slide-down"></div>
+
                 <div id="info-tunggakan-box" class="rounded-xl p-3 hidden">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-[10px] uppercase tracking-wider font-bold opacity-80">
@@ -1000,6 +1008,7 @@
         let currentIncomeProofs = [];
         let currentExpenseProofs = [];
         let currentWargaHouse = null;
+        let savedWargaHouseNumber = localStorage.getItem('kasRtWargaHouse') || null;
         let BENDAHARA_WHATSAPP = '6281234567890';
         let alokasiMode = 'auto';
         let manualAllocation = {};
@@ -2994,6 +3003,27 @@
             return firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('ISI_');
         }
 
+        // Fungsi pembantu untuk memulihkan warga yang login dari localStorage
+        // Dipanggil setelah data houses selesai dimuat
+        function restoreWargaFromStorage() {
+            if (!savedWargaHouseNumber) return;
+            if (currentWargaHouse) return; // sudah login, skip
+
+            const found = houses.find(h =>
+                (h.houseNumber || '').trim().toUpperCase() === (savedWargaHouseNumber || '').trim().toUpperCase()
+            );
+
+            if (found) {
+                currentWargaHouse = found;
+                updateWargaUI();
+                console.log('[Warga] Login dipulihkan:', found.houseNumber, '-', found.ownerName);
+            } else {
+                // Nomor rumah tidak ditemukan (mungkin sudah dihapus)
+                localStorage.removeItem('kasRtWargaHouse');
+                savedWargaHouseNumber = null;
+            }
+        }
+
         async function startFirebaseSync() {
             const statusEl = document.getElementById('firebase-status');
 
@@ -3089,13 +3119,21 @@
                     } else {
                         houses = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
+
+                    // Update warga yang sedang login (kalau data rumahnya berubah)
                     if (currentWargaHouse) {
-                        const updated = houses.find(h => h.houseNumber === currentWargaHouse.houseNumber);
+                        const updated = houses.find(h =>
+                            (h.houseNumber || '').trim().toUpperCase() === (currentWargaHouse.houseNumber || '').trim().toUpperCase()
+                        );
                         if (updated) {
                             currentWargaHouse = updated;
                             updateWargaUI();
                         }
+                    } else {
+                        // Belum login, coba pulihkan dari localStorage
+                        restoreWargaFromStorage();
                     }
+
                     scheduleRenderAllViews();
                 });
 
@@ -3151,6 +3189,9 @@
 
             document.getElementById('online-users-container').innerHTML = '<span class="text-xs text-slate-400">Offline mode.</span>';
             document.getElementById('online-count-badge').textContent = 'Offline';
+
+            // Pulihkan warga yang login dari localStorage (mode offline)
+            restoreWargaFromStorage();
 
             scheduleRenderAllViews();
         }
@@ -3608,8 +3649,12 @@
             }
 
             currentWargaHouse = house;
+            savedWargaHouseNumber = house.houseNumber;
+
             if (remember) {
                 localStorage.setItem('kasRtWargaHouse', house.houseNumber);
+            } else {
+                localStorage.removeItem('kasRtWargaHouse');
             }
 
             closeWargaLogin();
@@ -3669,6 +3714,43 @@
 
             document.getElementById('info-result-house').textContent = currentWargaHouse.houseNumber;
             document.getElementById('info-result-owner').textContent = currentWargaHouse.ownerName || '-';
+
+            // ============================================
+            // NOTIFIKASI STATUS BULAN INI
+            // ============================================
+            const notifEl = document.getElementById('info-notif-bulan-ini');
+            const currentMonthData = statusPerMonth.find(m => m.isCurrentMonth);
+            const currentMonthLabel = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+
+            if (currentMonthData && currentMonthData.isPaid) {
+                // Sudah lunas bulan ini
+                notifEl.className = "rounded-xl p-3 bg-emerald-50 border-2 border-emerald-300 text-emerald-800 flex items-center gap-3 animate-slide-down";
+                notifEl.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <i class="fas fa-check-circle text-lg"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-[10px] uppercase tracking-wider font-bold text-emerald-600">Status Iuran Bulan Ini</div>
+                        <div class="font-bold text-sm text-emerald-800">✅ Sudah Lunas</div>
+                        <div class="text-[10px] text-emerald-600 mt-0.5">Iuran ${currentMonthLabel} — ${formatRupiah(currentMonthData.amount)}</div>
+                    </div>
+                `;
+                notifEl.classList.remove('hidden');
+            } else {
+                // Belum bayar bulan ini
+                notifEl.className = "rounded-xl p-3 bg-amber-50 border-2 border-amber-300 text-amber-800 flex items-center gap-3 animate-slide-down";
+                notifEl.innerHTML = `
+                    <div class="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+                        <i class="fas fa-clock text-lg"></i>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <div class="text-[10px] uppercase tracking-wider font-bold text-amber-600">Status Iuran Bulan Ini</div>
+                        <div class="font-bold text-sm text-amber-800">⏳ Belum Dibayar</div>
+                        <div class="text-[10px] text-amber-600 mt-0.5">Iuran ${currentMonthLabel} belum tercatat. Mohon segera bayar.</div>
+                    </div>
+                `;
+                notifEl.classList.remove('hidden');
+            }
 
             const summaryBox = document.getElementById('info-tunggakan-box');
             const summaryAmount = document.getElementById('info-tunggakan-amount');
@@ -3859,6 +3941,7 @@
             if (!confirm('Yakin ingin keluar? Anda perlu memasukkan No. Rumah lagi di kunjungan berikutnya.')) return;
             
             currentWargaHouse = null;
+            savedWargaHouseNumber = null;
             localStorage.removeItem('kasRtWargaHouse');
             updateWargaUI();
             showToast('Anda telah keluar. Terima kasih! 👋', 'info');
@@ -3916,14 +3999,10 @@
                     }
                 }
 
-                const savedWarga = localStorage.getItem('kasRtWargaHouse');
-                if (savedWarga) {
-                    const found = houses.find(h => h.houseNumber === savedWarga);
-                    if (found) {
-                        currentWargaHouse = found;
-                        updateWargaUI();
-                    }
-                }
+                // Catatan: Pemulihan warga yang login TIDAK dilakukan di sini,
+                // karena data `houses` belum tentu sudah dimuat dari Firebase.
+                // Pemulihan dilakukan di dalam callback firebaseDb.ref('kasRt/houses').on('value', ...)
+                // dan di initApp() untuk mode offline.
 
                 startFirebaseSync();
             }, 100);
