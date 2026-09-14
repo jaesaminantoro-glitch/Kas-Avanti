@@ -2065,8 +2065,6 @@
             });
 
             let lastDate = null;
-            let dailyIncome = 0;
-            let dailyExpense = 0;
             let dailyGroup = [];
 
             function flushDailyGroup() {
@@ -2076,13 +2074,11 @@
                 dateHeader.className = "flex items-center justify-between px-1 pt-3 pb-1.5";
                 const dateObj = new Date(lastDate);
                 const dateLabel = dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                const netDay = dailyIncome - dailyExpense;
+                
+                // Hanya tampilkan tanggal, tanpa total harian
                 dateHeader.innerHTML = `
                     <div class="text-[10px] font-bold text-slate-600 uppercase tracking-wide">
                         <i class="fas fa-calendar-day mr-1 text-slate-400"></i> ${dateLabel}
-                    </div>
-                    <div class="text-[10px] font-semibold ${netDay >= 0 ? 'text-emerald-600' : 'text-rose-600'}">
-                        ${netDay >= 0 ? '+' : ''}${formatRupiah(netDay)}
                     </div>
                 `;
                 mobileList.appendChild(dateHeader);
@@ -2090,8 +2086,6 @@
                 dailyGroup.forEach(card => mobileList.appendChild(card));
 
                 dailyGroup = [];
-                dailyIncome = 0;
-                dailyExpense = 0;
             }
 
             sorted.forEach(t => {
@@ -2099,10 +2093,6 @@
                     flushDailyGroup();
                     lastDate = t.date;
                 }
-
-                const amt = parseFloat(t.amount) || 0;
-                if (t.type === 'income') dailyIncome += amt;
-                else dailyExpense += amt;
 
                 const isInc = t.type === 'income';
 
