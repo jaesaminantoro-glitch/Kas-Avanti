@@ -35,7 +35,6 @@
     <nav class="bg-blue-700 text-white shadow-md sticky top-0 z-30">
         <div class="max-w-6xl mx-auto px-3 sm:px-4 py-3 space-y-2.5">
             
-            <!-- Baris 1: Judul -->
             <div class="flex items-center justify-between gap-2">
                 <div class="flex items-center gap-2 min-w-0 flex-1">
                     <div class="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-inner shrink-0">
@@ -49,7 +48,6 @@
                 <div class="text-[10px] text-blue-200 hidden md:block shrink-0" id="current-date"></div>
             </div>
 
-            <!-- Baris 2: Tombol Cek Iuran & Login -->
             <div class="flex items-center justify-center gap-2 flex-wrap">
                 <button id="warga-login-btn" onclick="openWargaLogin()" class="px-3 sm:px-4 py-2 rounded-lg bg-white text-blue-800 hover:bg-blue-50 text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow-sm whitespace-nowrap">
                     <i class="fas fa-search"></i> <span id="warga-btn-text">Cek Iuran Saya</span>
@@ -68,7 +66,6 @@
                 </button>
             </div>
 
-            <!-- Baris 3: Menu Tab -->
             <div class="flex items-center bg-blue-800/60 p-1 rounded-xl border border-blue-500/30 justify-center">
                 <button onclick="switchMainPage('dashboard')" id="nav-btn-dashboard" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-blue-800 shadow text-center">
                     <i class="fas fa-chart-pie mr-1"></i> Kas & Transaksi
@@ -82,10 +79,7 @@
     </nav>
 
     <main class="max-w-6xl mx-auto px-2 sm:px-4 py-4 flex-1 w-full space-y-4">
-        
-        <!-- Elemen firebase-status dihapus dari tampilan -->
 
-        <!-- BANNER WARGA LOGGED IN -->
         <div id="warga-welcome-banner" class="hidden bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-2xl p-3 shadow-sm">
             <div class="flex items-center justify-between gap-3">
                 <div class="flex items-center gap-3 min-w-0">
@@ -109,7 +103,6 @@
             </div>
         </div>
 
-        <!-- PANEL ADMIN: PENGUNJUNG ONLINE -->
         <div id="admin-online-panel" class="admin-only bg-white rounded-2xl p-4 shadow-sm border border-slate-200 hidden">
             <div class="flex items-center justify-between mb-3 pb-2 border-b border-slate-100">
                 <h3 class="font-bold text-slate-800 text-xs sm:text-sm flex items-center gap-2">
@@ -133,10 +126,8 @@
             </div>
         </div>
 
-        <!-- DASHBOARD KAS & TRANSAKSI -->
         <div id="page-dashboard" class="space-y-4 sm:space-y-6">
 
-            <!-- PANEL ADMIN: SALDO PER METODE (COLLAPSIBLE) -->
             <div id="admin-method-balance-panel" class="admin-only bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden hidden">
                 <button onclick="toggleMethodBalance()" class="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors text-left">
                     <div class="flex items-center gap-2 min-w-0">
@@ -153,13 +144,11 @@
                     </div>
                     <i id="method-balance-toggle-icon" class="fas fa-chevron-down text-slate-400 text-sm transition-transform"></i>
                 </button>
-
                 <div id="method-balance-content" class="hidden border-t border-slate-100">
                     <div id="method-balance-container" class="divide-y divide-slate-100"></div>
                 </div>
             </div>
 
-            <!-- BANNER PERINGATAN KATEGORI YATIM PIATU -->
             <div id="orphan-category-alert" class="hidden bg-amber-50 border border-amber-300 rounded-xl p-3 text-xs text-amber-800">
                 <div class="flex items-start gap-2">
                     <i class="fas fa-exclamation-triangle text-amber-600 mt-0.5"></i>
@@ -170,8 +159,7 @@
                     </div>
                 </div>
             </div>
-            
-            <!-- INFO REKENING BANK -->
+
             <div class="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
                 <button onclick="toggleBankSection()" class="w-full p-3 bg-slate-50 hover:bg-slate-100 flex items-center justify-between transition-colors text-left">
                     <span class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
@@ -202,7 +190,19 @@
                 </div>
             </div>
 
-            <!-- KARTU TOTAL -->
+            <!-- FILTER PERIODE UNTUK KARTU TOTAL -->
+            <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-2 flex items-center gap-2 flex-wrap">
+                <span class="text-[10px] font-semibold text-slate-500 uppercase ml-1"><i class="fas fa-filter mr-1"></i> Filter Periode:</span>
+                <select id="dashboard-period-filter" onchange="handleDashboardPeriodChange()" class="px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-white outline-none">
+                    <option value="all">Semua Periode</option>
+                    <option value="current">Bulan Ini</option>
+                    <option value="lastmonth">Bulan Lalu</option>
+                    <option value="custom">Pilih Bulan...</option>
+                </select>
+                <input type="month" id="dashboard-custom-month" onchange="renderDashboard()" class="hidden px-2 py-1.5 border border-slate-300 rounded-lg text-xs font-medium bg-white outline-none">
+                <span id="dashboard-filter-label" class="text-[10px] text-slate-400 italic ml-auto">Menampilkan: Semua Periode</span>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-5">
                 <div class="bg-gradient-to-br from-blue-700 to-indigo-800 text-white rounded-2xl p-4 sm:p-6 shadow-md relative overflow-hidden flex flex-col justify-between cursor-pointer select-none" onclick="toggleBalanceBreakdown()">
                     <div>
@@ -240,6 +240,7 @@
                             </div>
                         </div>
                         <h3 class="text-xl sm:text-2xl font-bold text-emerald-600" id="total-income">Rp 0</h3>
+                        <div class="text-[9px] text-slate-400 italic" id="income-period-label">Semua periode</div>
                     </div>
 
                     <div class="mt-2 flex items-center gap-1 text-[10px] text-slate-400 font-medium">
@@ -279,6 +280,7 @@
                             </div>
                         </div>
                         <h3 class="text-xl sm:text-2xl font-bold text-rose-600" id="total-expense">Rp 0</h3>
+                        <div class="text-[9px] text-slate-400 italic" id="expense-period-label">Semua periode</div>
                     </div>
 
                     <div class="mt-2 flex items-center gap-1 text-[10px] text-slate-400 font-medium">
@@ -300,7 +302,6 @@
                 </div>
             </div>
 
-            <!-- FORM & RIWAYAT -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
                 <div id="transaction-form-container" class="lg:col-span-1 bg-white rounded-2xl shadow-sm border border-slate-200 p-4 sm:p-6 flex flex-col admin-only hidden">
                     <div class="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
@@ -321,7 +322,6 @@
                         </button>
                     </div>
 
-                    <!-- FORM PEMASUKAN -->
                     <form id="form-income" class="space-y-3">
                         <input type="hidden" id="inc-id" value="">
                         <div>
@@ -366,14 +366,12 @@
                             </div>
                         </div>
 
-                        <!-- PREVIEW ALOKASI -->
                         <div id="income-allocation-preview" class="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2 text-[11px]">
                             <div class="font-bold text-emerald-800 flex items-center justify-between">
                                 <span class="flex items-center gap-1"><i class="fas fa-wallet text-emerald-600"></i> Rincian Alokasi Dana:</span>
                                 <span id="preview-total-nominal" class="text-emerald-700">Rp 0</span>
                             </div>
 
-                            <!-- Preview Otomatis (default) -->
                             <div id="alokasi-auto-container">
                                 <div id="preview-allocation-list" class="space-y-1 mt-1 text-slate-600">
                                     <span class="text-slate-400 italic">Masukkan nominal untuk melihat rincian...</span>
@@ -383,7 +381,6 @@
                                 </button>
                             </div>
 
-                            <!-- Input Manual (hidden default) -->
                             <div id="alokasi-manual-container" class="hidden space-y-2">
                                 <div id="manual-allocation-inputs" class="space-y-2"></div>
                                 <div class="pt-2 border-t border-emerald-200">
@@ -416,7 +413,6 @@
                         </button>
                     </form>
 
-                    <!-- FORM PENGELUARAN -->
                     <form id="form-expense" class="space-y-3 hidden">
                         <input type="hidden" id="exp-id" value="">
                         <div>
@@ -554,7 +550,6 @@
             </div>
         </div>
 
-        <!-- HALAMAN STATUS IURAN -->
         <div id="page-houses" class="hidden space-y-4">
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                 <div class="bg-white rounded-xl p-3 border border-slate-200 shadow-sm">
@@ -1194,14 +1189,12 @@
         function updateHouseDatalist() {
             const datalist = document.getElementById('house-list');
             
-            // Datalist untuk panel admin (tetap pakai datalist bawaan)
             const html = houses.map(h => 
                 `<option value="${escapeHTML(h.houseNumber)}">${escapeHTML(h.houseNumber)} - ${escapeHTML(h.ownerName)}</option>`
             ).join('');
             
             if (datalist) datalist.innerHTML = html;
 
-            // Render ulang dropdown kustom untuk modal Cek Iuran Saya
             renderWargaLoginDropdown();
         }
 
@@ -1253,7 +1246,6 @@
             dropdown.classList.add('hidden');
         };
 
-        // Tutup dropdown saat klik di luar
         document.addEventListener('click', function(e) {
             const dropdown = document.getElementById('warga-login-dropdown');
             const input = document.getElementById('warga-login-input');
@@ -1320,6 +1312,16 @@
         };
 
         // ============================================================
+        // HELPER: Normalisasi kategori "Kas Umum" → "Kas Umum (Dana Tambahan)"
+        // ============================================================
+        window.normalizeCategory = function(cat) {
+            if (!cat) return cat;
+            const trimmed = String(cat).trim();
+            if (trimmed.toLowerCase() === 'kas umum') return 'Kas Umum (Dana Tambahan)';
+            return trimmed;
+        };
+
+        // ============================================================
         // ALOKASI MANUAL
         // ============================================================
         window.setNominal = function(value) {
@@ -1335,11 +1337,9 @@
         window.aktifkanManualAlokasi = function() {
             alokasiMode = 'manual';
             
-            // Sembunyikan auto, tampilkan manual
             document.getElementById('alokasi-auto-container').classList.add('hidden');
             document.getElementById('alokasi-manual-container').classList.remove('hidden');
             
-            // Set input nominal menjadi readonly agar tersinkronisasi dari rincian manual
             const amountInput = document.getElementById('inc-amount');
             if (amountInput) {
                 amountInput.readOnly = true;
@@ -1351,7 +1351,6 @@
                 subtitle.className = 'text-amber-600 font-normal text-[10px]';
             }
             
-            // Inisialisasi kategori alokasi manual
             manualAllocation = {};
             if (feeAllocations && feeAllocations.length > 0) {
                 feeAllocations.forEach((item) => {
@@ -1367,7 +1366,6 @@
             alokasiMode = 'auto';
             manualAllocation = {};
             
-            // Sembunyikan manual, tampilkan auto
             document.getElementById('alokasi-manual-container').classList.add('hidden');
             document.getElementById('alokasi-auto-container').classList.remove('hidden');
             
@@ -1375,7 +1373,6 @@
             if (amountInput) {
                 amountInput.readOnly = false;
                 amountInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
-                // Kembalikan nominal ke 50.000 jika kosong atau 0
                 if (parseFloat(amountInput.value) === 0 || !amountInput.value) {
                     amountInput.value = 50000;
                 }
@@ -1434,7 +1431,6 @@
                 allocEl.textContent = formatRupiah(totalAlloc);
             }
 
-            // Sinkronisasikan ke input nominal transaksi utama
             const amountInput = document.getElementById('inc-amount');
             if (amountInput) {
                 amountInput.value = totalAlloc;
@@ -1455,13 +1451,11 @@
             const totalNominalEl = document.getElementById('preview-total-nominal');
             if (totalNominalEl) totalNominalEl.textContent = formatRupiah(inputVal);
             
-            // Manual mode
             if (alokasiMode === 'manual') {
                 updateManualSummary();
                 return;
             }
             
-            // === AUTO MODE ===
             const container = document.getElementById('preview-allocation-list');
             if (!container) return;
             
@@ -1473,12 +1467,12 @@
                 container.innerHTML = `
                     <div class="flex justify-between items-center text-xs py-1 bg-purple-50 px-2 rounded">
                         <span class="text-purple-800 font-semibold">
-                            <i class="fas fa-gift mr-1"></i> Dana Tambahan
+                            <i class="fas fa-gift mr-1"></i> Kas Umum (Dana Tambahan)
                         </span>
                         <span class="font-bold text-purple-700">${formatRupiah(inputVal)}</span>
                     </div>
                     <div class="text-[10px] text-purple-600 italic mt-1">
-                        <i class="fas fa-info-circle"></i> Tanpa No. Rumah → langsung ke <b>Kas Umum</b>.
+                        <i class="fas fa-info-circle"></i> Tanpa No. Rumah → langsung ke <b>Kas Umum (Dana Tambahan)</b>.
                     </div>
                 `;
                 return;
@@ -1521,7 +1515,7 @@
             if (Math.abs(selisih) >= 1) {
                 html += `
                     <div class="flex justify-between items-center text-xs py-0.5 border-t border-emerald-200 mt-1 pt-1">
-                        <span class="text-slate-700 font-semibold">• Kas Umum (pembulatan)</span>
+                        <span class="text-slate-700 font-semibold">• Kas Umum (Dana Tambahan) (pembulatan)</span>
                         <span class="font-bold text-blue-700">${formatRupiah(selisih)}</span>
                     </div>
                 `;
@@ -1703,7 +1697,7 @@
             });
 
             const optKasUmum = document.createElement('option');
-            optKasUmum.value = 'Kas Umum';
+            optKasUmum.value = 'Kas Umum (Dana Tambahan)';
             optKasUmum.textContent = 'Kas Umum (Dana Tambahan)';
             select.appendChild(optKasUmum);
 
@@ -1802,12 +1796,80 @@
         };
 
         // ============================================================
+        // PERIODE FILTER HELPER
+        // ============================================================
+        window.handleDashboardPeriodChange = function() {
+            const val = document.getElementById('dashboard-period-filter').value;
+            const customInput = document.getElementById('dashboard-custom-month');
+            if (val === 'custom') {
+                customInput.classList.remove('hidden');
+                if (!customInput.value) customInput.value = currentYearMonth;
+            } else {
+                customInput.classList.add('hidden');
+            }
+            renderDashboard();
+        };
+
+        function getFilteredTransactions() {
+            const period = document.getElementById('dashboard-period-filter')?.value || 'all';
+            const customMonth = document.getElementById('dashboard-custom-month')?.value;
+
+            if (period === 'all') return transactions;
+
+            let targetYM = currentYearMonth;
+            if (period === 'lastmonth') {
+                const d = new Date();
+                d.setMonth(d.getMonth() - 1);
+                targetYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            } else if (period === 'custom' && customMonth) {
+                targetYM = customMonth;
+            }
+
+            return transactions.filter(t => {
+                const d = new Date(t.date);
+                if (isNaN(d.getTime())) return false;
+                const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+                return ym === targetYM;
+            });
+        }
+
+        function getFilteredLabel() {
+            const period = document.getElementById('dashboard-period-filter')?.value || 'all';
+            const customMonth = document.getElementById('dashboard-custom-month')?.value;
+
+            if (period === 'all') return 'Semua periode';
+            let targetYM = currentYearMonth;
+            if (period === 'lastmonth') {
+                const d = new Date();
+                d.setMonth(d.getMonth() - 1);
+                targetYM = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+            } else if (period === 'custom' && customMonth) {
+                targetYM = customMonth;
+            }
+            const [y, m] = targetYM.split('-');
+            const d = new Date(parseInt(y), parseInt(m) - 1, 1);
+            return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        }
+
+        // ============================================================
         // RENDER DASHBOARD
         // ============================================================
         window.renderDashboard = function() {
+            const filteredTx = getFilteredTransactions();
+            const isFiltered = (document.getElementById('dashboard-period-filter')?.value || 'all') !== 'all';
+            const labelText = getFilteredLabel();
+
+            // Update label
+            const filterLabel = document.getElementById('dashboard-filter-label');
+            if (filterLabel) filterLabel.textContent = `Menampilkan: ${labelText}`;
+            const incomePeriodLabel = document.getElementById('income-period-label');
+            const expensePeriodLabel = document.getElementById('expense-period-label');
+            if (incomePeriodLabel) incomePeriodLabel.textContent = isFiltered ? labelText : 'Semua periode';
+            if (expensePeriodLabel) expensePeriodLabel.textContent = isFiltered ? labelText : 'Semua periode';
+
             let totalInc = 0, incCash = 0, incMandiri = 0, incBca = 0, totalExp = 0;
 
-            transactions.forEach(t => {
+            filteredTx.forEach(t => {
                 const amt = parseFloat(t.amount) || 0;
                 if (t.type === 'income') {
                     totalInc += amt;
@@ -1820,7 +1882,15 @@
                 }
             });
 
-            document.getElementById('total-balance').textContent = formatRupiah(totalInc - totalExp);
+            // Total Saldo SELALU menggunakan semua transaksi (tidak difilter)
+            let grandInc = 0, grandExp = 0;
+            transactions.forEach(t => {
+                const amt = parseFloat(t.amount) || 0;
+                if (t.type === 'income') grandInc += amt;
+                else if (t.type === 'expense') grandExp += amt;
+            });
+
+            document.getElementById('total-balance').textContent = formatRupiah(grandInc - grandExp);
             document.getElementById('total-income').textContent = formatRupiah(totalInc);
             document.getElementById('income-cash').textContent = formatRupiah(incCash);
             document.getElementById('income-mandiri').textContent = formatRupiah(incMandiri);
@@ -1835,17 +1905,17 @@
             let autoIuranWarga = 0;
             let autoDanaTambahan = 0;
 
-            transactions.forEach(t => {
+            filteredTx.forEach(t => {
                 if (t.type !== 'income') return;
                 const amt = parseFloat(t.amount) || 0;
                 if (amt <= 0) return;
 
                 if (t.allocations && typeof t.allocations === 'object' && Object.keys(t.allocations).length > 0) {
-                    // Manual allocation: gunakan nominal persis per kategori yang diinput
                     Object.entries(t.allocations).forEach(([cat, catAmt]) => {
                         const val = parseFloat(catAmt) || 0;
                         if (val > 0) {
-                            incomeAllocByCategory[cat] = (incomeAllocByCategory[cat] || 0) + val;
+                            const normalizedCat = normalizeCategory(cat);
+                            incomeAllocByCategory[normalizedCat] = (incomeAllocByCategory[normalizedCat] || 0) + val;
                         }
                     });
                 } else if (t.houseNumber && t.houseNumber.trim()) {
@@ -1869,10 +1939,10 @@
 
                 const selisih = autoIuranWarga - totalSetelahAlokasi;
                 if (Math.abs(selisih) >= 1) {
-                    incomeAllocByCategory['Kas Umum (Sisa)'] = (incomeAllocByCategory['Kas Umum (Sisa)'] || 0) + selisih;
+                    incomeAllocByCategory['Kas Umum (Dana Tambahan)'] = (incomeAllocByCategory['Kas Umum (Dana Tambahan)'] || 0) + selisih;
                 }
             } else if (autoIuranWarga > 0) {
-                incomeAllocByCategory['Kas Umum'] = (incomeAllocByCategory['Kas Umum'] || 0) + autoIuranWarga;
+                incomeAllocByCategory['Kas Umum (Dana Tambahan)'] = (incomeAllocByCategory['Kas Umum (Dana Tambahan)'] || 0) + autoIuranWarga;
             }
 
             if (autoDanaTambahan > 0) {
@@ -1880,9 +1950,10 @@
             }
 
             const expenseByCategory = {};
-            transactions.forEach(t => {
+            filteredTx.forEach(t => {
                 if (t.type !== 'expense') return;
-                const cat = t.category && t.category.trim() ? t.category.trim() : 'Tanpa Kategori';
+                const rawCat = t.category && t.category.trim() ? t.category.trim() : 'Tanpa Kategori';
+                const cat = normalizeCategory(rawCat);
                 expenseByCategory[cat] = (expenseByCategory[cat] || 0) + (parseFloat(t.amount) || 0);
             });
 
@@ -1939,11 +2010,57 @@
 
             const balanceList = document.getElementById('balance-allocation-breakdown-list');
             if (balanceList) {
+                // Saldo per kategori SELALU menggunakan semua transaksi (tidak difilter)
+                const allIncAlloc = {};
+                const allExpCat = {};
+                let allAutoIuran = 0;
+                let allAutoDana = 0;
+
+                transactions.forEach(t => {
+                    if (t.type === 'income') {
+                        const amt = parseFloat(t.amount) || 0;
+                        if (t.allocations && Object.keys(t.allocations).length > 0) {
+                            Object.entries(t.allocations).forEach(([cat, catAmt]) => {
+                                const val = parseFloat(catAmt) || 0;
+                                if (val > 0) {
+                                    const nc = normalizeCategory(cat);
+                                    allIncAlloc[nc] = (allIncAlloc[nc] || 0) + val;
+                                }
+                            });
+                        } else if (t.houseNumber && t.houseNumber.trim()) {
+                            allAutoIuran += amt;
+                        } else {
+                            allAutoDana += amt;
+                        }
+                    } else if (t.type === 'expense') {
+                        const rawCat = t.category && t.category.trim() ? t.category.trim() : 'Tanpa Kategori';
+                        const cat = normalizeCategory(rawCat);
+                        allExpCat[cat] = (allExpCat[cat] || 0) + (parseFloat(t.amount) || 0);
+                    }
+                });
+
+                if (totalDefaultAlloc > 0 && allAutoIuran > 0) {
+                    const jml = allAutoIuran / totalDefaultAlloc;
+                    (feeAllocations || []).forEach(item => {
+                        allIncAlloc[item.title] = (allIncAlloc[item.title] || 0) + ((parseFloat(item.amount) || 0) * jml);
+                    });
+                    const totalSet = (feeAllocations || []).reduce((s, item) => s + Math.round((parseFloat(item.amount) || 0) * jml), 0);
+                    const selisih = allAutoIuran - totalSet;
+                    if (Math.abs(selisih) >= 1) {
+                        allIncAlloc['Kas Umum (Dana Tambahan)'] = (allIncAlloc['Kas Umum (Dana Tambahan)'] || 0) + selisih;
+                    }
+                } else if (allAutoIuran > 0) {
+                    allIncAlloc['Kas Umum (Dana Tambahan)'] = (allIncAlloc['Kas Umum (Dana Tambahan)'] || 0) + allAutoIuran;
+                }
+                if (allAutoDana > 0) {
+                    allIncAlloc['Kas Umum (Dana Tambahan)'] = (allIncAlloc['Kas Umum (Dana Tambahan)'] || 0) + allAutoDana;
+                }
+
                 const allCategoryNames = [];
-                Object.keys(incomeAllocByCategory).forEach(cat => {
+                Object.keys(allIncAlloc).forEach(cat => {
                     if (!allCategoryNames.includes(cat)) allCategoryNames.push(cat);
                 });
-                Object.keys(expenseByCategory).forEach(cat => {
+                Object.keys(allExpCat).forEach(cat => {
                     if (!allCategoryNames.includes(cat)) allCategoryNames.push(cat);
                 });
 
@@ -1951,8 +2068,8 @@
                     balanceList.innerHTML = '<span class="text-[11px] text-blue-200 italic">Belum ada data alokasi.</span>';
                 } else {
                     balanceList.innerHTML = allCategoryNames.map(cat => {
-                        const allocatedIn = incomeAllocByCategory[cat] || 0;
-                        const spentOut = expenseByCategory[cat] || 0;
+                        const allocatedIn = allIncAlloc[cat] || 0;
+                        const spentOut = allExpCat[cat] || 0;
                         const net = allocatedIn - spentOut;
                         const netColor = net < 0 ? 'text-rose-300' : 'text-white';
                         return `
@@ -1967,7 +2084,7 @@
 
             const allocTitles = (feeAllocations || []).map(a => a.title);
             const orphanCategories = Object.keys(expenseByCategory).filter(cat => {
-                if (cat === 'Tanpa Kategori' || cat === 'Kas Umum' || cat === 'Lain-lain') return false;
+                if (cat === 'Tanpa Kategori' || cat === 'Kas Umum (Dana Tambahan)' || cat === 'Lain-lain') return false;
                 return !allocTitles.includes(cat);
             });
 
@@ -2137,7 +2254,6 @@
                 const dateObj = new Date(lastDate);
                 const dateLabel = dateObj.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
                 
-                // Hanya tampilkan tanggal, tanpa total harian
                 dateHeader.innerHTML = `
                     <div class="text-[10px] font-bold text-slate-600 uppercase tracking-wide">
                         <i class="fas fa-calendar-day mr-1 text-slate-400"></i> ${dateLabel}
@@ -2170,7 +2286,8 @@
                 if (isInc) {
                     methodBadge = methodTag;
                 } else {
-                    const catTag = t.category ? `<span class="inline-block px-1.5 py-0.5 text-[9px] rounded font-semibold bg-rose-100 text-rose-700"><i class="fas fa-tag mr-0.5"></i>${escapeHTML(t.category)}</span>` : '';
+                    const normCat = normalizeCategory(t.category);
+                    const catTag = normCat ? `<span class="inline-block px-1.5 py-0.5 text-[9px] rounded font-semibold bg-rose-100 text-rose-700"><i class="fas fa-tag mr-0.5"></i>${escapeHTML(normCat)}</span>` : '';
                     methodBadge = methodTag + ' ' + catTag;
                 }
 
@@ -2507,7 +2624,7 @@
                     "No. Rumah": t.houseNumber || '-',
                     "Keterangan": t.description || '-',
                     "Metode": t.paymentMethod || '-',
-                    "Kategori": t.type === 'expense' ? (t.category || '-') : '-',
+                    "Kategori": t.type === 'expense' ? (normalizeCategory(t.category) || '-') : '-',
                     "Pemasukan (Rp)": t.type === 'income' ? (parseFloat(t.amount) || 0) : 0,
                     "Pengeluaran (Rp)": t.type === 'expense' ? (parseFloat(t.amount) || 0) : 0
                 }));
@@ -2674,7 +2791,6 @@
                     renderManualAllocationInputs();
                     updateManualSummary();
                 } else {
-                    // Reset ke mode otomatis
                     alokasiMode = 'auto';
                     manualAllocation = {};
                     document.getElementById('alokasi-manual-container').classList.add('hidden');
@@ -2702,7 +2818,7 @@
                 document.getElementById('exp-date').value = t.date || '';
                 document.getElementById('exp-method').value = t.paymentMethod || 'Cash';
                 document.getElementById('exp-desc').value = t.description || '';
-                document.getElementById('exp-category').value = t.category || '';
+                document.getElementById('exp-category').value = normalizeCategory(t.category) || '';
                 document.getElementById('exp-amount').value = t.amount || '';
                 document.getElementById('exp-submit-btn').innerHTML = '<i class="fas fa-save"></i> Perbarui Pengeluaran';
 
@@ -2725,7 +2841,6 @@
             document.getElementById('inc-amount').value = '50000';
             document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Simpan Pemasukan';
 
-            // Reset ke mode otomatis
             alokasiMode = 'auto';
             manualAllocation = {};
             document.getElementById('alokasi-manual-container').classList.add('hidden');
@@ -2902,7 +3017,7 @@
                         ? (t.houseNumber
                             ? `<span class="bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded text-[10px] font-bold border border-blue-200">${escapeHTML(t.houseNumber)}</span>`
                             : `<span class="bg-purple-50 text-purple-700 px-1.5 py-0.5 rounded text-[10px] font-bold border border-purple-200"><i class="fas fa-gift"></i> Dana Tambahan</span>`)
-                        : (t.category ? `<span class="bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-rose-200"><i class="fas fa-tag mr-0.5"></i>${escapeHTML(t.category)}</span>` : '');
+                        : (t.category ? `<span class="bg-rose-50 text-rose-700 px-1.5 py-0.5 rounded text-[10px] font-semibold border border-rose-200"><i class="fas fa-tag mr-0.5"></i>${escapeHTML(normalizeCategory(t.category))}</span>` : '');
                     return `
                         <div class="flex items-start justify-between gap-2 p-2.5 rounded-lg border border-slate-100 bg-white shadow-sm">
                             <div class="min-w-0 flex-1">
@@ -2954,7 +3069,7 @@
                 exportData.push({
                     "Tanggal": formatDate(t.date),
                     "Keterangan": t.description || '-',
-                    "No. Rumah / Kategori": isInc ? (t.houseNumber || 'Dana Tambahan') : (t.category || '-'),
+                    "No. Rumah / Kategori": isInc ? (t.houseNumber || 'Dana Tambahan') : (normalizeCategory(t.category) || '-'),
                     "Debit (Keluar)": !isInc ? (parseFloat(t.amount) || 0) : '',
                     "Kredit (Masuk)": isInc ? (parseFloat(t.amount) || 0) : '',
                     "Saldo": saldo
@@ -3056,11 +3171,9 @@
             return firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('ISI_');
         }
 
-        // Fungsi pembantu untuk memulihkan warga yang login dari localStorage
-        // Dipanggil setelah data houses selesai dimuat
         function restoreWargaFromStorage() {
             if (!savedWargaHouseNumber) return;
-            if (currentWargaHouse) return; // sudah login, skip
+            if (currentWargaHouse) return;
 
             const found = houses.find(h =>
                 (h.houseNumber || '').trim().toUpperCase() === (savedWargaHouseNumber || '').trim().toUpperCase()
@@ -3071,7 +3184,6 @@
                 updateWargaUI();
                 console.log('[Warga] Login dipulihkan:', found.houseNumber, '-', found.ownerName);
             } else {
-                // Nomor rumah tidak ditemukan (mungkin sudah dihapus)
                 localStorage.removeItem('kasRtWargaHouse');
                 savedWargaHouseNumber = null;
             }
@@ -3170,7 +3282,6 @@
                         houses = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
 
-                    // Update warga yang sedang login (kalau data rumahnya berubah)
                     if (currentWargaHouse) {
                         const updated = houses.find(h =>
                             (h.houseNumber || '').trim().toUpperCase() === (currentWargaHouse.houseNumber || '').trim().toUpperCase()
@@ -3180,7 +3291,6 @@
                             updateWargaUI();
                         }
                     } else {
-                        // Belum login, coba pulihkan dari localStorage
                         restoreWargaFromStorage();
                     }
 
@@ -3239,7 +3349,6 @@
             document.getElementById('online-users-container').innerHTML = '<span class="text-xs text-slate-400">Offline mode.</span>';
             document.getElementById('online-count-badge').textContent = 'Offline';
 
-            // Pulihkan warga yang login dari localStorage (mode offline)
             restoreWargaFromStorage();
 
             scheduleRenderAllViews();
@@ -3483,7 +3592,7 @@
 
                 if (oldTitle && oldTitle !== title) {
                     const affectedExpenses = transactions.filter(t =>
-                        t.type === 'expense' && t.category === oldTitle
+                        t.type === 'expense' && normalizeCategory(t.category) === oldTitle
                     ).length;
 
                     if (affectedExpenses > 0) {
@@ -3497,7 +3606,7 @@
                             if (firebaseReady) {
                                 const updates = {};
                                 transactions.forEach(t => {
-                                    if (t.type === 'expense' && t.category === oldTitle) {
+                                    if (t.type === 'expense' && normalizeCategory(t.category) === oldTitle) {
                                         updates[`kasRt/transactions/${t.id}/category`] = title;
                                     }
                                 });
@@ -3506,7 +3615,7 @@
                                 }
                             } else {
                                 transactions.forEach(t => {
-                                    if (t.type === 'expense' && t.category === oldTitle) {
+                                    if (t.type === 'expense' && normalizeCategory(t.category) === oldTitle) {
                                         t.category = title;
                                     }
                                 });
@@ -3587,7 +3696,6 @@
             
             let amount = parseFloat(document.getElementById('inc-amount').value) || 0;
             
-            // Jika dalam mode alokasi manual, pastikan nominal diambil dari total alokasi manual
             if (alokasiMode === 'manual') {
                 const totalManual = Object.values(manualAllocation).reduce((sum, v) => sum + (parseFloat(v) || 0), 0);
                 if (totalManual > 0) {
@@ -3710,7 +3818,6 @@
             updateWargaUI();
             showToast(`Selamat datang, ${house.ownerName}! 👋`);
 
-            // Tutup dropdown kustom
             const dd = document.getElementById('warga-login-dropdown');
             if (dd) dd.classList.add('hidden');
 
@@ -3861,8 +3968,7 @@
         };
 
         // ============================================================
-        // NAVIGASI
-        // ============================================================
+        // NAVIGASI        // ============================================================
         window.switchMainPage = function(page) {
             const pageDashboard = document.getElementById('page-dashboard');
             const pageHouses = document.getElementById('page-houses');
@@ -3950,7 +4056,6 @@
             document.getElementById('warga-remember').checked = true;
             document.getElementById('warga-login-modal').classList.remove('hidden');
 
-            // Pastikan dropdown tertutup dulu
             if (dropdown) dropdown.classList.add('hidden');
 
             setTimeout(() => input.focus(), 100);
@@ -3986,7 +4091,7 @@
         }
 
         // ============================================================
-        // INIT (PALING BAWAH)
+        // INIT
         // ============================================================
         window.addEventListener('DOMContentLoaded', async () => {
             const todayStr = new Date().toISOString().split('T')[0];
@@ -4005,7 +4110,6 @@
             await getAdminPinHash();
             updateAdminUI();
 
-            // Delay sedikit supaya semua fungsi sudah didefinisikan
             setTimeout(() => {
                 const savedPage = localStorage.getItem('kasRtActivePage') || 'dashboard';
                 if (typeof switchMainPage === 'function') switchMainPage(savedPage);
@@ -4022,7 +4126,6 @@
                     }
                 }
 
-                // Event listener untuk dropdown kustom Cek Iuran Saya
                 const wargaInput = document.getElementById('warga-login-input');
                 if (wargaInput) {
                     wargaInput.addEventListener('focus', () => filterWargaLoginDropdown(wargaInput.value));
