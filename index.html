@@ -49,7 +49,7 @@
                 <div class="text-[10px] text-blue-200 hidden md:block shrink-0" id="current-date"></div>
             </div>
 
-            <!-- Baris 2: Tombol Cek Iuran & Login -->
+            <!-- Baris 2: Tombol Cek Iuran & Login (di tengah) -->
             <div class="flex items-center justify-center gap-2 flex-wrap">
                 <button id="warga-login-btn" onclick="openWargaLogin()" class="px-3 sm:px-4 py-2 rounded-lg bg-white text-blue-800 hover:bg-blue-50 text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow-sm whitespace-nowrap">
                     <i class="fas fa-search"></i> <span id="warga-btn-text">Cek Iuran Saya</span>
@@ -68,7 +68,7 @@
                 </button>
             </div>
 
-            <!-- Baris 3: Menu Tab -->
+            <!-- Baris 3: Menu Tab (Kas & Status) -->
             <div class="flex items-center bg-blue-800/60 p-1 rounded-xl border border-blue-500/30 justify-center">
                 <button onclick="switchMainPage('dashboard')" id="nav-btn-dashboard" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-blue-800 shadow text-center">
                     <i class="fas fa-chart-pie mr-1"></i> Kas & Transaksi
@@ -353,57 +353,17 @@
                         </div>
 
                         <div>
-                            <label class="block text-xs font-semibold text-slate-600 mb-1">
-                                Nominal (Rp) <span class="text-rose-500">*</span>
-                                <span class="text-emerald-600 font-normal text-[10px]">(Standar: Rp 50.000)</span>
-                            </label>
-                            <input type="number" id="inc-amount" min="1" value="50000" placeholder="50000" oninput="updateAllocationPreview(this.value)" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none font-semibold">
-                            <div class="flex items-center gap-1.5 mt-1.5 flex-wrap">
-                                <button type="button" onclick="setNominal(50000)" class="text-[10px] px-2 py-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-700 font-bold rounded">50rb</button>
-                                <button type="button" onclick="setNominal(30000)" class="text-[10px] px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold rounded">30rb</button>
-                                <button type="button" onclick="setNominal(25000)" class="text-[10px] px-2 py-1 bg-amber-100 hover:bg-amber-200 text-amber-700 font-bold rounded">25rb</button>
-                                <button type="button" onclick="setNominal(100000)" class="text-[10px] px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold rounded">100rb</button>
-                            </div>
+                            <label class="block text-xs font-semibold text-slate-600 mb-1">Nominal (Rp) <span class="text-rose-500">*</span></label>
+                            <input type="number" id="inc-amount" min="1" placeholder="50000" oninput="updateAllocationPreview(this.value)" required class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs sm:text-sm focus:ring-2 focus:ring-blue-500 outline-none">
                         </div>
 
-                        <!-- PREVIEW ALOKASI -->
-                        <div id="income-allocation-preview" class="p-3 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-2 text-[11px]">
+                        <div id="income-allocation-preview" class="p-2.5 bg-emerald-50/60 border border-emerald-200 rounded-xl space-y-1 text-[11px]">
                             <div class="font-bold text-emerald-800 flex items-center justify-between">
                                 <span class="flex items-center gap-1"><i class="fas fa-wallet text-emerald-600"></i> Rincian Alokasi Dana:</span>
                                 <span id="preview-total-nominal" class="text-emerald-700">Rp 0</span>
                             </div>
-
-                            <!-- Toggle Mode -->
-                            <div class="flex items-center gap-2 bg-white rounded-lg p-1 border border-emerald-200">
-                                <button type="button" onclick="setAlokasiMode('auto')" id="btn-alokasi-auto" class="flex-1 py-1.5 rounded text-[10px] font-bold transition-all bg-emerald-600 text-white">
-                                    <i class="fas fa-magic"></i> Otomatis
-                                </button>
-                                <button type="button" onclick="setAlokasiMode('manual')" id="btn-alokasi-manual" class="flex-1 py-1.5 rounded text-[10px] font-bold transition-all text-slate-600 hover:text-slate-900">
-                                    <i class="fas fa-pen"></i> Manual
-                                </button>
-                            </div>
-
-                            <!-- Preview Otomatis -->
-                            <div id="alokasi-auto-container">
-                                <div id="preview-allocation-list" class="space-y-1 mt-1 text-slate-600">
-                                    <span class="text-slate-400 italic">Masukkan nominal untuk melihat rincian...</span>
-                                </div>
-                            </div>
-
-                            <!-- Input Manual -->
-                            <div id="alokasi-manual-container" class="hidden space-y-2">
-                                <div id="manual-allocation-inputs" class="space-y-2"></div>
-                                <div class="pt-2 border-t border-emerald-200 space-y-1">
-                                    <div class="flex justify-between text-[10px]">
-                                        <span class="text-slate-600">Total Alokasi:</span>
-                                        <span id="manual-total-alloc" class="font-bold text-emerald-700">Rp 0</span>
-                                    </div>
-                                    <div class="flex justify-between text-[10px]">
-                                        <span class="text-slate-600">Nominal Input:</span>
-                                        <span id="manual-nominal-input" class="font-bold text-blue-700">Rp 0</span>
-                                    </div>
-                                    <div id="manual-diff-alert" class="text-[10px] font-semibold text-center py-1.5 rounded hidden"></div>
-                                </div>
+                            <div id="preview-allocation-list" class="space-y-1 mt-1 text-slate-600">
+                                <span class="text-slate-400 italic">Masukkan nominal untuk melihat rincian...</span>
                             </div>
                         </div>
 
@@ -617,6 +577,7 @@
                 </div>
             </div>
 
+            <!-- Container Status Iuran — Tabel 4 kolom compact -->
             <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 <table class="w-full text-left border-collapse table-fixed">
                     <thead>
@@ -702,6 +663,7 @@
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
+                <!-- Box Summary -->
                 <div id="info-tunggakan-box" class="rounded-xl p-3 hidden">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-[10px] uppercase tracking-wider font-bold opacity-80">
@@ -712,6 +674,7 @@
                     <div id="info-tunggakan-detail" class="text-[10px] mt-1 opacity-80"></div>
                 </div>
 
+                <!-- Riwayat Pembayaran -->
                 <div>
                     <div class="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-2">
                         <i class="fas fa-list-ul mr-1"></i> Riwayat Pembayaran
@@ -719,6 +682,7 @@
                     <div id="info-status-list" class="space-y-1.5"></div>
                 </div>
 
+                <!-- Cara Bayar -->
                 <div class="bg-blue-50 border border-blue-200 rounded-xl p-3">
                     <div class="text-[10px] uppercase tracking-wider font-bold text-blue-800 mb-2">
                         <i class="fas fa-credit-card mr-1"></i> Cara Bayar
@@ -1011,11 +975,7 @@
 
         // Warga session
         let currentWargaHouse = null;
-        let BENDAHARA_WHATSAPP = '6281234567890';
-
-        // Alokasi manual
-        let alokasiMode = 'auto'; // 'auto' | 'manual'
-        let manualAllocation = {};
+        let BENDAHARA_WHATSAPP = '6281234567890'; // GANTI dengan nomor bendahara
 
         const DEFAULT_ADMIN_PIN = '123456';
         let ADMIN_PIN_HASH = null;
@@ -1272,130 +1232,328 @@
         };
 
         // ============================================================
-        // ALOKASI MANUAL
+        // WARGA LOGIN
         // ============================================================
-        window.setNominal = function(value) {
-            const input = document.getElementById('inc-amount');
-            if (!input) return;
-            input.value = value;
-            updateAllocationPreview(value);
-        };
-
-        window.setAlokasiMode = function(mode) {
-            alokasiMode = mode;
-            
-            const btnAuto = document.getElementById('btn-alokasi-auto');
-            const btnManual = document.getElementById('btn-alokasi-manual');
-            const containerAuto = document.getElementById('alokasi-auto-container');
-            const containerManual = document.getElementById('alokasi-manual-container');
-            
-            if (mode === 'auto') {
-                btnAuto.className = "flex-1 py-1.5 rounded text-[10px] font-bold transition-all bg-emerald-600 text-white";
-                btnManual.className = "flex-1 py-1.5 rounded text-[10px] font-bold transition-all text-slate-600 hover:text-slate-900";
-                containerAuto.classList.remove('hidden');
-                containerManual.classList.add('hidden');
-            } else {
-                btnManual.className = "flex-1 py-1.5 rounded text-[10px] font-bold transition-all bg-emerald-600 text-white";
-                btnAuto.className = "flex-1 py-1.5 rounded text-[10px] font-bold transition-all text-slate-600 hover:text-slate-900";
-                containerManual.classList.remove('hidden');
-                containerAuto.classList.add('hidden');
-                
-                // Inisialisasi: kalau kosong, taruh nominal di kategori pertama
-                if (Object.keys(manualAllocation).length === 0) {
-                    const nominal = parseFloat(document.getElementById('inc-amount').value) || 0;
-                    if (feeAllocations && feeAllocations.length > 0) {
-                        feeAllocations.forEach((item, idx) => {
-                            manualAllocation[item.title] = idx === 0 ? nominal : 0;
-                        });
-                    }
-                }
-                
-                renderManualAllocationInputs();
-            }
-            
-            const amount = document.getElementById('inc-amount').value;
-            updateAllocationPreview(amount);
-        };
-
-        window.renderManualAllocationInputs = function() {
-            const container = document.getElementById('manual-allocation-inputs');
-            if (!container) return;
-            
-            if (!feeAllocations || feeAllocations.length === 0) {
-                container.innerHTML = '<div class="text-slate-400 italic text-[10px]">Belum ada kategori alokasi. Tambah di menu admin.</div>';
+        window.openWargaLogin = function() {
+            if (currentWargaHouse) {
+                openInfoWarga();
                 return;
             }
+
+            document.getElementById('warga-login-input').value = '';
+            document.getElementById('warga-remember').checked = true;
+            document.getElementById('warga-login-modal').classList.remove('hidden');
+            setTimeout(() => document.getElementById('warga-login-input').focus(), 100);
+        };
+
+        window.closeWargaLogin = function() {
+            document.getElementById('warga-login-modal').classList.add('hidden');
+        };
+
+        window.logoutWarga = function() {
+            if (!confirm('Yakin ingin keluar? Anda perlu memasukkan No. Rumah lagi di kunjungan berikutnya.')) return;
             
-            container.innerHTML = feeAllocations.map(item => {
-                const currentVal = manualAllocation[item.title] || 0;
-                const safeTitle = escapeHTML(item.title).replace(/'/g, "\\'");
-                return `
-                    <div>
-                        <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">${escapeHTML(item.title)}</label>
-                        <div class="relative">
-                            <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">Rp</span>
-                            <input type="number" min="0" step="1000" 
-                                value="${currentVal}" 
-                                oninput="handleManualInput('${safeTitle}', this.value)"
-                                placeholder="0"
-                                class="w-full pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 outline-none">
-                        </div>
+            currentWargaHouse = null;
+            localStorage.removeItem('kasRtWargaHouse');
+            updateWargaUI();
+            showToast('Anda telah keluar. Terima kasih! 👋', 'info');
+        };
+
+        function updateWargaUI() {
+            const banner = document.getElementById('warga-welcome-banner');
+            const btnText = document.getElementById('warga-btn-text');
+
+            if (currentWargaHouse) {
+                if (banner) banner.classList.remove('hidden');
+                document.getElementById('warga-welcome-name').textContent = currentWargaHouse.ownerName || '-';
+                document.getElementById('warga-welcome-house').textContent = `Rumah ${currentWargaHouse.houseNumber}`;
+                if (btnText) btnText.textContent = 'Cek Iuran Saya';
+            } else {
+                if (banner) banner.classList.add('hidden');
+                if (btnText) btnText.textContent = 'Cek Iuran Saya';
+            }
+        }
+
+        // ============================================================
+        // INFO WARGA — Riwayat Pembayaran (hanya bulan yang pernah dibayar)
+        // ============================================================
+        window.openInfoWarga = function() {
+            if (!currentWargaHouse) {
+                openWargaLogin();
+                return;
+            }
+
+            const normalized = currentWargaHouse.houseNumber.replace(/[\s\-]/g, '').toUpperCase();
+            const now = new Date();
+            const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+
+            // Kumpulkan semua transaksi pembayaran rumah ini
+            const paymentsByMonth = {};
+            transactions.forEach(t => {
+                if (t.type !== 'income' || !t.houseNumber) return;
+                if (t.houseNumber.replace(/[\s\-]/g, '').toUpperCase() !== normalized) return;
+                
+                const tDate = new Date(t.date);
+                if (isNaN(tDate.getTime())) return;
+                
+                const tYM = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!paymentsByMonth[tYM]) {
+                    paymentsByMonth[tYM] = {
+                        ym: tYM,
+                        amount: 0,
+                        count: 0,
+                        date: tDate
+                    };
+                }
+                paymentsByMonth[tYM].amount += (parseFloat(t.amount) || 0);
+                paymentsByMonth[tYM].count += 1;
+            });
+
+            // Urutkan dari terbaru → lama
+            const sortedMonths = Object.keys(paymentsByMonth).sort().reverse();
+
+            const statusPerMonth = sortedMonths.map(ym => {
+                const data = paymentsByMonth[ym];
+                const d = new Date(data.date.getFullYear(), data.date.getMonth(), 1);
+                return {
+                    ym: ym,
+                    dateObj: d,
+                    label: d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }),
+                    fullLabel: d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
+                    isPaid: true,
+                    amount: data.amount,
+                    isCurrentMonth: ym === currentYM,
+                    isMultiPayment: data.count > 1
+                };
+            });
+
+            const totalPaid = statusPerMonth.reduce((sum, m) => sum + m.amount, 0);
+
+            // Render header
+            document.getElementById('info-result-house').textContent = currentWargaHouse.houseNumber;
+            document.getElementById('info-result-owner').textContent = currentWargaHouse.ownerName || '-';
+
+            // Summary box
+            const summaryBox = document.getElementById('info-tunggakan-box');
+            const summaryAmount = document.getElementById('info-tunggakan-amount');
+            const summaryDetail = document.getElementById('info-tunggakan-detail');
+
+            if (statusPerMonth.length === 0) {
+                summaryBox.classList.remove('hidden');
+                summaryBox.className = "rounded-xl p-3 bg-amber-50 border border-amber-200 text-amber-800";
+                summaryAmount.textContent = "Belum Ada Pembayaran";
+                summaryAmount.className = "text-base font-extrabold text-amber-700";
+                summaryDetail.textContent = `Belum ada riwayat pembayaran tercatat untuk rumah ini.`;
+            } else {
+                summaryBox.classList.remove('hidden');
+                summaryBox.className = "rounded-xl p-3 bg-emerald-50 border border-emerald-200 text-emerald-800";
+                summaryAmount.textContent = formatRupiah(totalPaid);
+                summaryAmount.className = "text-2xl font-extrabold text-emerald-700";
+                summaryDetail.textContent = `Total sudah dibayar (${statusPerMonth.length} bulan)`;
+            }
+
+            // Status list
+            const statusList = document.getElementById('info-status-list');
+            if (statusPerMonth.length === 0) {
+                statusList.innerHTML = `
+                    <div class="text-center py-6 px-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
+                        <i class="fas fa-inbox text-2xl text-slate-300 mb-2"></i>
+                        <p class="text-xs text-slate-500">Belum ada riwayat pembayaran</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Hubungi bendahara jika sudah membayar</p>
                     </div>
                 `;
-            }).join('');
-            
-            updateManualSummary();
-        };
-
-        window.handleManualInput = function(title, value) {
-            const amt = parseFloat(value) || 0;
-            manualAllocation[title] = amt;
-            updateManualSummary();
-        };
-
-        window.updateManualSummary = function() {
-            const totalAlloc = Object.values(manualAllocation).reduce((sum, v) => sum + v, 0);
-            const nominalInput = parseFloat(document.getElementById('inc-amount').value) || 0;
-            
-            document.getElementById('manual-total-alloc').textContent = formatRupiah(totalAlloc);
-            document.getElementById('manual-nominal-input').textContent = formatRupiah(nominalInput);
-            
-            const diff = nominalInput - totalAlloc;
-            const alertEl = document.getElementById('manual-diff-alert');
-            
-            if (Math.abs(diff) < 1) {
-                alertEl.className = "text-[10px] font-semibold text-center py-1.5 rounded bg-emerald-100 text-emerald-700";
-                alertEl.innerHTML = '<i class="fas fa-check-circle"></i> Cocok!';
-            } else if (diff > 0) {
-                alertEl.className = "text-[10px] font-semibold text-center py-1.5 rounded bg-blue-100 text-blue-700";
-                alertEl.innerHTML = `<i class="fas fa-info-circle"></i> Sisa ${formatRupiah(diff)} masuk Kas Umum`;
             } else {
-                alertEl.className = "text-[10px] font-semibold text-center py-1.5 rounded bg-rose-100 text-rose-700";
-                alertEl.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Kelebihan ${formatRupiah(Math.abs(diff))}`;
+                statusList.innerHTML = statusPerMonth.map(m => {
+                    const bg = 'bg-emerald-50 border-emerald-200';
+                    const icon = '✅';
+                    const statusColor = 'text-emerald-700';
+                    const highlight = m.isCurrentMonth ? 'ring-2 ring-blue-300' : '';
+                    const multiTag = m.isMultiPayment ? `<span class="text-[9px] text-blue-600 font-bold ml-1">(${m.count}x bayar)</span>` : '';
+                    
+                    return `
+                        <div class="flex items-center justify-between p-2 rounded-lg border ${bg} ${highlight}">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-sm">${icon}</span>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-semibold text-slate-800 truncate">${m.fullLabel}${multiTag}</div>
+                                    ${m.isCurrentMonth ? `<div class="text-[9px] text-blue-600 font-bold">BULAN INI</div>` : ''}
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="text-[10px] font-bold ${statusColor}">Lunas</div>
+                                <div class="text-[10px] text-slate-600 font-semibold">${formatRupiah(m.amount)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
             }
-            alertEl.classList.remove('hidden');
+
+            // Bank list
+            const bankList = document.getElementById('info-bank-list');
+            if (bankAccounts.length === 0) {
+                bankList.innerHTML = '<div class="text-xs text-blue-600 italic">Hubungi bendahara untuk info rekening.</div>';
+            } else {
+                bankList.innerHTML = bankAccounts.map(b => `
+                    <div class="flex items-center justify-between gap-2 bg-white rounded-lg p-2 border border-blue-200">
+                        <div class="min-w-0 flex-1">
+                            <div class="text-[10px] font-bold text-blue-700 uppercase">${escapeHTML(b.bankName)}</div>
+                            <div class="text-xs font-bold text-slate-800">${escapeHTML(b.accountNumber)}</div>
+                            <div class="text-[10px] text-slate-500">a.n. ${escapeHTML(b.accountHolder)}</div>
+                        </div>
+                        <button onclick="copyToClipboard('${escapeHTML(b.accountNumber)}')" class="text-[10px] px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold rounded shrink-0">
+                            <i class="fas fa-copy"></i> Salin
+                        </button>
+                    </div>
+                `).join('');
+            }
+
+            document.getElementById('info-warga-modal').classList.remove('hidden');
+        };
+
+        window.closeInfoWarga = function() {
+            document.getElementById('info-warga-modal').classList.add('hidden');
+        };
+
+        window.whatsappBendahara = function() {
+            if (!currentWargaHouse) {
+                showToast('Login dulu!', 'error');
+                return;
+            }
+
+            const house = currentWargaHouse.houseNumber;
+            const owner = currentWargaHouse.ownerName;
+
+            let message = `Assalamualaikum Bendahara RT 01.\n\n`;
+            message += `Saya ${owner} (${house}) ingin konfirmasi iuran.\n\n`;
+            message += `Mohon dibantu dicek ya. Terima kasih. 🙏`;
+
+            const url = `https://wa.me/${BENDAHARA_WHATSAPP}?text=${encodeURIComponent(message)}`;
+            window.open(url, '_blank');
+        };
+
+        // Handler form warga login
+        document.getElementById('form-warga-login').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const input = document.getElementById('warga-login-input');
+            const remember = document.getElementById('warga-remember').checked;
+            
+            let houseNo = (input.value || '').trim().toUpperCase();
+            if (!houseNo) {
+                showToast('Masukkan No. Rumah!', 'error');
+                return;
+            }
+
+            const normalized = houseNo.replace(/[\s\-]/g, '');
+            const house = houses.find(h => {
+                const hNorm = (h.houseNumber || '').replace(/[\s\-]/g, '').toUpperCase();
+                return hNorm === normalized;
+            });
+
+            if (!house) {
+                showToast(`Rumah "${houseNo}" tidak ditemukan. Cek dengan pengurus.`, 'error');
+                return;
+            }
+
+            currentWargaHouse = house;
+            if (remember) {
+                localStorage.setItem('kasRtWargaHouse', house.houseNumber);
+            }
+
+            closeWargaLogin();
+            updateWargaUI();
+            showToast(`Selamat datang, ${house.ownerName}! 👋`);
+
+            setTimeout(() => openInfoWarga(), 300);
+        });
+
+        // ============================================================
+        // NAVIGASI
+        // ============================================================
+        window.switchMainPage = function(page) {
+            const pageDashboard = document.getElementById('page-dashboard');
+            const pageHouses = document.getElementById('page-houses');
+            const navBtnDash = document.getElementById('nav-btn-dashboard');
+            const navBtnHouses = document.getElementById('nav-btn-houses');
+
+            localStorage.setItem('kasRtActivePage', page);
+
+            if (page === 'dashboard') {
+                pageDashboard.classList.remove('hidden');
+                pageHouses.classList.add('hidden');
+                navBtnDash.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-blue-800 shadow text-center";
+                navBtnHouses.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
+            } else {
+                pageDashboard.classList.add('hidden');
+                pageHouses.classList.remove('hidden');
+                navBtnHouses.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-blue-800 shadow text-center";
+                navBtnDash.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
+                renderHouseStatus();
+            }
+        };
+
+        window.switchMainView = window.switchMainPage;
+
+        window.switchForm = function(type) {
+            const formIncome = document.getElementById('form-income');
+            const formExpense = document.getElementById('form-expense');
+            const btnInc = document.getElementById('btn-form-income');
+            const btnExp = document.getElementById('btn-form-expense');
+
+            if (type === 'income') {
+                formIncome.classList.remove('hidden');
+                formExpense.classList.add('hidden');
+                btnInc.className = "py-1.5 text-xs font-bold rounded-lg transition-all bg-emerald-600 text-white shadow-sm flex items-center justify-center gap-1";
+                btnExp.className = "py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1";
+            } else {
+                formIncome.classList.add('hidden');
+                formExpense.classList.remove('hidden');
+                btnExp.className = "py-1.5 text-xs font-bold rounded-lg transition-all bg-rose-600 text-white shadow-sm flex items-center justify-center gap-1";
+                btnInc.className = "py-1.5 text-xs font-bold rounded-lg transition-all text-slate-600 hover:text-slate-900 flex items-center justify-center gap-1";
+            }
+        };
+
+        let currentActiveTab = localStorage.getItem('kasRtActiveDataTab') || 'history';
+        window.switchDataTab = function(tab) {
+            currentActiveTab = tab;
+            localStorage.setItem('kasRtActiveDataTab', tab);
+            const viewHistory = document.getElementById('view-history');
+            const viewRecap = document.getElementById('view-recap');
+            const tabHistory = document.getElementById('tab-data-history');
+            const tabRecap = document.getElementById('tab-data-recap');
+
+            if (tab === 'history') {
+                viewHistory.classList.remove('hidden');
+                viewHistory.classList.add('flex');
+                viewRecap.classList.add('hidden');
+                viewRecap.classList.remove('flex');
+                tabHistory.className = "pb-2.5 text-xs sm:text-sm transition-all tab-active";
+                tabRecap.className = "pb-2.5 text-xs sm:text-sm transition-all tab-inactive";
+            } else {
+                viewHistory.classList.add('hidden');
+                viewHistory.classList.remove('flex');
+                viewRecap.classList.remove('hidden');
+                viewRecap.classList.add('flex');
+                tabRecap.className = "pb-2.5 text-xs sm:text-sm transition-all tab-active";
+                tabHistory.className = "pb-2.5 text-xs sm:text-sm transition-all tab-inactive";
+                renderRecap();
+            }
         };
 
         // ============================================================
         // PREVIEW ALOKASI
         // ============================================================
         window.updateAllocationPreview = function(val) {
-            const inputVal = parseFloat(val) || 0;
-            
-            document.getElementById('preview-total-nominal').textContent = formatRupiah(inputVal);
-            
-            // Manual mode
-            if (alokasiMode === 'manual') {
-                updateManualSummary();
-                return;
-            }
-            
-            // === AUTO MODE ===
             const container = document.getElementById('preview-allocation-list');
+            const totalNominalEl = document.getElementById('preview-total-nominal');
+            const inputVal = parseFloat(val) || 0;
+
+            totalNominalEl.textContent = formatRupiah(inputVal);
+
             const houseInput = document.getElementById('inc-house');
             const houseNo = (houseInput?.value || '').trim().toUpperCase();
             const isDonasi = !houseNo;
-            
+
             if (isDonasi) {
                 container.innerHTML = `
                     <div class="flex justify-between items-center text-xs py-1 bg-purple-50 px-2 rounded">
@@ -1405,31 +1563,31 @@
                         <span class="font-bold text-purple-700">${formatRupiah(inputVal)}</span>
                     </div>
                     <div class="text-[10px] text-purple-600 italic mt-1">
-                        <i class="fas fa-info-circle"></i> Tanpa No. Rumah → langsung ke <b>Kas Umum</b>.
+                        <i class="fas fa-info-circle"></i> Tanpa No. Rumah → langsung ke <b>Kas Umum</b>, tidak dialokasikan.
                     </div>
                 `;
                 return;
             }
-            
+
             if (!feeAllocations || feeAllocations.length === 0) {
                 container.innerHTML = '<span class="text-slate-400 italic">Belum ada rincian alokasi terdaftar.</span>';
                 return;
             }
-            
+
             const totalDefaultAlloc = feeAllocations.reduce(
                 (sum, item) => sum + (parseFloat(item.amount) || 0), 0
             );
-            
+
             if (totalDefaultAlloc <= 0 || inputVal <= 0) {
                 container.innerHTML = '<span class="text-slate-400 italic">Masukkan nominal untuk melihat rincian...</span>';
                 return;
             }
-            
+
             const jumlahRumahBayar = inputVal / totalDefaultAlloc;
-            
+
             let html = '';
             let totalDibulatkan = 0;
-            
+
             feeAllocations.forEach(item => {
                 const amt = (parseFloat(item.amount) || 0) * jumlahRumahBayar;
                 const rounded = Math.round(amt);
@@ -1443,7 +1601,7 @@
                     </div>
                 `;
             });
-            
+
             const selisih = inputVal - totalDibulatkan;
             if (Math.abs(selisih) >= 1) {
                 html += `
@@ -1453,13 +1611,13 @@
                     </div>
                 `;
             }
-            
+
             html += `
                 <div class="text-[10px] text-slate-500 italic mt-1 pt-1 border-t border-emerald-100">
-                    <i class="fas fa-calculator"></i> Setara <b>${jumlahRumahBayar.toFixed(2)}</b>× alokasi standar
+                    <i class="fas fa-calculator"></i> Setara <b>${jumlahRumahBayar.toFixed(2)}</b>× alokasi iuran standar
                 </div>
             `;
-            
+
             container.innerHTML = html;
         };
 
@@ -2080,7 +2238,6 @@
 
                 const isInc = t.type === 'income';
                 const isDonasi = isInc && (!t.houseNumber || !t.houseNumber.trim());
-                const isManualAlloc = isInc && t.allocations && t.allocations.mode === 'manual';
 
                 let methodBadge = '';
                 const m = t.paymentMethod || 'Cash';
@@ -2090,10 +2247,9 @@
                 else if (m.includes('BCA')) { badgeBg = 'bg-indigo-100 text-indigo-700'; methodIcon = '🏦'; }
                 else { badgeBg = 'bg-amber-100 text-amber-800'; methodIcon = '💵'; }
                 const methodTag = `<span class="inline-block px-1.5 py-0.5 text-[9px] rounded font-semibold ${badgeBg}">${methodIcon} ${escapeHTML(m.replace('Bank ', ''))}</span>`;
-                const manualTag = isManualAlloc ? `<span class="inline-block px-1.5 py-0.5 text-[9px] rounded font-semibold bg-purple-100 text-purple-700"><i class="fas fa-hand-paper mr-0.5"></i>Manual</span>` : '';
 
                 if (isInc) {
-                    methodBadge = methodTag + ' ' + manualTag;
+                    methodBadge = methodTag;
                 } else {
                     const catTag = t.category ? `<span class="inline-block px-1.5 py-0.5 text-[9px] rounded font-semibold bg-rose-100 text-rose-700"><i class="fas fa-tag mr-0.5"></i>${escapeHTML(t.category)}</span>` : '';
                     methodBadge = methodTag + ' ' + catTag;
@@ -2266,7 +2422,7 @@
         };
 
         // ============================================================
-        // RENDER HOUSE STATUS
+        // RENDER HOUSE STATUS — Tabel Compact 4 Kolom
         // ============================================================
         window.renderHouseStatus = function() {
             const periodInput = document.getElementById('house-period-filter');
@@ -2549,10 +2705,8 @@
             }
             
             descInput.value = `Iuran Kas Bulan ${monthName}`;
-            document.getElementById('inc-amount').value = '50000';
-            updateAllocationPreview('50000');
             document.getElementById('inc-amount').focus();
-            document.getElementById('inc-amount').select();
+            updateAllocationPreview(document.getElementById('inc-amount').value);
             showToast(`Mencatat iuran rumah ${houseNo}`);
         };
 
@@ -2579,18 +2733,6 @@
                 document.getElementById('inc-house').value = t.houseNumber || '';
                 document.getElementById('inc-desc').value = t.description || '';
                 document.getElementById('inc-amount').value = t.amount || '';
-                
-                // Load mode alokasi
-                if (t.allocations && t.allocations.mode === 'manual' && t.allocations.items) {
-                    alokasiMode = 'manual';
-                    manualAllocation = { ...t.allocations.items };
-                    setAlokasiMode('manual');
-                } else {
-                    alokasiMode = 'auto';
-                    manualAllocation = {};
-                    setAlokasiMode('auto');
-                }
-                
                 updateAllocationPreview(t.amount || 0);
                 document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Perbarui Pemasukan';
 
@@ -2624,15 +2766,8 @@
             const formInc = document.getElementById('form-income');
             formInc.reset();
             document.getElementById('inc-id').value = '';
-            document.getElementById('inc-amount').value = '50000';
             document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Simpan Pemasukan';
-
-            // Reset mode alokasi
-            alokasiMode = 'auto';
-            manualAllocation = {};
-            setAlokasiMode('auto');
-
-            updateAllocationPreview('50000');
+            updateAllocationPreview(0);
             currentIncomeProofs = [];
             renderPreviews('income');
 
@@ -2977,7 +3112,8 @@
                         myPresenceRef.set({
                             joinedAt: firebase.database.ServerValue.TIMESTAMP,
                             device: /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop',
-                            role: isAdmin ? 'Admin' : 'Warga'
+                            role: isAdmin ? 'Admin' : 'Warga',
+                            house: currentWargaHouse ? currentWargaHouse.houseNumber : ''
                         });
                     }
                 });
@@ -3006,13 +3142,18 @@
                         const isMe = key === userSessionId;
                         const role = user.role || 'Warga';
                         const device = user.device || '';
+                        const house = user.house || '';
 
                         const badge = document.createElement('div');
                         badge.className = "flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 px-2.5 py-1 rounded-xl text-xs font-medium shadow-xs";
+                        
+                        let displayName = isMe ? 'Anda' : role;
+                        if (house) displayName += ` (${house})`;
+                        
                         badge.innerHTML = `
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                             <span class="flex items-center gap-1">
-                                <b>${isMe ? `Anda (${role})` : role}</b>
+                                <b>${displayName}</b>
                                 ${device ? `<span class="text-[9px] text-emerald-500">${device === 'Mobile' ? '📱' : '💻'}</span>` : ''}
                             </span>
                         `;
@@ -3444,22 +3585,7 @@
             const amount = parseFloat(document.getElementById('inc-amount').value) || 0;
             const proofs = [...currentIncomeProofs];
 
-            // Validasi & ambil alokasi
-            let allocations = null;
-            if (alokasiMode === 'manual') {
-                const totalAlloc = Object.values(manualAllocation).reduce((sum, v) => sum + v, 0);
-                
-                if (totalAlloc > amount) {
-                    showToast(`Total alokasi (${formatRupiah(totalAlloc)}) melebihi nominal (${formatRupiah(amount)})!`, 'error');
-                    return;
-                }
-                
-                allocations = { mode: 'manual', items: { ...manualAllocation } };
-            } else {
-                allocations = { mode: 'auto' };
-            }
-
-            const txData = { type: 'income', date, paymentMethod, houseNumber, description, amount, proofs, allocations };
+            const txData = { type: 'income', date, paymentMethod, houseNumber, description, amount, proofs };
 
             if (firebaseReady) {
                 if (id) firebaseDb.ref(`kasRt/transactions/${id}`).update(txData);
