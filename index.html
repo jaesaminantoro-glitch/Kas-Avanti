@@ -819,8 +819,8 @@
         </div>
     </div>
 
-    <!-- Modal Proof -->
-    <div id="proof-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
+    <!-- Modal Proof (z-index dinaikkan jadi z-[100]) -->
+    <div id="proof-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] flex items-center justify-center p-3 hidden">
         <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
             <div class="p-3 border-b border-slate-100 flex justify-between items-center bg-slate-50">
                 <h3 class="font-bold text-slate-800 text-xs flex items-center gap-1.5">
@@ -872,7 +872,7 @@
         </div>
     </div>
 
-    <!-- Modal Detail Kategori Pengeluaran (BARU) -->
+    <!-- Modal Detail Kategori Pengeluaran -->
     <div id="expense-category-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-3 hidden">
         <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
             <div class="bg-gradient-to-br from-rose-600 to-rose-700 p-4 text-white">
@@ -906,8 +906,8 @@
             <div id="expense-cat-modal-list" class="p-3 overflow-y-auto custom-scrollbar flex-1 space-y-2"></div>
 
             <div class="p-3 bg-slate-50 border-t border-slate-200 flex gap-2">
-                <button onclick="closeExpenseCategoryModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-lg">
-                    Tutup
+                <button onclick="closeExpenseCategoryModal()" class="flex-1 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 font-semibold text-xs rounded-lg flex items-center justify-center gap-1.5">
+                    <i class="fas fa-arrow-left"></i> Kembali ke Daftar
                 </button>
                 <button onclick="exportExpenseCategoryToExcel()" class="flex-1 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs rounded-lg flex items-center justify-center gap-1.5">
                     <i class="fas fa-file-excel"></i> Ekspor Excel
@@ -981,7 +981,8 @@
         <i id="toast-icon" class="fas fa-check-circle text-emerald-400 text-sm"></i>
         <span id="toast-message" class="font-medium whitespace-nowrap">Notifikasi</span>
     </div>
-        <script>
+
+    <script>
         // ============================================================
         // DATA DEFAULT
         // ============================================================
@@ -1020,9 +1021,6 @@
             measurementId: "G-QT5XKJSQ1X"
         };
 
-        // ============================================================
-        // STATE
-        // ============================================================
         let firebaseReady = false;
         let firebaseDb = null;
         let firebaseAuth = null;
@@ -1048,9 +1046,6 @@
         const now = new Date();
         const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
-        // ============================================================
-        // HASH PIN
-        // ============================================================
         async function hashPin(pin) {
             try {
                 const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(pin)));
@@ -1095,9 +1090,6 @@
             return ADMIN_PIN_HASH;
         }
 
-        // ============================================================
-        // KOMPRES GAMBAR
-        // ============================================================
         function compressImage(file, maxSizeKB = 500) {
             return new Promise((resolve) => {
                 if (!file) return resolve('');
@@ -1159,9 +1151,6 @@
             });
         }
 
-        // ============================================================
-        // UI TOGGLE
-        // ============================================================
         window.toggleBankSection = function() {
             const content = document.getElementById('bank-section-content');
             const icon = document.getElementById('bank-toggle-icon');
@@ -1238,9 +1227,6 @@
             renderWargaLoginDropdown();
         }
 
-        // ============================================================
-        // DROPDOWN KUSTOM WARGA LOGIN (HANYA NOMOR RUMAH)
-        // ============================================================
         window.renderWargaLoginDropdown = function(filterText = '') {
             const dropdown = document.getElementById('warga-login-dropdown');
             if (!dropdown) return;
@@ -1296,9 +1282,6 @@
             }
         });
 
-        // ============================================================
-        // FORMAT
-        // ============================================================
         window.formatRupiah = function(number) {
             return new Intl.NumberFormat('id-ID', {
                 style: 'currency', currency: 'IDR',
@@ -1351,9 +1334,6 @@
             });
         };
 
-        // ============================================================
-        // HELPER: Normalisasi kategori "Kas Umum" → "Kas Umum (Dana Tambahan)"
-        // ============================================================
         window.normalizeCategory = function(cat) {
             if (!cat) return cat;
             const trimmed = String(cat).trim();
@@ -1361,9 +1341,6 @@
             return trimmed;
         };
 
-        // ============================================================
-        // ALOKASI MANUAL
-        // ============================================================
         window.setNominal = function(value) {
             if (alokasiMode === 'manual') {
                 kembaliOtomatis();
@@ -1482,9 +1459,6 @@
             }
         };
 
-        // ============================================================
-        // PREVIEW ALOKASI
-        // ============================================================
         window.updateAllocationPreview = function(val) {
             const inputVal = parseFloat(val) || 0;
             
@@ -1570,9 +1544,6 @@
             container.innerHTML = html;
         };
 
-        // ============================================================
-        // UPLOAD BUKTI
-        // ============================================================
         window.handleFilesUpload = async function(type) {
             const fileInput = document.getElementById(type === 'income' ? 'inc-proof' : 'exp-proof');
             const files = fileInput.files;
@@ -1644,9 +1615,6 @@
             }
         };
 
-        // ============================================================
-        // RENDER BANK & ALOKASI
-        // ============================================================
         window.renderBankAccounts = function() {
             const container = document.getElementById('bank-accounts-container');
             if (!container) return;
@@ -1753,9 +1721,6 @@
             }
         };
 
-        // ============================================================
-        // CRUD BANK
-        // ============================================================
         window.openAddBankModal = function() {
             if (!requireAdmin()) return;
             document.getElementById('modal-bank-id').value = '';
@@ -1795,9 +1760,6 @@
             }
         };
 
-        // ============================================================
-        // CRUD ALOKASI
-        // ============================================================
         window.openAddAllocationModal = function() {
             if (!requireAdmin()) return;
             document.getElementById('modal-allocation-id').value = '';
@@ -1835,9 +1797,6 @@
             }
         };
 
-        // ============================================================
-        // PERIODE FILTER HELPER
-        // ============================================================
         window.handleDashboardPeriodChange = function() {
             const val = document.getElementById('dashboard-period-filter').value;
             const customInput = document.getElementById('dashboard-custom-month');
@@ -1891,9 +1850,6 @@
             return d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
         }
 
-        // ============================================================
-        // RENDER DASHBOARD
-        // ============================================================
         window.renderDashboard = function() {
             const filteredTx = getFilteredTransactions();
             const isFiltered = (document.getElementById('dashboard-period-filter')?.value || 'all') !== 'all';
@@ -2145,7 +2101,7 @@
         };
 
         // ============================================================
-        // MODAL DETAIL KATEGORI PENGELUARAN (BARU)
+        // MODAL DETAIL KATEGORI PENGELUARAN
         // ============================================================
         let currentExpenseCategoryExport = null;
 
@@ -2221,6 +2177,14 @@
         window.closeExpenseCategoryModal = function() {
             document.getElementById('expense-category-modal').classList.add('hidden');
             currentExpenseCategoryExport = null;
+
+            // Auto-buka rincian Total Pengeluaran agar user bisa langsung klik kategori lain
+            const expenseBreakdown = document.getElementById('expense-breakdown-content');
+            const expenseIcon = document.getElementById('expense-breakdown-icon');
+            if (expenseBreakdown && expenseIcon) {
+                expenseBreakdown.classList.remove('hidden');
+                expenseIcon.classList.add('rotate-180');
+            }
         };
 
         document.addEventListener('keydown', function(e) {
@@ -2536,9 +2500,6 @@
             flushDailyGroup();
         };
 
-        // ============================================================
-        // RENDER RECAP
-        // ============================================================
         window.renderRecap = function() {
             const tbody = document.getElementById('recap-tbody');
             const emptyEl = document.getElementById('recap-empty');
@@ -2620,9 +2581,6 @@
             table.appendChild(tfoot);
         };
 
-        // ============================================================
-        // RENDER HOUSE STATUS
-        // ============================================================
         window.renderHouseStatus = function() {
             const periodInput = document.getElementById('house-period-filter');
             if (!periodInput.value) periodInput.value = currentYearMonth;
@@ -2766,9 +2724,6 @@
             }
         };
 
-        // ============================================================
-        // EXPORT EXCEL
-        // ============================================================
         window.exportToExcel = function() {
             if (typeof XLSX === 'undefined') {
                 showToast('Pustaka Excel belum siap.', 'error');
@@ -2876,9 +2831,6 @@
             showToast(`Status iuran periode ${periodInput} berhasil diekspor!`);
         };
 
-        // ============================================================
-        // QUICK RECORD PAYMENT
-        // ============================================================
         window.quickRecordPayment = function(houseNo) { 
             if (!requireAdmin()) return;
             switchMainPage('dashboard');
@@ -2911,9 +2863,6 @@
             showToast(`Mencatat iuran rumah ${houseNo}`);
         };
 
-        // ============================================================
-        // EDIT / CANCEL TRANSAKSI
-        // ============================================================
         window.editTransaction = function(id) {
             if (!requireAdmin()) return;
             const t = transactions.find(item => item.id === id);
@@ -3036,9 +2985,6 @@
             document.getElementById('exp-date').value = todayISO;
         };
 
-        // ============================================================
-        // CRUD HOUSE
-        // ============================================================
         window.openAddHouseModal = function() { 
             if (!requireAdmin()) return;
             document.getElementById('modal-house-id').value = '';
@@ -3081,9 +3027,6 @@
             }
         };
 
-        // ============================================================
-        // MODAL PROOF
-        // ============================================================
         window.openProofModal = function(id) {
             const t = transactions.find(item => item.id === id);
             const modal = document.getElementById('proof-modal');
@@ -3113,9 +3056,6 @@
             document.getElementById('proof-modal').classList.add('hidden');
         };
 
-        // ============================================================
-        // RECAP DETAIL
-        // ============================================================
         let currentRecapExport = null;
 
         window.openRecapDetail = function(monthKey) {
@@ -3255,9 +3195,6 @@
             showToast('Rincian mutasi berhasil diekspor!');
         };
 
-        // ============================================================
-        // DELETE TRANSAKSI
-        // ============================================================
         window.deleteTransaction = function(id) { 
             if (!requireAdmin()) return;
             if (confirm('Hapus transaksi ini?')) {
@@ -3272,9 +3209,6 @@
             }
         };
 
-        // ============================================================
-        // RENDER BATCH
-        // ============================================================
         let renderScheduled = false;
 
         function scheduleRenderAllViews() {
@@ -3301,9 +3235,6 @@
             renderHouseStatus();
         }
 
-        // ============================================================
-        // FIREBASE
-        // ============================================================
         function addHouseToFirebase(houseData) {
             if (!firebaseReady) return;
             firebaseDb.ref('kasRt/houses').push().set({
@@ -3498,9 +3429,6 @@
             }
         }
 
-        // ============================================================
-        // LOCAL STORAGE MODE
-        // ============================================================
         function initApp() {
             firebaseReady = false;
             
@@ -3525,9 +3453,6 @@
             localStorage.setItem('kasRtTransactions', JSON.stringify(transactions));
         }
 
-        // ============================================================
-        // AUTH ADMIN
-        // ============================================================
         window.openAdminLogin = function() {
             document.getElementById('admin-pin').value = '';
             document.getElementById('admin-login-modal').classList.remove('hidden');
@@ -3647,9 +3572,6 @@
             renderAllViews();
         }
 
-        // ============================================================
-        // BACKUP / RESTORE
-        // ============================================================
         window.backupDataJSON = function() {
             const data = { houses, bankAccounts, feeAllocations, transactions, exportedAt: new Date().toISOString() };
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -3711,9 +3633,6 @@
             event.target.value = '';
         };
 
-        // ============================================================
-        // FORM SUBMITS
-        // ============================================================
         document.getElementById('form-bank').addEventListener('submit', function(e) {
             e.preventDefault();
             if (!requireAdmin()) return;
@@ -3943,9 +3862,6 @@
             showToast('Pengeluaran kas berhasil dicatat!');
         });
 
-        // ============================================================
-        // WARGA LOGIN FORM
-        // ============================================================
         document.getElementById('form-warga-login').addEventListener('submit', function(e) {
             e.preventDefault();
             const input = document.getElementById('warga-login-input');
@@ -3987,9 +3903,6 @@
             setTimeout(() => openInfoWarga(), 300);
         });
 
-        // ============================================================
-        // INFO WARGA
-        // ============================================================
         window.openInfoWarga = function() {
             if (!currentWargaHouse) {
                 openWargaLogin();
@@ -4130,9 +4043,6 @@
             window.open(url, '_blank');
         };
 
-        // ============================================================
-        // NAVIGASI
-        // ============================================================
         window.switchMainPage = function(page) {
             const pageDashboard = document.getElementById('page-dashboard');
             const pageHouses = document.getElementById('page-houses');
@@ -4204,9 +4114,6 @@
             }
         };
 
-        // ============================================================
-        // WARGA LOGIN
-        // ============================================================
         window.openWargaLogin = function() {
             if (currentWargaHouse) {
                 openInfoWarga();
@@ -4254,9 +4161,6 @@
             }
         }
 
-        // ============================================================
-        // INIT
-        // ============================================================
         window.addEventListener('DOMContentLoaded', async () => {
             const todayStr = new Date().toISOString().split('T')[0];
             const incDateEl = document.getElementById('inc-date');
