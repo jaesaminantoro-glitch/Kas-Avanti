@@ -25,11 +25,6 @@
             overflow: hidden;
         }
         .smooth-hscroll { -webkit-overflow-scrolling: touch; }
-        @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-slide-down { animation: slideDown 0.4s ease-out; }
     </style>
     <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
@@ -88,7 +83,7 @@
 
     <main class="max-w-6xl mx-auto px-2 sm:px-4 py-4 flex-1 w-full space-y-4">
         
-        <div id="firebase-status" class="text-[11px] text-slate-500 font-medium px-1"></div>
+        <!-- Elemen firebase-status dihapus dari tampilan -->
 
         <!-- BANNER WARGA LOGGED IN -->
         <div id="warga-welcome-banner" class="hidden bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-2xl p-3 shadow-sm">
@@ -645,10 +640,10 @@
                 <p class="text-blue-200 text-[11px] mt-0.5">Masukkan No. Rumah Anda</p>
             </div>
             <form id="form-warga-login" class="p-4 space-y-3">
-                <div>
+                <div class="relative">
                     <label class="block text-xs font-semibold text-slate-600 mb-1">No. Rumah / Blok <span class="text-rose-500">*</span></label>
-                    <input type="text" id="warga-login-input" list="warga-login-list" placeholder="Misal: L8" required class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase font-semibold">
-                    <datalist id="warga-login-list"></datalist>
+                    <input type="text" id="warga-login-input" placeholder="Misal: L8" required autocomplete="off" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm focus:ring-2 focus:ring-blue-500 outline-none uppercase font-semibold">
+                    <div id="warga-login-dropdown" class="hidden absolute z-50 w-full mt-1 bg-white border border-slate-300 rounded-lg shadow-lg max-h-48 overflow-y-auto custom-scrollbar"></div>
                     <p class="text-[10px] text-slate-400 mt-1 italic">
                         <i class="fas fa-info-circle"></i> Data pribadi Anda tidak tersimpan di server.
                     </p>
@@ -698,9 +693,6 @@
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
-                <!-- NOTIFIKASI STATUS BULAN INI -->
-                <div id="info-notif-bulan-ini" class="hidden animate-slide-down"></div>
-
                 <div id="info-tunggakan-box" class="rounded-xl p-3 hidden">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-[10px] uppercase tracking-wider font-bold opacity-80">
@@ -1201,15 +1193,76 @@
 
         function updateHouseDatalist() {
             const datalist = document.getElementById('house-list');
-            const wargaList = document.getElementById('warga-login-list');
             
+            // Datalist untuk panel admin (tetap pakai datalist bawaan)
             const html = houses.map(h => 
                 `<option value="${escapeHTML(h.houseNumber)}">${escapeHTML(h.houseNumber)} - ${escapeHTML(h.ownerName)}</option>`
             ).join('');
             
             if (datalist) datalist.innerHTML = html;
-            if (wargaList) wargaList.innerHTML = html;
+
+            // Render ulang dropdown kustom untuk modal Cek Iuran Saya
+            renderWargaLoginDropdown();
         }
+
+        // ============================================================
+        // DROPDOWN KUSTOM WARGA LOGIN (HANYA NOMOR RUMAH)
+        // ============================================================
+        window.renderWargaLoginDropdown = function(filterText = '') {
+            const dropdown = document.getElementById('warga-login-dropdown');
+            if (!dropdown) return;
+
+            const query = (filterText || '').trim().toUpperCase();
+
+            const sortedHouses = [...houses].sort((a, b) =>
+                (a.houseNumber || '').localeCompare(b.houseNumber || '', undefined, { numeric: true, sensitivity: 'base' })
+            );
+
+            const filtered = sortedHouses.filter(h => {
+                const no = (h.houseNumber || '').toUpperCase();
+                return no.includes(query);
+            });
+
+            if (filtered.length === 0) {
+                dropdown.innerHTML = '<div class="px-3 py-2 text-xs text-slate-400 italic">Tidak ada rumah ditemukan.</div>';
+                return;
+            }
+
+            dropdown.innerHTML = filtered.map(h => `
+                <div onclick="selectWargaHouse('${escapeHTML(h.houseNumber)}')" 
+                     class="px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-800 cursor-pointer border-b border-slate-100 last:border-0">
+                    ${escapeHTML(h.houseNumber)}
+                </div>
+            `).join('');
+        };
+
+        window.filterWargaLoginDropdown = function(value) {
+            const dropdown = document.getElementById('warga-login-dropdown');
+            if (!dropdown) return;
+
+            renderWargaLoginDropdown(value);
+            dropdown.classList.remove('hidden');
+        };
+
+        window.selectWargaHouse = function(houseNo) {
+            const input = document.getElementById('warga-login-input');
+            const dropdown = document.getElementById('warga-login-dropdown');
+            if (!input || !dropdown) return;
+
+            input.value = houseNo;
+            dropdown.classList.add('hidden');
+        };
+
+        // Tutup dropdown saat klik di luar
+        document.addEventListener('click', function(e) {
+            const dropdown = document.getElementById('warga-login-dropdown');
+            const input = document.getElementById('warga-login-input');
+            if (!dropdown || !input) return;
+
+            if (!dropdown.contains(e.target) && e.target !== input) {
+                dropdown.classList.add('hidden');
+            }
+        });
 
         // ============================================================
         // FORMAT
@@ -3025,8 +3078,6 @@
         }
 
         async function startFirebaseSync() {
-            const statusEl = document.getElementById('firebase-status');
-
             if (!isFirebaseConfigured()) {
                 initApp();
                 return;
@@ -3041,7 +3092,6 @@
                 });
 
                 firebaseReady = true;
-                statusEl.innerHTML = '<span class="text-emerald-600"><i class="fas fa-check-circle"></i> Terhubung ke Firebase Realtime Database.</span>';
 
                 await getAdminPinHash();
 
@@ -3180,7 +3230,6 @@
         // ============================================================
         function initApp() {
             firebaseReady = false;
-            document.getElementById('firebase-status').innerHTML = '<span class="text-amber-600"><i class="fas fa-exclamation-triangle"></i> Mode Offline / LocalStorage.</span>';
             
             houses = JSON.parse(localStorage.getItem('kasRtHouses') || JSON.stringify(defaultHousesArray));
             bankAccounts = JSON.parse(localStorage.getItem('kasRtBanks') || JSON.stringify(defaultBanksArray));
@@ -3661,6 +3710,10 @@
             updateWargaUI();
             showToast(`Selamat datang, ${house.ownerName}! 👋`);
 
+            // Tutup dropdown kustom
+            const dd = document.getElementById('warga-login-dropdown');
+            if (dd) dd.classList.add('hidden');
+
             setTimeout(() => openInfoWarga(), 300);
         });
 
@@ -3714,43 +3767,6 @@
 
             document.getElementById('info-result-house').textContent = currentWargaHouse.houseNumber;
             document.getElementById('info-result-owner').textContent = currentWargaHouse.ownerName || '-';
-
-            // ============================================
-            // NOTIFIKASI STATUS BULAN INI
-            // ============================================
-            const notifEl = document.getElementById('info-notif-bulan-ini');
-            const currentMonthData = statusPerMonth.find(m => m.isCurrentMonth);
-            const currentMonthLabel = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-
-            if (currentMonthData && currentMonthData.isPaid) {
-                // Sudah lunas bulan ini
-                notifEl.className = "rounded-xl p-3 bg-emerald-50 border-2 border-emerald-300 text-emerald-800 flex items-center gap-3 animate-slide-down";
-                notifEl.innerHTML = `
-                    <div class="w-10 h-10 rounded-full bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-sm">
-                        <i class="fas fa-check-circle text-lg"></i>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="text-[10px] uppercase tracking-wider font-bold text-emerald-600">Status Iuran Bulan Ini</div>
-                        <div class="font-bold text-sm text-emerald-800">✅ Sudah Lunas</div>
-                        <div class="text-[10px] text-emerald-600 mt-0.5">Iuran ${currentMonthLabel} — ${formatRupiah(currentMonthData.amount)}</div>
-                    </div>
-                `;
-                notifEl.classList.remove('hidden');
-            } else {
-                // Belum bayar bulan ini
-                notifEl.className = "rounded-xl p-3 bg-amber-50 border-2 border-amber-300 text-amber-800 flex items-center gap-3 animate-slide-down";
-                notifEl.innerHTML = `
-                    <div class="w-10 h-10 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-sm">
-                        <i class="fas fa-clock text-lg"></i>
-                    </div>
-                    <div class="min-w-0 flex-1">
-                        <div class="text-[10px] uppercase tracking-wider font-bold text-amber-600">Status Iuran Bulan Ini</div>
-                        <div class="font-bold text-sm text-amber-800">⏳ Belum Dibayar</div>
-                        <div class="text-[10px] text-amber-600 mt-0.5">Iuran ${currentMonthLabel} belum tercatat. Mohon segera bayar.</div>
-                    </div>
-                `;
-                notifEl.classList.remove('hidden');
-            }
 
             const summaryBox = document.getElementById('info-tunggakan-box');
             const summaryAmount = document.getElementById('info-tunggakan-amount');
@@ -3927,10 +3943,17 @@
                 return;
             }
 
-            document.getElementById('warga-login-input').value = '';
+            const input = document.getElementById('warga-login-input');
+            const dropdown = document.getElementById('warga-login-dropdown');
+
+            input.value = '';
             document.getElementById('warga-remember').checked = true;
             document.getElementById('warga-login-modal').classList.remove('hidden');
-            setTimeout(() => document.getElementById('warga-login-input').focus(), 100);
+
+            // Pastikan dropdown tertutup dulu
+            if (dropdown) dropdown.classList.add('hidden');
+
+            setTimeout(() => input.focus(), 100);
         };
 
         window.closeWargaLogin = function() {
@@ -3999,10 +4022,12 @@
                     }
                 }
 
-                // Catatan: Pemulihan warga yang login TIDAK dilakukan di sini,
-                // karena data `houses` belum tentu sudah dimuat dari Firebase.
-                // Pemulihan dilakukan di dalam callback firebaseDb.ref('kasRt/houses').on('value', ...)
-                // dan di initApp() untuk mode offline.
+                // Event listener untuk dropdown kustom Cek Iuran Saya
+                const wargaInput = document.getElementById('warga-login-input');
+                if (wargaInput) {
+                    wargaInput.addEventListener('focus', () => filterWargaLoginDropdown(wargaInput.value));
+                    wargaInput.addEventListener('input', () => filterWargaLoginDropdown(wargaInput.value));
+                }
 
                 startFirebaseSync();
             }, 100);
