@@ -33,60 +33,49 @@
 <body class="text-slate-800 min-h-screen flex flex-col overflow-x-hidden relative">
 
     <nav class="bg-blue-700 text-white shadow-md sticky top-0 z-30">
-        <div class="max-w-6xl mx-auto px-3 sm:px-4 py-2.5 flex flex-col sm:flex-row justify-between items-center gap-2.5">
-            <div class="flex items-center gap-2 w-full sm:w-auto justify-between sm:justify-start">
-                <div class="flex items-center gap-2 min-w-0">
-                    <div class="w-8 h-8 sm:w-9 sm:h-9 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-inner shrink-0">
+        <div class="max-w-6xl mx-auto px-3 sm:px-4 py-3 space-y-2.5">
+            
+            <!-- Baris 1: Judul -->
+            <div class="flex items-center justify-between gap-2">
+                <div class="flex items-center gap-2 min-w-0 flex-1">
+                    <div class="w-9 h-9 sm:w-10 sm:h-10 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm shadow-inner shrink-0">
                         <i class="fas fa-building text-sm sm:text-lg"></i>
                     </div>
                     <div class="min-w-0 flex-1">
-                        <h1 class="font-bold text-xs sm:text-base leading-tight truncate">Puri Avanti RT 01 RW 12</h1>
+                        <h1 class="font-bold text-sm sm:text-base leading-tight truncate">Puri Avanti RT 01 RW 12</h1>
                         <p class="text-blue-200 text-[10px] sm:text-xs truncate">Manajemen Keuangan & Status Iuran</p>
                     </div>
                 </div>
-                
-                <div class="flex items-center gap-1.5 shrink-0 sm:hidden">
-                    <button id="warga-login-btn-mb" onclick="openWargaLogin()" class="px-2.5 py-1.5 rounded-lg bg-white text-blue-800 text-[11px] font-semibold flex items-center gap-1 whitespace-nowrap">
-                        <i class="fas fa-user"></i> <span id="warga-btn-text-mb">Cek Iuran</span>
-                    </button>
-                    <button id="admin-login-btn-mb" onclick="openAdminLogin()" class="px-2.5 py-1.5 rounded-lg bg-white/15 text-[11px] font-semibold flex items-center gap-1 whitespace-nowrap">
-                        <i class="fas fa-lock"></i> Login
-                    </button>
-                    <button id="admin-change-pin-btn-mb" onclick="openChangePin()" class="admin-only px-2.5 py-1.5 rounded-lg bg-amber-500 text-[11px] font-semibold hidden flex items-center gap-1 whitespace-nowrap">
-                        <i class="fas fa-key"></i> PIN
-                    </button>
-                    <button id="admin-logout-btn-mb" onclick="logoutAdmin()" class="admin-only px-2.5 py-1.5 rounded-lg bg-rose-500 text-[11px] font-semibold hidden flex items-center gap-1 whitespace-nowrap">
-                        <i class="fas fa-sign-out-alt"></i> Keluar
-                    </button>
-                </div>
+                <div class="text-[10px] text-blue-200 hidden md:block shrink-0" id="current-date"></div>
             </div>
-            
-            <div class="flex items-center bg-blue-800/60 p-1 rounded-xl border border-blue-500/30 w-full sm:w-auto justify-center">
-                <button onclick="switchMainPage('dashboard')" id="nav-btn-dashboard" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center">
-                    <i class="fas fa-chart-pie mr-1"></i> Kas & Transaksi
+
+            <!-- Baris 2: Tombol Cek Iuran & Login (di tengah) -->
+            <div class="flex items-center justify-center gap-2 flex-wrap">
+                <button id="warga-login-btn" onclick="openWargaLogin()" class="px-3 sm:px-4 py-2 rounded-lg bg-white text-blue-800 hover:bg-blue-50 text-xs sm:text-sm font-semibold flex items-center gap-1.5 shadow-sm whitespace-nowrap">
+                    <i class="fas fa-search"></i> <span id="warga-btn-text">Cek Iuran Saya</span>
                 </button>
-                <button onclick="switchMainPage('houses')" id="nav-btn-houses" class="flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center">
-                    <i class="fas fa-home mr-1"></i> Status Iuran
-                    <span id="unpaid-badge" class="ml-1 px-1.5 py-0.5 text-[9px] bg-rose-500 text-white rounded-full font-bold inline-block">0</span>
+                
+                <button id="admin-login-btn" onclick="openAdminLogin()" class="px-3 sm:px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-lock"></i> Login Admin
+                </button>
+                
+                <button id="admin-change-pin-btn" onclick="openChangePin()" class="admin-only px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-xs font-semibold hidden items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-key"></i> Ubah PIN
+                </button>
+                
+                <button id="admin-logout-btn" onclick="logoutAdmin()" class="admin-only px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-xs font-semibold hidden items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-sign-out-alt"></i> Logout
                 </button>
             </div>
 
-            <div class="hidden sm:flex items-center gap-2">
-                <div class="text-xs font-medium text-blue-100 hidden lg:block mr-2" id="current-date"></div>
-                
-                <!-- Tombol Cek Iuran Warga -->
-                <button id="warga-login-btn" onclick="openWargaLogin()" class="px-3 py-2 rounded-lg bg-white text-blue-800 hover:bg-blue-50 text-xs font-semibold flex items-center gap-1.5">
-                    <i class="fas fa-user-circle"></i> <span id="warga-btn-text">Cek Iuran Saya</span>
+            <!-- Baris 3: Menu Tab (Kas & Status) -->
+            <div class="flex items-center bg-blue-800/60 p-1 rounded-xl border border-blue-500/30 justify-center">
+                <button onclick="switchMainPage('dashboard')" id="nav-btn-dashboard" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-blue-800 shadow text-center">
+                    <i class="fas fa-chart-pie mr-1"></i> Kas & Transaksi
                 </button>
-                
-                <button id="admin-login-btn" onclick="openAdminLogin()" class="px-3 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-xs font-semibold">
-                    <i class="fas fa-lock mr-1"></i> Login Admin
-                </button>
-                <button id="admin-change-pin-btn" onclick="openChangePin()" class="admin-only ml-2 px-3 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-xs font-semibold hidden">
-                    <i class="fas fa-key mr-1"></i> Ubah PIN
-                </button>
-                <button id="admin-logout-btn" onclick="logoutAdmin()" class="admin-only ml-2 px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-xs font-semibold hidden">
-                    <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                <button onclick="switchMainPage('houses')" id="nav-btn-houses" class="flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center">
+                    <i class="fas fa-home mr-1"></i> Status Iuran
+                    <span id="unpaid-badge" class="ml-1 px-1.5 py-0.5 text-[9px] bg-rose-500 text-white rounded-full font-bold inline-block">0</span>
                 </button>
             </div>
         </div>
@@ -654,7 +643,7 @@
                         </div>
                         <div>
                             <h3 class="font-bold text-sm">Status Iuran Saya</h3>
-                            <p class="text-blue-200 text-[10px]">12 bulan terakhir</p>
+                            <p class="text-blue-200 text-[10px]">Riwayat pembayaran</p>
                         </div>
                     </div>
                     <button onclick="closeInfoWarga()" class="text-white/70 hover:text-white p-1 rounded-lg">
@@ -674,21 +663,21 @@
             </div>
 
             <div class="flex-1 overflow-y-auto custom-scrollbar p-4 space-y-3">
-                <!-- Total Tunggakan -->
+                <!-- Box Summary -->
                 <div id="info-tunggakan-box" class="rounded-xl p-3 hidden">
                     <div class="flex items-center justify-between mb-1">
                         <span class="text-[10px] uppercase tracking-wider font-bold opacity-80">
-                            <i class="fas fa-exclamation-triangle mr-1"></i> Total Tunggakan
+                            <i class="fas fa-wallet mr-1"></i> Ringkasan
                         </span>
                     </div>
                     <div id="info-tunggakan-amount" class="text-2xl font-extrabold">Rp 0</div>
                     <div id="info-tunggakan-detail" class="text-[10px] mt-1 opacity-80"></div>
                 </div>
 
-                <!-- Tabel Status per Bulan -->
+                <!-- Riwayat Pembayaran -->
                 <div>
                     <div class="text-[10px] text-slate-500 uppercase tracking-wider font-bold mb-2">
-                        <i class="fas fa-list-ul mr-1"></i> Status Per Bulan
+                        <i class="fas fa-list-ul mr-1"></i> Riwayat Pembayaran
                     </div>
                     <div id="info-status-list" class="space-y-1.5"></div>
                 </div>
@@ -985,7 +974,7 @@
         let currentExpenseProofs = [];
 
         // Warga session
-        let currentWargaHouse = null; // Objek house yang sedang login
+        let currentWargaHouse = null;
         let BENDAHARA_WHATSAPP = '6281234567890'; // GANTI dengan nomor bendahara
 
         const DEFAULT_ADMIN_PIN = '123456';
@@ -1246,7 +1235,6 @@
         // WARGA LOGIN
         // ============================================================
         window.openWargaLogin = function() {
-            // Kalau sudah login, langsung buka Info
             if (currentWargaHouse) {
                 openInfoWarga();
                 return;
@@ -1274,23 +1262,20 @@
         function updateWargaUI() {
             const banner = document.getElementById('warga-welcome-banner');
             const btnText = document.getElementById('warga-btn-text');
-            const btnTextMb = document.getElementById('warga-btn-text-mb');
 
             if (currentWargaHouse) {
                 if (banner) banner.classList.remove('hidden');
                 document.getElementById('warga-welcome-name').textContent = currentWargaHouse.ownerName || '-';
                 document.getElementById('warga-welcome-house').textContent = `Rumah ${currentWargaHouse.houseNumber}`;
                 if (btnText) btnText.textContent = 'Cek Iuran Saya';
-                if (btnTextMb) btnTextMb.textContent = 'Cek Iuran';
             } else {
                 if (banner) banner.classList.add('hidden');
                 if (btnText) btnText.textContent = 'Cek Iuran Saya';
-                if (btnTextMb) btnTextMb.textContent = 'Cek Iuran';
             }
         }
 
         // ============================================================
-        // INFO WARGA (Cek Status Pribadi)
+        // INFO WARGA — Riwayat Pembayaran (hanya bulan yang pernah dibayar)
         // ============================================================
         window.openInfoWarga = function() {
             if (!currentWargaHouse) {
@@ -1298,93 +1283,111 @@
                 return;
             }
 
-            // Hitung status 12 bulan terakhir
+            const normalized = currentWargaHouse.houseNumber.replace(/[\s\-]/g, '').toUpperCase();
             const now = new Date();
             const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-            const normalized = currentWargaHouse.houseNumber.replace(/[\s\-]/g, '').toUpperCase();
 
-            const monthsList = [];
-            for (let i = 0; i < 12; i++) {
-                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                const ym = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                monthsList.push({
+            // Kumpulkan semua transaksi pembayaran rumah ini
+            const paymentsByMonth = {};
+            transactions.forEach(t => {
+                if (t.type !== 'income' || !t.houseNumber) return;
+                if (t.houseNumber.replace(/[\s\-]/g, '').toUpperCase() !== normalized) return;
+                
+                const tDate = new Date(t.date);
+                if (isNaN(tDate.getTime())) return;
+                
+                const tYM = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
+                
+                if (!paymentsByMonth[tYM]) {
+                    paymentsByMonth[tYM] = {
+                        ym: tYM,
+                        amount: 0,
+                        count: 0,
+                        date: tDate
+                    };
+                }
+                paymentsByMonth[tYM].amount += (parseFloat(t.amount) || 0);
+                paymentsByMonth[tYM].count += 1;
+            });
+
+            // Urutkan dari terbaru → lama
+            const sortedMonths = Object.keys(paymentsByMonth).sort().reverse();
+
+            const statusPerMonth = sortedMonths.map(ym => {
+                const data = paymentsByMonth[ym];
+                const d = new Date(data.date.getFullYear(), data.date.getMonth(), 1);
+                return {
                     ym: ym,
                     dateObj: d,
                     label: d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' }),
-                    fullLabel: d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })
-                });
-            }
-
-            const statusPerMonth = monthsList.map(m => {
-                const payment = transactions.find(t => {
-                    if (t.type !== 'income' || !t.houseNumber) return false;
-                    if (t.houseNumber.replace(/[\s\-]/g, '').toUpperCase() !== normalized) return false;
-                    const tDate = new Date(t.date);
-                    if (isNaN(tDate.getTime())) return false;
-                    const tYM = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
-                    return tYM === m.ym;
-                });
-
-                return {
-                    ...m,
-                    isPaid: !!payment,
-                    amount: payment ? (parseFloat(payment.amount) || 0) : 0,
-                    isCurrentMonth: m.ym === currentYM
+                    fullLabel: d.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' }),
+                    isPaid: true,
+                    amount: data.amount,
+                    isCurrentMonth: ym === currentYM,
+                    isMultiPayment: data.count > 1
                 };
             });
 
-            const unpaidMonths = statusPerMonth.filter(s => !s.isPaid);
-            const totalDefaultAlloc = feeAllocations.reduce((sum, item) => sum + (parseFloat(item.amount) || 0), 0) || 50000;
-            const totalTunggakan = unpaidMonths.length * totalDefaultAlloc;
+            const totalPaid = statusPerMonth.reduce((sum, m) => sum + m.amount, 0);
 
-            // Render
+            // Render header
             document.getElementById('info-result-house').textContent = currentWargaHouse.houseNumber;
             document.getElementById('info-result-owner').textContent = currentWargaHouse.ownerName || '-';
 
-            const tunggakanBox = document.getElementById('info-tunggakan-box');
-            const tunggakanAmount = document.getElementById('info-tunggakan-amount');
-            const tunggakanDetail = document.getElementById('info-tunggakan-detail');
+            // Summary box
+            const summaryBox = document.getElementById('info-tunggakan-box');
+            const summaryAmount = document.getElementById('info-tunggakan-amount');
+            const summaryDetail = document.getElementById('info-tunggakan-detail');
 
-            if (unpaidMonths.length === 0) {
-                tunggakanBox.classList.remove('hidden');
-                tunggakanBox.className = "rounded-xl p-3 bg-emerald-50 border border-emerald-200 text-emerald-800";
-                tunggakanAmount.textContent = "LUNAS ✅";
-                tunggakanAmount.className = "text-xl font-extrabold text-emerald-700";
-                tunggakanDetail.textContent = `Terima kasih! Semua iuran 12 bulan terakhir lunas.`;
+            if (statusPerMonth.length === 0) {
+                summaryBox.classList.remove('hidden');
+                summaryBox.className = "rounded-xl p-3 bg-amber-50 border border-amber-200 text-amber-800";
+                summaryAmount.textContent = "Belum Ada Pembayaran";
+                summaryAmount.className = "text-base font-extrabold text-amber-700";
+                summaryDetail.textContent = `Belum ada riwayat pembayaran tercatat untuk rumah ini.`;
             } else {
-                tunggakanBox.classList.remove('hidden');
-                tunggakanBox.className = "rounded-xl p-3 bg-rose-50 border border-rose-200 text-rose-800";
-                tunggakanAmount.textContent = formatRupiah(totalTunggakan);
-                tunggakanAmount.className = "text-2xl font-extrabold text-rose-700";
-                tunggakanDetail.textContent = `${unpaidMonths.length} bulan belum dibayar (${formatRupiah(totalDefaultAlloc)}/bulan)`;
+                summaryBox.classList.remove('hidden');
+                summaryBox.className = "rounded-xl p-3 bg-emerald-50 border border-emerald-200 text-emerald-800";
+                summaryAmount.textContent = formatRupiah(totalPaid);
+                summaryAmount.className = "text-2xl font-extrabold text-emerald-700";
+                summaryDetail.textContent = `Total sudah dibayar (${statusPerMonth.length} bulan)`;
             }
 
             // Status list
             const statusList = document.getElementById('info-status-list');
-            statusList.innerHTML = statusPerMonth.map(m => {
-                const bg = m.isPaid ? 'bg-emerald-50 border-emerald-200' : 'bg-rose-50 border-rose-200';
-                const icon = m.isPaid ? '✅' : '❌';
-                const statusText = m.isPaid ? 'Lunas' : 'Belum Bayar';
-                const statusColor = m.isPaid ? 'text-emerald-700' : 'text-rose-700';
-                const amountText = m.isPaid ? formatRupiah(m.amount) : '-';
-                const highlight = m.isCurrentMonth ? 'ring-2 ring-blue-300' : '';
-                
-                return `
-                    <div class="flex items-center justify-between p-2 rounded-lg border ${bg} ${highlight}">
-                        <div class="flex items-center gap-2 min-w-0">
-                            <span class="text-sm">${icon}</span>
-                            <div class="min-w-0">
-                                <div class="text-xs font-semibold text-slate-800 truncate">${m.fullLabel}</div>
-                                ${m.isCurrentMonth ? `<div class="text-[9px] text-blue-600 font-bold">BULAN INI</div>` : ''}
-                            </div>
-                        </div>
-                        <div class="text-right shrink-0">
-                            <div class="text-[10px] font-bold ${statusColor}">${statusText}</div>
-                            <div class="text-[10px] text-slate-600 font-semibold">${amountText}</div>
-                        </div>
+            if (statusPerMonth.length === 0) {
+                statusList.innerHTML = `
+                    <div class="text-center py-6 px-3 bg-slate-50 border border-dashed border-slate-300 rounded-xl">
+                        <i class="fas fa-inbox text-2xl text-slate-300 mb-2"></i>
+                        <p class="text-xs text-slate-500">Belum ada riwayat pembayaran</p>
+                        <p class="text-[10px] text-slate-400 mt-1">Hubungi bendahara jika sudah membayar</p>
                     </div>
                 `;
-            }).join('');
+            } else {
+                statusList.innerHTML = statusPerMonth.map(m => {
+                    const bg = 'bg-emerald-50 border-emerald-200';
+                    const icon = '✅';
+                    const statusColor = 'text-emerald-700';
+                    const highlight = m.isCurrentMonth ? 'ring-2 ring-blue-300' : '';
+                    const multiTag = m.isMultiPayment ? `<span class="text-[9px] text-blue-600 font-bold ml-1">(${m.count}x bayar)</span>` : '';
+                    
+                    return `
+                        <div class="flex items-center justify-between p-2 rounded-lg border ${bg} ${highlight}">
+                            <div class="flex items-center gap-2 min-w-0">
+                                <span class="text-sm">${icon}</span>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-semibold text-slate-800 truncate">${m.fullLabel}${multiTag}</div>
+                                    ${m.isCurrentMonth ? `<div class="text-[9px] text-blue-600 font-bold">BULAN INI</div>` : ''}
+                                </div>
+                            </div>
+                            <div class="text-right shrink-0">
+                                <div class="text-[10px] font-bold ${statusColor}">Lunas</div>
+                                <div class="text-[10px] text-slate-600 font-semibold">${formatRupiah(m.amount)}</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
 
             // Bank list
             const bankList = document.getElementById('info-bank-list');
@@ -1461,7 +1464,6 @@
             updateWargaUI();
             showToast(`Selamat datang, ${house.ownerName}! 👋`);
 
-            // Langsung buka info
             setTimeout(() => openInfoWarga(), 300);
         });
 
@@ -1479,13 +1481,13 @@
             if (page === 'dashboard') {
                 pageDashboard.classList.remove('hidden');
                 pageHouses.classList.add('hidden');
-                navBtnDash.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center";
-                navBtnHouses.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
+                navBtnDash.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-blue-800 shadow text-center";
+                navBtnHouses.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
             } else {
                 pageDashboard.classList.add('hidden');
                 pageHouses.classList.remove('hidden');
-                navBtnHouses.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all bg-white text-blue-800 shadow text-center";
-                navBtnDash.className = "flex-1 sm:flex-none px-3 py-1.5 rounded-lg text-xs font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
+                navBtnHouses.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all bg-white text-blue-800 shadow text-center";
+                navBtnDash.className = "flex-1 sm:flex-none px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all text-blue-100 hover:text-white hover:bg-white/10 relative text-center";
                 renderHouseStatus();
             }
         };
@@ -3110,7 +3112,8 @@
                         myPresenceRef.set({
                             joinedAt: firebase.database.ServerValue.TIMESTAMP,
                             device: /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop',
-                            role: isAdmin ? 'Admin' : 'Warga'
+                            role: isAdmin ? 'Admin' : 'Warga',
+                            house: currentWargaHouse ? currentWargaHouse.houseNumber : ''
                         });
                     }
                 });
@@ -3139,13 +3142,18 @@
                         const isMe = key === userSessionId;
                         const role = user.role || 'Warga';
                         const device = user.device || '';
+                        const house = user.house || '';
 
                         const badge = document.createElement('div');
                         badge.className = "flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 px-2.5 py-1 rounded-xl text-xs font-medium shadow-xs";
+                        
+                        let displayName = isMe ? 'Anda' : role;
+                        if (house) displayName += ` (${house})`;
+                        
                         badge.innerHTML = `
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                             <span class="flex items-center gap-1">
-                                ${isMe ? `<b>${role === 'Admin' ? 'Anda (Admin)' : 'Anda (Warga)'}</b>` : role}
+                                <b>${displayName}</b>
                                 ${device ? `<span class="text-[9px] text-emerald-500">${device === 'Mobile' ? '📱' : '💻'}</span>` : ''}
                             </span>
                         `;
@@ -3169,7 +3177,6 @@
                     } else {
                         houses = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
-                    // Update currentWargaHouse jika ada perubahan
                     if (currentWargaHouse) {
                         const updated = houses.find(h => h.houseNumber === currentWargaHouse.houseNumber);
                         if (updated) {
@@ -3358,13 +3365,10 @@
             });
 
             const loginBtn = document.getElementById('admin-login-btn');
-            const loginBtnMb = document.getElementById('admin-login-btn-mb');
             if (isAdmin) {
                 if (loginBtn) loginBtn.classList.add('hidden');
-                if (loginBtnMb) loginBtnMb.classList.add('hidden');
             } else {
                 if (loginBtn) loginBtn.classList.remove('hidden');
-                if (loginBtnMb) loginBtnMb.classList.remove('hidden');
             }
             renderAllViews();
         }
@@ -3668,10 +3672,8 @@
                 }
             }
 
-            // Restore warga login
             const savedWarga = localStorage.getItem('kasRtWargaHouse');
             if (savedWarga) {
-                // Tunggu sampai houses ter-load
                 setTimeout(() => {
                     const found = houses.find(h => h.houseNumber === savedWarga);
                     if (found) {
