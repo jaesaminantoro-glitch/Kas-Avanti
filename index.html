@@ -989,7 +989,7 @@
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
         // ============================================================
-        // KONFIGURASI FIREBASE (SUDAH DIPERBAIKI)
+        // KONFIGURASI FIREBASE (API KEY & SITE KEY SUDAH DIPERBAIKI)
         // ============================================================
         const firebaseConfig = {
             apiKey: "AIzaSyA5XIhdeyBJw4MDNebedRKDcjsVcuR1Zx8", // ✅ DIPERBAIKI
@@ -3284,9 +3284,9 @@
                 firebaseDb = getDatabase(firebaseApp);
                 firebaseAuth = getAuth(firebaseApp);
 
-                // Inisialisasi App Check
+                // Inisialisasi App Check dengan Site Key yang sudah diperbaiki
                 initializeAppCheck(firebaseApp, {
-                    provider: new ReCaptchaEnterpriseProvider('6LcUO7wtAAAAAB9coinGrKNTXYjk-zzmrdKo64vg'),
+                    provider: new ReCaptchaEnterpriseProvider('6LeWsLwtAAAAALeEZFL1uwV7PIBYSuzsfLlhyodU'), // ✅ DIPERBAIKI
                     isTokenAutoRefreshEnabled: true
                 });
 
