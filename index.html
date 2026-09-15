@@ -26,9 +26,6 @@
         }
         .smooth-hscroll { -webkit-overflow-scrolling: touch; }
     </style>
-    <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-auth-compat.js"></script>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col overflow-x-hidden relative">
 
@@ -982,7 +979,54 @@
         <span id="toast-message" class="font-medium whitespace-nowrap">Notifikasi</span>
     </div>
 
-    <script>
+    <script type="module">
+        // ============================================================
+        // IMPOR FIREBASE SDK MODULAR v10
+        // ============================================================
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getDatabase, ref, onValue, off, get, set, update, remove, push, child, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
+
+        // ============================================================
+        // KONFIGURASI FIREBASE (DARI GAMBAR ANDA)
+        // ============================================================
+        const firebaseConfig = {
+            apiKey: "AIzaSyA5XIndeyBJw4MDNebedRKDcjsVcuR1Zx8",
+            authDomain: "jaes-c1b52.firebaseapp.com",
+            databaseURL: "https://jaes-c1b52-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "jaes-c1b52",
+            storageBucket: "jaes-c1b52.firebasestorage.app",
+            messagingSenderId: "934203338301",
+            appId: "1:934203338301:web:2bd353cec0b3f127e48454",
+            measurementId: "G-QT5XKJSQ1X"
+        };
+
+        let firebaseReady = false;
+        let firebaseApp = null;
+        let firebaseDb = null;
+        let firebaseAuth = null;
+
+        // State Aplikasi
+        let transactions = [];
+        let houses = [];
+        let bankAccounts = [];
+        let feeAllocations = [];
+        let editingTransactionId = null;
+        let recapMonthlyDataCache = {};
+        let userSessionId = 'User_' + Math.random().toString(36).substring(2, 8);
+        let currentActiveTab = 'history';
+        let currentIncomeProofs = [];
+        let currentExpenseProofs = [];
+        let currentWargaHouse = null;
+        let savedWargaHouseNumber = localStorage.getItem('kasRtWargaHouse') || null;
+        let BENDAHARA_WHATSAPP = '6281234567890';
+        let alokasiMode = 'auto';
+        let manualAllocation = {};
+        const DEFAULT_ADMIN_PIN = '123456';
+        let ADMIN_PIN_HASH = null;
+        let isAdmin = sessionStorage.getItem('kasRtIsAdmin') === 'true';
+
         // ============================================================
         // DATA DEFAULT
         // ============================================================
@@ -1010,42 +1054,12 @@
             { title: 'Kas Sosial & Perawatan RT', amount: 10000 }
         ];
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyA5XIhdeyBJw4MDNebedRKDcjsVcuR1Zx8",
-            authDomain: "jaes-c1b52.firebaseapp.com",
-            databaseURL: "https://jaes-c1b52-default-rtdb.asia-southeast1.firebasedatabase.app",
-            projectId: "jaes-c1b52",
-            storageBucket: "jaes-c1b52.firebasestorage.app",
-            messagingSenderId: "934203338301",
-            appId: "1:934203338301:web:2bd353cec0b3f127e48454",
-            measurementId: "G-QT5XKJSQ1X"
-        };
-
-        let firebaseReady = false;
-        let firebaseDb = null;
-        let firebaseAuth = null;
-        let transactions = [];
-        let houses = [];
-        let bankAccounts = [];
-        let feeAllocations = [];
-        let editingTransactionId = null;
-        let recapMonthlyDataCache = {};
-        let userSessionId = 'User_' + Math.random().toString(36).substring(2, 8);
-        let currentActiveTab = 'history';
-        let currentIncomeProofs = [];
-        let currentExpenseProofs = [];
-        let currentWargaHouse = null;
-        let savedWargaHouseNumber = localStorage.getItem('kasRtWargaHouse') || null;
-        let BENDAHARA_WHATSAPP = '6281234567890';
-        let alokasiMode = 'auto';
-        let manualAllocation = {};
-        const DEFAULT_ADMIN_PIN = '123456';
-        let ADMIN_PIN_HASH = null;
-        let isAdmin = sessionStorage.getItem('kasRtIsAdmin') === 'true';
-
         const now = new Date();
         const currentYearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
+        // ============================================================
+        // FUNGSI UTILITAS
+        // ============================================================
         async function hashPin(pin) {
             try {
                 const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(pin)));
@@ -1061,7 +1075,7 @@
         async function getAdminPinHash() {
             if (firebaseReady && firebaseDb) {
                 try {
-                    const snap = await firebaseDb.ref('kasRt/settings/adminPinHash').once('value');
+                    const snap = await get(ref(firebaseDb, 'kasRt/settings/adminPinHash'));
                     const serverHash = snap.val();
 
                     if (serverHash) {
@@ -1070,7 +1084,7 @@
                         return serverHash;
                     } else {
                         const newHash = await hashPin(DEFAULT_ADMIN_PIN);
-                        await firebaseDb.ref('kasRt/settings/adminPinHash').set(newHash);
+                        await set(ref(firebaseDb, 'kasRt/settings/adminPinHash'), newHash);
                         ADMIN_PIN_HASH = newHash;
                         localStorage.setItem('kasRtAdminPinHash', newHash);
                         return newHash;
@@ -1151,6 +1165,9 @@
             });
         }
 
+        // ============================================================
+        // FUNGSI GLOBAL (WINDOW)
+        // ============================================================
         window.toggleBankSection = function() {
             const content = document.getElementById('bank-section-content');
             const icon = document.getElementById('bank-toggle-icon');
@@ -1750,7 +1767,7 @@
         window.deleteBank = function(id) {
             if (!requireAdmin()) return;
             if (confirm('Hapus rekening bank ini?')) {
-                if (firebaseReady) firebaseDb.ref(`kasRt/banks/${id}`).remove();
+                if (firebaseReady) remove(ref(firebaseDb, `kasRt/banks/${id}`));
                 else {
                     bankAccounts = bankAccounts.filter(b => b.id !== id);
                     saveLocalStorage();
@@ -1787,7 +1804,7 @@
         window.deleteAllocation = function(id) {
             if (!requireAdmin()) return;
             if (confirm('Hapus rincian alokasi ini?')) {
-                if (firebaseReady) firebaseDb.ref(`kasRt/allocations/${id}`).remove();
+                if (firebaseReady) remove(ref(firebaseDb, `kasRt/allocations/${id}`));
                 else {
                     feeAllocations = feeAllocations.filter(a => a.id !== id);
                     saveLocalStorage();
@@ -3017,7 +3034,7 @@
             const house = houses.find(h => h.id === id);
             const houseName = house ? `Rumah ${house.houseNumber}` : 'data ini';
             if (confirm(`Hapus ${houseName}?`)) {
-                if (firebaseReady) firebaseDb.ref(`kasRt/houses/${id}`).remove();
+                if (firebaseReady) remove(ref(firebaseDb, `kasRt/houses/${id}`));
                 else {
                     houses = houses.filter(h => h.id !== id);
                     saveLocalStorage();
@@ -3199,7 +3216,7 @@
             if (!requireAdmin()) return;
             if (confirm('Hapus transaksi ini?')) {
                 if (editingTransactionId === id) cancelEditTransaction();
-                if (firebaseReady) firebaseDb.ref(`kasRt/transactions/${id}`).remove();
+                if (firebaseReady) remove(ref(firebaseDb, `kasRt/transactions/${id}`));
                 else {
                     transactions = transactions.filter(t => t.id !== id);
                     saveLocalStorage();
@@ -3235,32 +3252,6 @@
             renderHouseStatus();
         }
 
-        function addHouseToFirebase(houseData) {
-            if (!firebaseReady) return;
-            firebaseDb.ref('kasRt/houses').push().set({
-                houseNumber: houseData.houseNumber,
-                ownerName: houseData.ownerName,
-                phone: houseData.phone || ''
-            });
-        }
-
-        function addBankToFirebase(bankData) {
-            if (!firebaseReady) return;
-            firebaseDb.ref('kasRt/banks').push().set({
-                bankName: bankData.bankName,
-                accountNumber: bankData.accountNumber,
-                accountHolder: bankData.accountHolder
-            });
-        }
-
-        function addAllocationToFirebase(allocData) {
-            if (!firebaseReady) return;
-            firebaseDb.ref('kasRt/allocations').push().set({
-                title: allocData.title,
-                amount: allocData.amount
-            });
-        }
-
         function isFirebaseConfigured() {
             return firebaseConfig.apiKey && !firebaseConfig.apiKey.startsWith('ISI_');
         }
@@ -3289,11 +3280,17 @@
                 return;
             }
             try {
-                firebase.initializeApp(firebaseConfig);
-                firebaseDb = firebase.database();
-                firebaseAuth = firebase.auth();
+                firebaseApp = initializeApp(firebaseConfig);
+                firebaseDb = getDatabase(firebaseApp);
+                firebaseAuth = getAuth(firebaseApp);
 
-                firebaseAuth.signInAnonymously().catch((err) => {
+                // Inisialisasi App Check
+                initializeAppCheck(firebaseApp, {
+                    provider: new ReCaptchaEnterpriseProvider('6LcUO7wtAAAAAB9coinGrKNTXYjk-zzmrdKo64vg'),
+                    isTokenAutoRefreshEnabled: true
+                });
+
+                signInAnonymously(firebaseAuth).catch((err) => {
                     console.warn('Anonymous auth gagal:', err.message);
                 });
 
@@ -3301,14 +3298,14 @@
 
                 await getAdminPinHash();
 
-                const myPresenceRef = firebaseDb.ref(`kasRt/presence/${userSessionId}`);
-                const connectedRef = firebaseDb.ref('.info/connected');
+                const myPresenceRef = ref(firebaseDb, `kasRt/presence/${userSessionId}`);
+                const connectedRef = ref(firebaseDb, '.info/connected');
 
-                connectedRef.on('value', (snap) => {
+                onValue(connectedRef, (snap) => {
                     if (snap.val() === true) {
-                        myPresenceRef.onDisconnect().remove();
-                        myPresenceRef.set({
-                            joinedAt: firebase.database.ServerValue.TIMESTAMP,
+                        onDisconnect(myPresenceRef).remove();
+                        set(myPresenceRef, {
+                            joinedAt: serverTimestamp(),
                             device: /Mobi|Android/i.test(navigator.userAgent) ? 'Mobile' : 'Desktop',
                             role: isAdmin ? 'Admin' : 'Warga',
                             house: currentWargaHouse ? currentWargaHouse.houseNumber : ''
@@ -3317,10 +3314,10 @@
                 });
 
                 window.addEventListener('beforeunload', () => {
-                    if (firebaseReady) myPresenceRef.remove();
+                    if (firebaseReady) remove(myPresenceRef);
                 });
 
-                firebaseDb.ref('kasRt/presence').on('value', (snap) => {
+                onValue(ref(firebaseDb, 'kasRt/presence'), (snap) => {
                     const presenceObj = snap.val() || {};
                     const container = document.getElementById('online-users-container');
                     const countBadge = document.getElementById('online-count-badge');
@@ -3359,7 +3356,7 @@
                     });
                 });
 
-                firebaseDb.ref('kasRt/settings/adminPinHash').on('value', (snap) => {
+                onValue(ref(firebaseDb, 'kasRt/settings/adminPinHash'), (snap) => {
                     const serverHash = snap.val();
                     if (serverHash && serverHash !== ADMIN_PIN_HASH) {
                         ADMIN_PIN_HASH = serverHash;
@@ -3367,11 +3364,14 @@
                     }
                 });
 
-                firebaseDb.ref('kasRt/houses').on('value', (snap) => {
+                onValue(ref(firebaseDb, 'kasRt/houses'), (snap) => {
                     const val = snap.val();
                     if (!val) {
                         houses = [...defaultHousesArray];
-                        houses.forEach(h => addHouseToFirebase(h));
+                        houses.forEach(h => {
+                            const newRef = push(ref(firebaseDb, 'kasRt/houses'));
+                            set(newRef, { houseNumber: h.houseNumber, ownerName: h.ownerName, phone: h.phone || '' });
+                        });
                     } else {
                         houses = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
@@ -3391,29 +3391,35 @@
                     scheduleRenderAllViews();
                 });
 
-                firebaseDb.ref('kasRt/banks').on('value', (snap) => {
+                onValue(ref(firebaseDb, 'kasRt/banks'), (snap) => {
                     const val = snap.val();
                     if (!val) {
                         bankAccounts = [...defaultBanksArray];
-                        bankAccounts.forEach(b => addBankToFirebase(b));
+                        bankAccounts.forEach(b => {
+                            const newRef = push(ref(firebaseDb, 'kasRt/banks'));
+                            set(newRef, { bankName: b.bankName, accountNumber: b.accountNumber, accountHolder: b.accountHolder });
+                        });
                     } else {
                         bankAccounts = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
                     scheduleRenderAllViews();
                 });
 
-                firebaseDb.ref('kasRt/allocations').on('value', (snap) => {
+                onValue(ref(firebaseDb, 'kasRt/allocations'), (snap) => {
                     const val = snap.val();
                     if (!val) {
                         feeAllocations = [...defaultAllocationsArray];
-                        feeAllocations.forEach(a => addAllocationToFirebase(a));
+                        feeAllocations.forEach(a => {
+                            const newRef = push(ref(firebaseDb, 'kasRt/allocations'));
+                            set(newRef, { title: a.title, amount: a.amount });
+                        });
                     } else {
                         feeAllocations = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
                     scheduleRenderAllViews();
                 });
 
-                firebaseDb.ref('kasRt/transactions').on('value', (snap) => {
+                onValue(ref(firebaseDb, 'kasRt/transactions'), (snap) => {
                     const val = snap.val();
                     if (!val) {
                         transactions = [];
@@ -3532,7 +3538,7 @@
 
             if (firebaseReady) {
                 try {
-                    await firebaseDb.ref('kasRt/settings/adminPinHash').set(newHash);
+                    await set(ref(firebaseDb, 'kasRt/settings/adminPinHash'), newHash);
                     showToast('PIN diperbarui! Semua admin pakai PIN baru.');
                 } catch (err) {
                     console.error('Gagal simpan PIN ke server:', err);
@@ -3599,26 +3605,35 @@
                     transactions = data.transactions || [];
 
                     if (firebaseReady) {
-                        firebaseDb.ref('kasRt/houses').set(houses.reduce((acc, h) => {
+                        // Hapus data lama dulu (opsional, atau bisa langsung set)
+                        // Untuk kesederhanaan, kita set ulang seluruh node
+                        const housesObj = houses.reduce((acc, h) => {
                             const { id, ...rest } = h;
-                            acc[id || firebaseDb.ref().push().key] = rest;
+                            acc[id || push(ref(firebaseDb, 'kasRt/houses')).key] = rest;
                             return acc;
-                        }, {}));
-                        firebaseDb.ref('kasRt/banks').set(bankAccounts.reduce((acc, b) => {
+                        }, {});
+                        set(ref(firebaseDb, 'kasRt/houses'), housesObj);
+
+                        const banksObj = bankAccounts.reduce((acc, b) => {
                             const { id, ...rest } = b;
-                            acc[id || firebaseDb.ref().push().key] = rest;
+                            acc[id || push(ref(firebaseDb, 'kasRt/banks')).key] = rest;
                             return acc;
-                        }, {}));
-                        firebaseDb.ref('kasRt/allocations').set(feeAllocations.reduce((acc, a) => {
+                        }, {});
+                        set(ref(firebaseDb, 'kasRt/banks'), banksObj);
+
+                        const allocsObj = feeAllocations.reduce((acc, a) => {
                             const { id, ...rest } = a;
-                            acc[id || firebaseDb.ref().push().key] = rest;
+                            acc[id || push(ref(firebaseDb, 'kasRt/allocations')).key] = rest;
                             return acc;
-                        }, {}));
-                        firebaseDb.ref('kasRt/transactions').set(transactions.reduce((acc, t) => {
+                        }, {});
+                        set(ref(firebaseDb, 'kasRt/allocations'), allocsObj);
+
+                        const txObj = transactions.reduce((acc, t) => {
                             const { id, ...rest } = t;
-                            acc[id || firebaseDb.ref().push().key] = rest;
+                            acc[id || push(ref(firebaseDb, 'kasRt/transactions')).key] = rest;
                             return acc;
-                        }, {}));
+                        }, {});
+                        set(ref(firebaseDb, 'kasRt/transactions'), txObj);
                     } else {
                         saveLocalStorage();
                         scheduleRenderAllViews();
@@ -3643,8 +3658,11 @@
             const accountHolder = document.getElementById('modal-bank-holder').value.trim();
 
             if (firebaseReady) {
-                if (id) firebaseDb.ref(`kasRt/banks/${id}`).update({ bankName, accountNumber, accountHolder });
-                else firebaseDb.ref('kasRt/banks').push({ bankName, accountNumber, accountHolder });
+                if (id) update(ref(firebaseDb, `kasRt/banks/${id}`), { bankName, accountNumber, accountHolder });
+                else {
+                    const newRef = push(ref(firebaseDb, 'kasRt/banks'));
+                    set(newRef, { bankName, accountNumber, accountHolder });
+                }
             } else {
                 if (id) {
                     const idx = bankAccounts.findIndex(b => b.id === id);
@@ -3693,7 +3711,7 @@
                                     }
                                 });
                                 if (Object.keys(updates).length > 0) {
-                                    await firebaseDb.ref().update(updates);
+                                    await update(ref(firebaseDb), updates);
                                 }
                             } else {
                                 transactions.forEach(t => {
@@ -3710,8 +3728,11 @@
             }
 
             if (firebaseReady) {
-                if (id) firebaseDb.ref(`kasRt/allocations/${id}`).update({ title, amount });
-                else firebaseDb.ref('kasRt/allocations').push({ title, amount });
+                if (id) update(ref(firebaseDb, `kasRt/allocations/${id}`), { title, amount });
+                else {
+                    const newRef = push(ref(firebaseDb, 'kasRt/allocations'));
+                    set(newRef, { title, amount });
+                }
             } else {
                 if (id) {
                     const idx = feeAllocations.findIndex(a => a.id === id);
@@ -3749,8 +3770,11 @@
             }
 
             if (firebaseReady) {
-                if (id) firebaseDb.ref(`kasRt/houses/${id}`).update({ houseNumber, ownerName, phone });
-                else firebaseDb.ref('kasRt/houses').push({ houseNumber, ownerName, phone });
+                if (id) update(ref(firebaseDb, `kasRt/houses/${id}`), { houseNumber, ownerName, phone });
+                else {
+                    const newRef = push(ref(firebaseDb, 'kasRt/houses'));
+                    set(newRef, { houseNumber, ownerName, phone });
+                }
             } else {
                 if (id) {
                     const idx = houses.findIndex(h => h.id === id);
@@ -3808,8 +3832,11 @@
             }
 
             if (firebaseReady) {
-                if (id) firebaseDb.ref(`kasRt/transactions/${id}`).update(txData);
-                else firebaseDb.ref('kasRt/transactions').push(txData);
+                if (id) update(ref(firebaseDb, `kasRt/transactions/${id}`), txData);
+                else {
+                    const newRef = push(ref(firebaseDb, 'kasRt/transactions'));
+                    set(newRef, txData);
+                }
             } else {
                 if (id) {
                     const idx = transactions.findIndex(t => t.id === id);
@@ -3845,8 +3872,11 @@
             const txData = { type: 'expense', date, paymentMethod, description, category, amount, proofs };
 
             if (firebaseReady) {
-                if (id) firebaseDb.ref(`kasRt/transactions/${id}`).update(txData);
-                else firebaseDb.ref('kasRt/transactions').push(txData);
+                if (id) update(ref(firebaseDb, `kasRt/transactions/${id}`), txData);
+                else {
+                    const newRef = push(ref(firebaseDb, 'kasRt/transactions'));
+                    set(newRef, txData);
+                }
             } else {
                 if (id) {
                     const idx = transactions.findIndex(t => t.id === id);
