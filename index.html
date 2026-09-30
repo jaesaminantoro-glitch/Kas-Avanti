@@ -25,6 +25,40 @@
             overflow: hidden;
         }
         .smooth-hscroll { -webkit-overflow-scrolling: touch; }
+
+        /* ===== Popup sinkronisasi Firebase ===== */
+        .sync-overlay { position: fixed; inset: 0; z-index: 150; display: flex; align-items: center; justify-content: center; padding: 12px; background: rgba(15,23,42,.6); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+        .sync-overlay[hidden] { display: none; }
+        .sync-overlay.is-leaving { opacity: 0; transition: opacity .25s ease; }
+        .sync-card { width: 100%; max-width: 320px; background: #fff; border-radius: 16px; padding: 18px; box-shadow: 0 25px 50px -12px rgba(0,0,0,.35); }
+        .sync-head { display: flex; align-items: center; gap: 12px; }
+        .sync-badge { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: #eff6ff; color: #2563eb; display: flex; align-items: center; justify-content: center; font-size: 17px; }
+        .sync-head h3 { margin: 0; font-size: 14px; font-weight: 700; color: #1e293b; }
+        .sync-head p { margin: 2px 0 0; font-size: 12px; color: #64748b; }
+        .sync-bar { height: 6px; margin: 16px 0 12px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+        .sync-bar span { display: block; height: 100%; width: 10%; background: #2563eb; border-radius: 999px; transition: width .35s ease; }
+        .sync-overlay.is-error .sync-bar span { background: #e11d48; }
+        .sync-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+        .sync-list li { display: flex; align-items: center; gap: 10px; font-size: 12.5px; color: #475569; }
+        .sync-list li.is-done { color: #1e293b; }
+        .sync-ico { width: 16px; text-align: center; flex-shrink: 0; }
+        .sync-ico .i-wait { color: #2563eb; }
+        .sync-ico .i-done { display: none; color: #059669; }
+        .sync-ico .i-err { display: none; color: #e11d48; }
+        .sync-list li.is-done .i-wait { display: none; }
+        .sync-list li.is-done .i-done { display: inline-block; }
+        .sync-overlay.is-error .sync-list li:not(.is-done) .i-wait { display: none; }
+        .sync-overlay.is-error .sync-list li:not(.is-done) .i-err { display: inline-block; }
+        .sync-note { margin: 12px 0 0; font-size: 11.5px; line-height: 1.5; color: #64748b; }
+        .sync-note:empty { display: none; }
+        .sync-actions { display: none; gap: 8px; margin-top: 14px; }
+        .sync-overlay.is-slow .sync-actions, .sync-overlay.is-error .sync-actions { display: flex; }
+        .sync-actions button { flex: 1; border: 0; border-radius: 10px; padding: 8px 10px; font: inherit; font-size: 12px; font-weight: 600; cursor: pointer; background: #f1f5f9; color: #475569; }
+        .sync-actions button:hover { background: #e2e8f0; }
+        .sync-actions button:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+        #sync-reload { display: none; background: #2563eb; color: #fff; }
+        #sync-reload:hover { background: #1d4ed8; }
+        .sync-overlay.is-error #sync-reload { display: block; }
     </style>
 </head>
 <body class="text-slate-800 min-h-screen flex flex-col overflow-x-hidden relative">
@@ -979,6 +1013,109 @@
         <span id="toast-message" class="font-medium whitespace-nowrap">Notifikasi</span>
     </div>
 
+    <!-- ===== Popup sinkronisasi Firebase ===== -->
+    <div id="sync-overlay" class="sync-overlay" role="dialog" aria-modal="true" aria-labelledby="sync-title">
+        <div class="sync-card">
+            <div class="sync-head">
+                <div class="sync-badge"><i class="fas fa-cloud-arrow-down"></i></div>
+                <div>
+                    <h3 id="sync-title">Sinkronisasi server</h3>
+                    <p id="sync-sub" aria-live="polite">Mengambil data kas terbaru…</p>
+                </div>
+            </div>
+            <div class="sync-bar"><span id="sync-bar-fill"></span></div>
+            <ul class="sync-list">
+                <li data-key="houses"><span class="sync-ico"><i class="fas fa-circle-notch fa-spin i-wait"></i><i class="fas fa-circle-check i-done"></i><i class="fas fa-circle-xmark i-err"></i></span><span>Data rumah warga</span></li>
+                <li data-key="banks"><span class="sync-ico"><i class="fas fa-circle-notch fa-spin i-wait"></i><i class="fas fa-circle-check i-done"></i><i class="fas fa-circle-xmark i-err"></i></span><span>Rekening pembayaran</span></li>
+                <li data-key="allocations"><span class="sync-ico"><i class="fas fa-circle-notch fa-spin i-wait"></i><i class="fas fa-circle-check i-done"></i><i class="fas fa-circle-xmark i-err"></i></span><span>Rincian alokasi iuran</span></li>
+                <li data-key="transactions"><span class="sync-ico"><i class="fas fa-circle-notch fa-spin i-wait"></i><i class="fas fa-circle-check i-done"></i><i class="fas fa-circle-xmark i-err"></i></span><span>Transaksi dan bukti transfer</span></li>
+            </ul>
+            <p id="sync-note" class="sync-note"></p>
+            <div class="sync-actions">
+                <button type="button" id="sync-reload">Muat ulang</button>
+                <button type="button" id="sync-close">Tutup</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        // Popup sinkronisasi. Sengaja pakai script klasik (bukan module) supaya tetap
+        // jalan dan bisa menampilkan pesan gagal walau file Firebase gagal dimuat.
+        (function () {
+            var KEYS = ['houses', 'banks', 'allocations', 'transactions'];
+            var el = document.getElementById('sync-overlay');
+            if (!el) { window.kasSync = { done: function(){}, fail: function(){}, hide: function(){} }; return; }
+            var fill = document.getElementById('sync-bar-fill');
+            var sub = document.getElementById('sync-sub');
+            var note = document.getElementById('sync-note');
+            var state = {};
+            var closed = false, failed = false;
+            var slowTimer, stallTimer;
+
+            function doneCount() { return KEYS.filter(function (k) { return state[k]; }).length; }
+            function refresh() {
+                KEYS.forEach(function (k) {
+                    var li = el.querySelector('li[data-key="' + k + '"]');
+                    if (li) li.classList.toggle('is-done', !!state[k]);
+                });
+                fill.style.width = (10 + doneCount() / KEYS.length * 90) + '%';
+            }
+            function hide() {
+                if (closed) return;
+                closed = true;
+                clearTimeout(slowTimer); clearTimeout(stallTimer);
+                el.hidden = true;
+                document.documentElement.style.overflow = '';
+            }
+            function done(key) {
+                if (closed || failed || state[key]) return;
+                state[key] = true;
+                refresh();
+                if (doneCount() === KEYS.length) {
+                    sub.textContent = 'Data siap ✓';
+                    note.textContent = '';
+                    clearTimeout(slowTimer); clearTimeout(stallTimer);
+                    setTimeout(function () {
+                        el.classList.add('is-leaving');
+                        setTimeout(hide, 260);
+                    }, 350);
+                }
+            }
+            function fail(err) {
+                if (closed) return;
+                failed = true;
+                clearTimeout(slowTimer); clearTimeout(stallTimer);
+                el.classList.remove('is-slow');
+                el.classList.add('is-error');
+                var code = err && (err.code || err.message) ? String(err.code || err.message) : '';
+                sub.textContent = 'Sinkronisasi gagal';
+                if (/permission/i.test(code)) {
+                    note.textContent = 'Akses ke server ditolak. Hubungi pengurus untuk memeriksa pengaturan akses.';
+                } else if (code === 'timeout') {
+                    note.textContent = 'Belum ada respons dari server. Periksa koneksi internet, lalu muat ulang.';
+                } else {
+                    note.textContent = 'Data belum bisa diambil dari server. Periksa koneksi internet, lalu muat ulang.';
+                }
+            }
+
+            document.documentElement.style.overflow = 'hidden';
+            refresh();
+
+            slowTimer = setTimeout(function () {
+                if (closed || failed) return;
+                el.classList.add('is-slow');
+                note.textContent = 'Koneksi agak lambat. Transaksi dan bukti transfer adalah bagian terbesar, jadi paling lama diunduh. Anda bisa menutup jendela ini, data tetap dimuat di latar belakang.';
+            }, 8000);
+            stallTimer = setTimeout(function () {
+                if (!closed && !failed && doneCount() === 0) fail({ code: 'timeout' });
+            }, 30000);
+
+            document.getElementById('sync-close').addEventListener('click', hide);
+            document.getElementById('sync-reload').addEventListener('click', function () { location.reload(); });
+
+            window.kasSync = { done: done, fail: fail, hide: hide };
+        })();
+    </script>
+
     <script type="module">
         // ============================================================
         // IMPOR FIREBASE SDK MODULAR v10
@@ -1006,6 +1143,7 @@
         let firebaseApp = null;
         let firebaseDb = null;
         let firebaseAuth = null;
+        const kasSync = window.kasSync || { done() {}, fail() {}, hide() {} };
 
         // State Aplikasi
         let transactions = [];
@@ -3276,6 +3414,7 @@
 
         async function startFirebaseSync() {
             if (!isFirebaseConfigured()) {
+                kasSync.hide();
                 initApp();
                 return;
             }
@@ -3389,7 +3528,8 @@
                     }
 
                     scheduleRenderAllViews();
-                });
+                    kasSync.done('houses');
+                }, (err) => { console.error('Listener houses gagal:', err); kasSync.fail(err); });
 
                 onValue(ref(firebaseDb, 'kasRt/banks'), (snap) => {
                     const val = snap.val();
@@ -3403,7 +3543,8 @@
                         bankAccounts = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
                     scheduleRenderAllViews();
-                });
+                    kasSync.done('banks');
+                }, (err) => { console.error('Listener banks gagal:', err); kasSync.fail(err); });
 
                 onValue(ref(firebaseDb, 'kasRt/allocations'), (snap) => {
                     const val = snap.val();
@@ -3417,7 +3558,8 @@
                         feeAllocations = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
                     scheduleRenderAllViews();
-                });
+                    kasSync.done('allocations');
+                }, (err) => { console.error('Listener allocations gagal:', err); kasSync.fail(err); });
 
                 onValue(ref(firebaseDb, 'kasRt/transactions'), (snap) => {
                     const val = snap.val();
@@ -3427,10 +3569,12 @@
                         transactions = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
                     scheduleRenderAllViews();
-                });
+                    kasSync.done('transactions');
+                }, (err) => { console.error('Listener transactions gagal:', err); kasSync.fail(err); });
 
             } catch(err) {
                 console.error("Firebase init error:", err);
+                kasSync.fail(err);
                 initApp();
             }
         }
