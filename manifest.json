@@ -1,0 +1,26 @@
+{
+  "name": "Kas RT Puri Avanti 01 RW 12",
+  "short_name": "Kas RT",
+  "description": "Sistem Manajemen Kas RT & Iuran Warga - Puri Avanti RT 1 RW 12",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1D4ED8",
+  "theme_color": "#1D4ED8",
+  "lang": "id",
+  "icons": [
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
