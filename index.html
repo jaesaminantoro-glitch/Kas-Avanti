@@ -1455,6 +1455,33 @@
             }).format(number || 0);
         };
 
+        // Urutan transaksi: tanggal -> waktu input (createdAt / timestamp dari ID) -> ID
+        const PUSH_CHARS = '-0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz';
+        window.getTxTime = function(t) {
+            if (!t) return 0;
+            if (t.createdAt && !isNaN(Number(t.createdAt))) return Number(t.createdAt);
+            const id = String(t.id || '');
+            if (id.startsWith('t_')) { const n = Number(id.slice(2)); if (!isNaN(n)) return n; }
+            if (id.length >= 8) {
+                let ts = 0;
+                for (let i = 0; i < 8; i++) {
+                    const idx = PUSH_CHARS.indexOf(id.charAt(i));
+                    if (idx < 0) return 0;
+                    ts = ts * 64 + idx;
+                }
+                return ts;
+            }
+            return 0;
+        };
+        // Negatif jika a lebih baru dari b (terbaru di atas)
+        window.compareTxNewestFirst = function(a, b) {
+            const dateDiff = new Date(b.date) - new Date(a.date);
+            if (dateDiff !== 0 && !isNaN(dateDiff)) return dateDiff;
+            const timeDiff = getTxTime(b) - getTxTime(a);
+            if (timeDiff !== 0) return timeDiff;
+            return String(b.id || '').localeCompare(String(a.id || ''));
+        };
+
         window.formatDate = function(dateString) {
             if (!dateString) return '-';
             const d = new Date(dateString);
@@ -2280,11 +2307,7 @@
                 return normalizeCategory(rawCat) === categoryName;
             });
 
-            const sorted = [...filtered].sort((a, b) => {
-                const dateDiff = new Date(b.date) - new Date(a.date);
-                if (dateDiff !== 0) return dateDiff;
-                return (b.id || '').localeCompare(a.id || '');
-            });
+            const sorted = [...filtered].sort(compareTxNewestFirst);
 
             const total = sorted.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
 
@@ -2530,11 +2553,7 @@
             emptyEl.classList.add('hidden');
             emptyEl.classList.remove('flex');
 
-            const sorted = [...filteredTransactions].sort((a, b) => {
-                const dateDiff = new Date(b.date) - new Date(a.date);
-                if (dateDiff !== 0) return dateDiff;
-                return (b.id || '').localeCompare(a.id || '');
-            });
+            const sorted = [...filteredTransactions].sort(compareTxNewestFirst);
 
             let lastDate = null;
             let dailyGroup = [];
@@ -3247,11 +3266,7 @@
                 openingBalance += (t.type === 'income' ? amt : -amt);
             });
 
-            const chronological = [...(monthData.transactions || [])].sort((a, b) => {
-                const dateDiff = new Date(a.date) - new Date(b.date);
-                if (dateDiff !== 0) return dateDiff;
-                return (a.id || '').localeCompare(b.id || '');
-            });
+            const chronological = [...(monthData.transactions || [])].sort((a, b) => compareTxNewestFirst(b, a));
 
             let running = openingBalance;
             const rows = chronological.map(t => {
