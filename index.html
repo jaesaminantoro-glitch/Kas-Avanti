@@ -91,6 +91,10 @@
                     <i class="fas fa-search"></i> <span id="warga-btn-text">Cek Iuran Saya</span>
                 </button>
                 
+                <button id="notif-btn" onclick="enableNotifications()" class="px-3 sm:px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap">
+                    <i class="fas fa-bell"></i> <span id="notif-btn-text">Aktifkan Notifikasi</span>
+                </button>
+
                 <button id="admin-login-btn" onclick="openAdminLogin()" class="px-3 sm:px-4 py-2 rounded-lg bg-white/15 hover:bg-white/25 text-xs sm:text-sm font-semibold flex items-center gap-1.5 whitespace-nowrap">
                     <i class="fas fa-lock"></i> Login Admin
                 </button>
@@ -1128,7 +1132,7 @@
         // IMPOR FIREBASE SDK MODULAR v10
         // ============================================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, onValue, off, get, set, update, remove, push, child, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, onValue, onChildAdded, off, get, set, update, remove, push, child, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
@@ -3419,6 +3423,73 @@
             }
         }
 
+        // ===== NOTIFIKASI TRANSAKSI BARU =====
+        let notifReady = false; // true setelah data awal selesai dimuat (supaya data lama tidak dinotifikasi)
+
+        function updateNotifButton() {
+            const btn = document.getElementById('notif-btn');
+            const txt = document.getElementById('notif-btn-text');
+            if (!btn || !txt) return;
+            if (!('Notification' in window)) {
+                btn.classList.add('hidden');
+                return;
+            }
+            if (Notification.permission === 'granted') {
+                txt.textContent = 'Notifikasi Aktif';
+                btn.classList.add('bg-emerald-500/80');
+            } else if (Notification.permission === 'denied') {
+                txt.textContent = 'Notifikasi Diblokir';
+            } else {
+                txt.textContent = 'Aktifkan Notifikasi';
+            }
+        }
+
+        updateNotifButton();
+
+        window.enableNotifications = async function () {
+            if (!('Notification' in window)) {
+                showToast('Browser ini tidak mendukung notifikasi. Di iPhone, tambahkan app ke Layar Utama dulu.', 'error');
+                return;
+            }
+            if (Notification.permission === 'denied') {
+                showToast('Notifikasi diblokir. Aktifkan lewat pengaturan situs di browser.', 'error');
+                return;
+            }
+            const perm = await Notification.requestPermission();
+            updateNotifButton();
+            if (perm === 'granted') {
+                showToast('Notifikasi diaktifkan!');
+                showSystemNotification('🔔 Notifikasi aktif', 'Anda akan diberi tahu saat ada pemasukan/pengeluaran baru.', 'notif-test');
+            } else {
+                showToast('Izin notifikasi tidak diberikan', 'error');
+            }
+        };
+
+        async function showSystemNotification(title, body, tag) {
+            if (!('Notification' in window) || Notification.permission !== 'granted') return;
+            const options = { body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag };
+            try {
+                const reg = await navigator.serviceWorker.ready;
+                await reg.showNotification(title, options);
+            } catch (e) {
+                try { new Notification(title, options); } catch (e2) { console.warn('Notifikasi gagal:', e2); }
+            }
+        }
+
+        function notifyNewTransaction(t) {
+            const isIncome = t.type === 'income';
+            const title = isIncome ? '💰 Pemasukan baru' : '💸 Pengeluaran baru';
+            const house = t.houseNumber ? 'Rumah ' + t.houseNumber + ' · ' : '';
+            const desc = t.description || t.category || '';
+            const amount = 'Rp ' + Number(t.amount || 0).toLocaleString('id-ID');
+            const body = house + (desc ? desc + ' — ' : '') + amount;
+
+            // Selalu tampilkan toast di dalam app
+            showToast(title + ': ' + body);
+            // Plus notifikasi sistem jika izin sudah diberikan
+            showSystemNotification(title, body, 'tx-' + (t.createdAt || Date.now()));
+        }
+
         async function startFirebaseSync() {
             if (!isFirebaseConfigured()) {
                 kasSync.hide();
@@ -3568,7 +3639,16 @@
                     kasSync.done('allocations');
                 }, (err) => { console.error('Listener allocations gagal:', err); kasSync.fail(err); });
 
+                onChildAdded(ref(firebaseDb, 'kasRt/transactions'), (snap) => {
+                    if (!notifReady) return;                  // abaikan data awal
+                    const t = snap.val();
+                    if (!t || !t.createdAt) return;           // abaikan transaksi lama / tanpa penanda
+                    if (t.createdBy === userSessionId) return; // jangan notif ke diri sendiri
+                    notifyNewTransaction(t);
+                });
+
                 onValue(ref(firebaseDb, 'kasRt/transactions'), (snap) => {
+                    if (!notifReady) setTimeout(() => { notifReady = true; }, 0);
                     const val = snap.val();
                     if (!val) {
                         transactions = [];
@@ -3986,7 +4066,7 @@
                 if (id) update(ref(firebaseDb, `kasRt/transactions/${id}`), txData);
                 else {
                     const newRef = push(ref(firebaseDb, 'kasRt/transactions'));
-                    set(newRef, txData);
+                    set(newRef, { ...txData, createdAt: Date.now(), createdBy: userSessionId });
                 }
             } else {
                 if (id) {
@@ -4026,7 +4106,7 @@
                 if (id) update(ref(firebaseDb, `kasRt/transactions/${id}`), txData);
                 else {
                     const newRef = push(ref(firebaseDb, 'kasRt/transactions'));
-                    set(newRef, txData);
+                    set(newRef, { ...txData, createdAt: Date.now(), createdBy: userSessionId });
                 }
             } else {
                 if (id) {
