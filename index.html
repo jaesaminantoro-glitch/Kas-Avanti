@@ -1132,7 +1132,7 @@
         // IMPOR FIREBASE SDK MODULAR v10
         // ============================================================
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-        import { getDatabase, ref, onValue, onChildAdded, off, get, set, update, remove, push, child, serverTimestamp, onDisconnect } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+        import { getDatabase, ref, onValue, onChildAdded, off, get, set, update, remove, push, child, serverTimestamp, onDisconnect, runTransaction } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
         import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check.js";
 
@@ -1168,6 +1168,8 @@
         let currentIncomeProofs = [];
         let currentExpenseProofs = [];
         let currentWargaHouse = null;
+        let myPresenceRef = null;
+        let presenceActive = false;
         let savedWargaHouseNumber = localStorage.getItem('kasRtWargaHouse') || null;
         let BENDAHARA_WHATSAPP = '6281234567890';
         let alokasiMode = 'auto';
@@ -1209,6 +1211,8 @@
         // ============================================================
         // FUNGSI UTILITAS
         // ============================================================
+        // --- Hash PIN ---
+        // Format lama (kompatibel): SHA-256 tanpa salt. Format baru: pbkdf2$iter$salt$hash
         async function hashPin(pin) {
             try {
                 const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(pin)));
@@ -1221,37 +1225,68 @@
             }
         }
 
+        const PBKDF2_ITER = 150000;
+        const toHex = (u8) => Array.from(u8).map(b => b.toString(16).padStart(2, '0')).join('');
+        const fromHex = (h) => new Uint8Array((h.match(/.{2}/g) || []).map(x => parseInt(x, 16)));
+
+        async function pbkdf2Hex(pin, saltBytes, iter) {
+            const keyMat = await crypto.subtle.importKey('raw', new TextEncoder().encode(String(pin)), 'PBKDF2', false, ['deriveBits']);
+            const bits = await crypto.subtle.deriveBits({ name: 'PBKDF2', salt: saltBytes, iterations: iter, hash: 'SHA-256' }, keyMat, 256);
+            return toHex(new Uint8Array(bits));
+        }
+
+        async function hashPinSalted(pin) {
+            if (!(window.crypto && crypto.subtle)) throw new Error('crypto.subtle tidak tersedia (gunakan HTTPS)');
+            const salt = crypto.getRandomValues(new Uint8Array(16));
+            const h = await pbkdf2Hex(pin, salt, PBKDF2_ITER);
+            return `pbkdf2$${PBKDF2_ITER}$${toHex(salt)}$${h}`;
+        }
+
+        // stored kosong = PIN belum pernah diatur (pakai PIN awal, wajib diganti)
+        async function verifyAdminPin(pin, stored) {
+            if (!stored) return String(pin) === DEFAULT_ADMIN_PIN;
+            if (stored.startsWith('pbkdf2$')) {
+                const [, iter, saltHex, hash] = stored.split('$');
+                const calc = await pbkdf2Hex(pin, fromHex(saltHex), parseInt(iter, 10));
+                return calc === hash;
+            }
+            return (await hashPin(pin)) === stored;
+        }
+
+        async function isUsingDefaultPin(stored) {
+            if (!stored) return true;
+            if (stored.startsWith('pbkdf2$')) return verifyAdminPin(DEFAULT_ADMIN_PIN, stored);
+            return stored === await hashPin(DEFAULT_ADMIN_PIN);
+        }
+
+        // Mengembalikan hash tersimpan, atau '' bila belum pernah diatur.
+        // PIN awal TIDAK lagi ditulis otomatis ke server.
         async function getAdminPinHash() {
             if (firebaseReady && firebaseDb) {
                 try {
                     const snap = await get(ref(firebaseDb, 'kasRt/settings/adminPinHash'));
                     const serverHash = snap.val();
-
                     if (serverHash) {
                         ADMIN_PIN_HASH = serverHash;
                         localStorage.setItem('kasRtAdminPinHash', serverHash);
                         return serverHash;
-                    } else {
-                        const newHash = await hashPin(DEFAULT_ADMIN_PIN);
-                        await set(ref(firebaseDb, 'kasRt/settings/adminPinHash'), newHash);
-                        ADMIN_PIN_HASH = newHash;
-                        localStorage.setItem('kasRtAdminPinHash', newHash);
-                        return newHash;
                     }
+                    ADMIN_PIN_HASH = '';
+                    localStorage.removeItem('kasRtAdminPinHash');
+                    return '';
                 } catch (err) {
                     console.warn('Gagal ambil PIN dari server:', err.message);
                 }
             }
-
-            if (!ADMIN_PIN_HASH) {
-                ADMIN_PIN_HASH = localStorage.getItem('kasRtAdminPinHash');
-                if (!ADMIN_PIN_HASH) {
-                    ADMIN_PIN_HASH = await hashPin(DEFAULT_ADMIN_PIN);
-                    localStorage.setItem('kasRtAdminPinHash', ADMIN_PIN_HASH);
-                }
+            if (ADMIN_PIN_HASH === null) {
+                ADMIN_PIN_HASH = localStorage.getItem('kasRtAdminPinHash') || '';
             }
             return ADMIN_PIN_HASH;
         }
+
+        // Pembatasan percobaan login (sisi klien)
+        let pinFailCount = 0;
+        let pinLockUntil = 0;
 
         function compressImage(file, maxSizeKB = 500) {
             return new Promise((resolve) => {
@@ -1414,7 +1449,7 @@
             }
 
             dropdown.innerHTML = filtered.map(h => `
-                <div onclick="selectWargaHouse('${escapeHTML(h.houseNumber)}')" 
+                <div onclick="selectWargaHouse(${jsArg(h.houseNumber)})" 
                      class="px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-blue-50 hover:text-blue-800 cursor-pointer border-b border-slate-100 last:border-0">
                     ${escapeHTML(h.houseNumber)}
                 </div>
@@ -1496,6 +1531,74 @@
                 "'": '&#39;', '"': '&quot;'
             }[tag] || tag));
         };
+
+        // Aman dipakai di dalam atribut onclick="..." (JSON + HTML-escape)
+        window.jsArg = function(v) {
+            return escapeHTML(JSON.stringify(String(v == null ? '' : v)));
+        };
+
+        // Normalisasi nomor rumah: "A-01", "a 01", "A01" dianggap sama
+        window.normHouseNo = function(s) {
+            return String(s || '').replace(/[\s\-]/g, '').toUpperCase();
+        };
+
+        // Iuran standar = jumlah semua rincian alokasi
+        window.getStandardIuran = function() {
+            return (feeAllocations || []).reduce((sum, a) => sum + (parseFloat(a.amount) || 0), 0);
+        };
+        window.getDefaultIuranAmount = function() {
+            return getStandardIuran() || 50000;
+        };
+        window.standardLabel = function() {
+            const std = getStandardIuran();
+            return std > 0 ? `(Standar: ${formatRupiah(std)})` : '(Nominal bebas)';
+        };
+        window.refreshStandardIuranUI = function() {
+            const subtitle = document.getElementById('nominal-subtitle');
+            if (subtitle && alokasiMode === 'auto') subtitle.textContent = standardLabel();
+        };
+
+        // Semua pembayaran iuran sebuah rumah pada periode (YYYY-MM)
+        window.getHousePayments = function(houseNo, period) {
+            const target = normHouseNo(houseNo);
+            return transactions.filter(t => {
+                if (t.type !== 'income' || !t.houseNumber) return false;
+                if (normHouseNo(t.houseNumber) !== target) return false;
+                const d = new Date(t.date);
+                if (isNaN(d.getTime())) return false;
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}` === period;
+            });
+        };
+
+        // Cegah submit ganda saat menunggu server
+        function lockBtn(e) {
+            const b = e && e.submitter;
+            if (!b) return () => {};
+            b.disabled = true;
+            return () => { b.disabled = false; };
+        }
+
+        // Tunggu konfirmasi server; tampilkan error jika ditolak. Resolve true bila OK / diantrekan.
+        function trackWrite(promise, label) {
+            return new Promise(resolve => {
+                let settled = false;
+                const timer = setTimeout(() => {
+                    if (settled) return;
+                    settled = true;
+                    showToast('Belum ada konfirmasi server. Perubahan diantrekan dan dikirim saat online.', 'info');
+                    resolve(true);
+                }, 8000);
+                Promise.resolve(promise).then(() => {
+                    clearTimeout(timer);
+                    if (!settled) { settled = true; resolve(true); }
+                }).catch(err => {
+                    clearTimeout(timer);
+                    console.error('Tulis gagal:', label || '', err);
+                    showToast('Gagal menyimpan ke server' + (err && err.code ? ` (${err.code})` : '') + '. Perubahan TIDAK tersimpan.', 'error');
+                    if (!settled) { settled = true; resolve(false); }
+                });
+            });
+        }
 
         let toastTimer;
         window.showToast = function(message, type = 'success') {
@@ -1584,16 +1687,16 @@
                 amountInput.readOnly = false;
                 amountInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
                 if (parseFloat(amountInput.value) === 0 || !amountInput.value) {
-                    amountInput.value = 50000;
+                    amountInput.value = getDefaultIuranAmount();
                 }
             }
             const subtitle = document.getElementById('nominal-subtitle');
             if (subtitle) {
-                subtitle.textContent = '(Standar: Rp 50.000)';
+                subtitle.textContent = standardLabel();
                 subtitle.className = 'text-emerald-600 font-normal text-[10px]';
             }
             
-            const amount = amountInput ? amountInput.value : 50000;
+            const amount = amountInput ? amountInput.value : getDefaultIuranAmount();
             updateAllocationPreview(amount);
         };
 
@@ -1608,7 +1711,7 @@
             
             container.innerHTML = feeAllocations.map(item => {
                 const currentVal = manualAllocation[item.title] || 0;
-                const safeTitle = escapeHTML(item.title).replace(/'/g, "\\'");
+
                 return `
                     <div>
                         <label class="block text-[10px] font-semibold text-slate-600 mb-0.5">${escapeHTML(item.title)}</label>
@@ -1616,7 +1719,7 @@
                             <span class="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">Rp</span>
                             <input type="number" min="0" step="1000" 
                                 value="${currentVal}" 
-                                oninput="handleManualInput('${safeTitle}', this.value)"
+                                oninput="handleManualInput(${jsArg(item.title)}, this.value)"
                                 placeholder="0"
                                 class="w-full pl-7 pr-2 py-1.5 rounded-lg border border-slate-300 text-xs font-semibold focus:ring-2 focus:ring-emerald-500 outline-none">
                         </div>
@@ -1831,13 +1934,13 @@
                         <div class="font-bold text-slate-800 text-xs tracking-wide">${escapeHTML(b.accountNumber)}</div>
                     </div>
                     <div class="flex items-center gap-1 shrink-0">
-                        <button onclick="copyToClipboard('${escapeHTML(b.accountNumber)}')" class="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded text-[10px] flex items-center gap-1 transition-colors" title="Salin No Rekening">
+                        <button onclick="copyToClipboard(${jsArg(b.accountNumber)})" class="px-2 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-semibold rounded text-[10px] flex items-center gap-1 transition-colors" title="Salin No Rekening">
                             <i class="fas fa-copy"></i> Salin
                         </button>
-                        <button onclick="editBank('${b.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}" title="Edit Rekening">
+                        <button onclick="editBank(${jsArg(b.id)})" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}" title="Edit Rekening">
                             <i class="fas fa-pen text-[10px]"></i>
                         </button>
-                        <button onclick="deleteBank('${b.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}" title="Hapus Rekening">
+                        <button onclick="deleteBank(${jsArg(b.id)})" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}" title="Hapus Rekening">
                             <i class="fas fa-trash-alt text-[10px]"></i>
                         </button>
                     </div>
@@ -1866,10 +1969,10 @@
                         <strong class="text-slate-800 text-xs">${formatRupiah(item.amount)} <span class="text-slate-400 font-normal text-[10px]">/ rumah</span></strong>
                     </div>
                     <div class="admin-only flex items-center gap-1 shrink-0 ${isAdmin ? '' : 'hidden'}">
-                        <button onclick="editAllocation('${item.id}')" class="text-slate-400 hover:text-amber-600 p-1" title="Edit Rincian">
+                        <button onclick="editAllocation(${jsArg(item.id)})" class="text-slate-400 hover:text-amber-600 p-1" title="Edit Rincian">
                             <i class="fas fa-pen text-[10px]"></i>
                         </button>
-                        <button onclick="deleteAllocation('${item.id}')" class="text-slate-300 hover:text-rose-600 p-1" title="Hapus Rincian">
+                        <button onclick="deleteAllocation(${jsArg(item.id)})" class="text-slate-300 hover:text-rose-600 p-1" title="Hapus Rincian">
                             <i class="fas fa-trash-alt text-[10px]"></i>
                         </button>
                     </div>
@@ -1940,10 +2043,10 @@
             document.getElementById('bank-modal').classList.add('hidden');
         };
 
-        window.deleteBank = function(id) {
+        window.deleteBank = async function(id) {
             if (!requireAdmin()) return;
             if (confirm('Hapus rekening bank ini?')) {
-                if (firebaseReady) remove(ref(firebaseDb, `kasRt/banks/${id}`));
+                if (firebaseReady) { if (!(await trackWrite(remove(ref(firebaseDb, `kasRt/banks/${id}`)), 'hapus-bank'))) return; }
                 else {
                     bankAccounts = bankAccounts.filter(b => b.id !== id);
                     saveLocalStorage();
@@ -1977,10 +2080,10 @@
             document.getElementById('allocation-modal').classList.add('hidden');
         };
 
-        window.deleteAllocation = function(id) {
+        window.deleteAllocation = async function(id) {
             if (!requireAdmin()) return;
             if (confirm('Hapus rincian alokasi ini?')) {
-                if (firebaseReady) remove(ref(firebaseDb, `kasRt/allocations/${id}`));
+                if (firebaseReady) { if (!(await trackWrite(remove(ref(firebaseDb, `kasRt/allocations/${id}`)), 'hapus-alokasi'))) return; }
                 else {
                     feeAllocations = feeAllocations.filter(a => a.id !== id);
                     saveLocalStorage();
@@ -2187,7 +2290,7 @@
                     });
 
                     expCatList.innerHTML = categories.map(cat => `
-                        <div onclick="openExpenseCategoryModal('${escapeHTML(cat).replace(/'/g, "\\'")}')" 
+                        <div onclick="openExpenseCategoryModal(${jsArg(cat)})" 
                              class="flex justify-between text-[11px] cursor-pointer hover:bg-rose-50 rounded px-1 py-0.5 transition-colors group">
                             <span class="text-slate-600 group-hover:text-rose-700 group-hover:underline">
                                 • ${escapeHTML(cat)} 
@@ -2344,7 +2447,7 @@
                                 <div class="flex items-center gap-1.5 mt-1 flex-wrap">
                                     <span class="inline-block px-1.5 py-0.5 text-[9px] rounded font-semibold ${badgeBg}">${methodIcon} ${escapeHTML(m.replace('Bank ', ''))}</span>
                                     ${proofsCount > 0 
-                                        ? `<button onclick="openProofModal('${t.id}')" class="text-blue-600 hover:text-blue-800 text-[10px] font-semibold underline flex items-center gap-0.5">
+                                        ? `<button onclick="openProofModal(${jsArg(t.id)})" class="text-blue-600 hover:text-blue-800 text-[10px] font-semibold underline flex items-center gap-0.5">
                                             <i class="fas fa-image"></i> Bukti (${proofsCount})
                                            </button>` 
                                         : ''}
@@ -2620,7 +2723,7 @@
                         <div class="flex items-center gap-1.5 mt-1 flex-wrap">
                             ${methodBadge}
                             ${proofsCount > 0 
-                                ? `<button onclick="openProofModal('${t.id}')" class="text-blue-600 hover:text-blue-800 text-[10px] font-semibold underline flex items-center gap-0.5">
+                                ? `<button onclick="openProofModal(${jsArg(t.id)})" class="text-blue-600 hover:text-blue-800 text-[10px] font-semibold underline flex items-center gap-0.5">
                                     <i class="fas fa-image"></i> Bukti (${proofsCount})
                                    </button>` 
                                 : ''}
@@ -2630,10 +2733,10 @@
                     <td class="px-2 sm:px-3 py-2 text-right font-bold text-xs sm:text-sm text-rose-600">${!isInc ? formatRupiah(t.amount) : '-'}</td>
                     <td class="px-1 py-2 text-center">
                         <div class="flex items-center justify-center gap-1">
-                            <button onclick="editTransaction('${t.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                            <button onclick="editTransaction(${jsArg(t.id)})" class="admin-only text-slate-400 hover:text-amber-600 p-1 ${isAdmin ? '' : 'hidden'}">
                                 <i class="fas fa-pen text-xs"></i>
                             </button>
-                            <button onclick="deleteTransaction('${t.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}">
+                            <button onclick="deleteTransaction(${jsArg(t.id)})" class="admin-only text-slate-300 hover:text-rose-600 p-1 ${isAdmin ? '' : 'hidden'}">
                                 <i class="fas fa-trash-alt text-xs"></i>
                             </button>
                         </div>
@@ -2664,16 +2767,16 @@
                         <div class="flex items-center gap-2">
                             ${methodBadge}
                             ${proofsCount > 0 
-                                ? `<button onclick="openProofModal('${t.id}')" class="text-blue-600 font-medium underline flex items-center gap-1">
+                                ? `<button onclick="openProofModal(${jsArg(t.id)})" class="text-blue-600 font-medium underline flex items-center gap-1">
                                     <i class="fas fa-image"></i> Bukti (${proofsCount})
                                    </button>` 
                                 : ''}
                         </div>
                         <div class="flex items-center gap-2">
-                            <button onclick="editTransaction('${t.id}')" class="admin-only text-slate-500 hover:text-amber-600 ${isAdmin ? '' : 'hidden'}">
+                            <button onclick="editTransaction(${jsArg(t.id)})" class="admin-only text-slate-500 hover:text-amber-600 ${isAdmin ? '' : 'hidden'}">
                                 <i class="fas fa-pen"></i> Edit
                             </button>
-                            <button onclick="deleteTransaction('${t.id}')" class="admin-only text-rose-500 hover:text-rose-700 ${isAdmin ? '' : 'hidden'}">
+                            <button onclick="deleteTransaction(${jsArg(t.id)})" class="admin-only text-rose-500 hover:text-rose-700 ${isAdmin ? '' : 'hidden'}">
                                 <i class="fas fa-trash-alt"></i> Hapus
                             </button>
                         </div>
@@ -2792,18 +2895,14 @@
             let visibleRows = 0;
 
             filteredHouses.forEach(h => {
-                const payment = transactions.find(t => {
-                    if (t.type !== 'income' || !t.houseNumber) return false;
-                    if (t.houseNumber.trim().toUpperCase() !== h.houseNumber.trim().toUpperCase()) return false;
-                    
-                    const tDate = new Date(t.date);
-                    if (isNaN(tDate.getTime())) return false;
-                    
-                    const tPeriod = `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}`;
-                    return tPeriod === selectedPeriod;
-                });
-
-                const isPaid = !!payment;
+                const payments = getHousePayments(h.houseNumber, selectedPeriod);
+                const paidTotal = payments.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                const stdIuran = getStandardIuran();
+                // pembayaran yang punya bukti diprioritaskan untuk tombol "Bukti"
+                const payment = payments.find(t => (t.proofs && t.proofs.length > 0) || t.proof) || payments[0] || null;
+                // Lunas = total bayar >= iuran standar; di bawahnya = "Kurang"
+                const isPaid = payments.length > 0 && (stdIuran <= 0 || paidTotal >= stdIuran);
+                const isPartial = payments.length > 0 && !isPaid;
                 if (isPaid) paidCount++;
                 else unpaidCount++;
 
@@ -2814,11 +2913,13 @@
 
                 const statusBadge = isPaid
                     ? `<span class="inline-block px-1 py-0.5 rounded text-[9px] font-bold bg-emerald-100 text-emerald-700">Lunas</span>`
-                    : `<span class="inline-block px-1 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-700">Belum</span>`;
+                    : (isPartial
+                        ? `<span class="inline-block px-1 py-0.5 rounded text-[9px] font-bold bg-amber-100 text-amber-700">Kurang</span>`
+                        : `<span class="inline-block px-1 py-0.5 rounded text-[9px] font-bold bg-rose-100 text-rose-700">Belum</span>`);
 
                 let nominalDisplay = '-';
-                if (isPaid) {
-                    const amt = parseFloat(payment.amount) || 0;
+                if (payments.length > 0) {
+                    const amt = paidTotal;
                     if (amt >= 1000000) {
                         nominalDisplay = (amt / 1000000).toFixed(1).replace('.0', '') + 'jt';
                     } else if (amt >= 1000) {
@@ -2828,25 +2929,29 @@
                     }
                 }
 
-                let actionBtnMobile = '';
-                let actionBtnDesktop = '';
-                if (isPaid) {
+                let proofBtnMobile = '', proofBtnDesktop = '', payBtnMobile = '', payBtnDesktop = '';
+                if (payment) {
                     const hasProof = (payment.proofs && payment.proofs.length > 0) || payment.proof;
-                    actionBtnMobile = `<button onclick="openProofModal('${payment.id}')" class="text-[9px] px-1 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded whitespace-nowrap ${hasProof ? '' : 'opacity-40 cursor-not-allowed'}" ${hasProof ? '' : 'disabled'} title="Bukti">📷</button>`;
-                    actionBtnDesktop = `<button onclick="openProofModal('${payment.id}')" class="text-[10px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded whitespace-nowrap ${hasProof ? '' : 'opacity-40 cursor-not-allowed'}" ${hasProof ? '' : 'disabled'}>Bukti</button>`;
-                } else if (isAdmin) {
-                    actionBtnMobile = `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[9px] px-1.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-sm whitespace-nowrap" title="Bayar">Bayar</button>`;
-                    actionBtnDesktop = `<button onclick="quickRecordPayment('${h.houseNumber}')" class="text-[10px] px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded shadow-sm whitespace-nowrap">Bayar</button>`;
+                    proofBtnMobile = `<button onclick="openProofModal(${jsArg(payment.id)})" class="text-[9px] px-1 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded whitespace-nowrap ${hasProof ? '' : 'opacity-40 cursor-not-allowed'}" ${hasProof ? '' : 'disabled'} title="Bukti">📷</button>`;
+                    proofBtnDesktop = `<button onclick="openProofModal(${jsArg(payment.id)})" class="text-[10px] px-2 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded whitespace-nowrap ${hasProof ? '' : 'opacity-40 cursor-not-allowed'}" ${hasProof ? '' : 'disabled'}>Bukti</button>`;
                 }
+                if (!isPaid && isAdmin) {
+                    const remaining = isPartial ? Math.round(stdIuran - paidTotal) : 0;
+                    const lbl = isPartial ? 'Tambah' : 'Bayar';
+                    payBtnMobile = `<button onclick="quickRecordPayment(${jsArg(h.houseNumber)}, ${remaining})" class="text-[9px] px-1.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded shadow-sm whitespace-nowrap" title="${lbl}">${lbl}</button>`;
+                    payBtnDesktop = `<button onclick="quickRecordPayment(${jsArg(h.houseNumber)}, ${remaining})" class="text-[10px] px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded shadow-sm whitespace-nowrap">${lbl}</button>`;
+                }
+                const actionBtnMobile = proofBtnMobile + payBtnMobile;
+                const actionBtnDesktop = proofBtnDesktop + payBtnDesktop;
 
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-slate-50 transition-colors";
 
                 let nominalCellContent = '';
-                if (isPaid) {
+                if (payments.length > 0) {
                     nominalCellContent = `
                         <div class="flex items-center justify-end gap-1">
-                            <span class="font-bold text-[10px] sm:text-xs text-emerald-600" title="${formatRupiah(payment.amount)}">${nominalDisplay}</span>
+                            <span class="font-bold text-[10px] sm:text-xs ${isPaid ? 'text-emerald-600' : 'text-amber-600'}" title="${formatRupiah(paidTotal)}">${nominalDisplay}</span>
                             <span class="sm:hidden">${actionBtnMobile}</span>
                             <span class="hidden sm:inline">${actionBtnDesktop}</span>
                         </div>
@@ -2873,10 +2978,10 @@
                     </td>
                     <td class="px-0.5 sm:px-2 py-2 text-center">
                         <div class="flex items-center justify-center gap-0.5 sm:gap-1 flex-nowrap">
-                            <button onclick="editHouse('${h.id}')" class="admin-only text-slate-400 hover:text-amber-600 p-0.5 sm:p-1 shrink-0 ${isAdmin ? '' : 'hidden'}" title="Edit">
+                            <button onclick="editHouse(${jsArg(h.id)})" class="admin-only text-slate-400 hover:text-amber-600 p-0.5 sm:p-1 shrink-0 ${isAdmin ? '' : 'hidden'}" title="Edit">
                                 <i class="fas fa-pen text-[10px] sm:text-xs"></i>
                             </button>
-                            <button onclick="deleteHouse('${h.id}')" class="admin-only text-slate-300 hover:text-rose-600 p-0.5 sm:p-1 shrink-0 ${isAdmin ? '' : 'hidden'}" title="Hapus">
+                            <button onclick="deleteHouse(${jsArg(h.id)})" class="admin-only text-slate-300 hover:text-rose-600 p-0.5 sm:p-1 shrink-0 ${isAdmin ? '' : 'hidden'}" title="Hapus">
                                 <i class="fas fa-trash-alt text-[10px] sm:text-xs"></i>
                             </button>
                         </div>
@@ -2991,21 +3096,19 @@
             }
 
             const exportData = sortedHouses.map((h, index) => {
-                const payment = transactions.find(t => {
-                    if (t.type !== 'income' || !t.houseNumber) return false;
-                    if (t.houseNumber.trim().toUpperCase() !== h.houseNumber.trim().toUpperCase()) return false;
-                    const tDate = new Date(t.date);
-                    if (isNaN(tDate.getTime())) return false;
-                    return `${tDate.getFullYear()}-${String(tDate.getMonth() + 1).padStart(2, '0')}` === periodInput;
-                });
+                const payments = getHousePayments(h.houseNumber, periodInput);
+                const paidTotal = payments.reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                const stdIuran = getStandardIuran();
+                const statusText = payments.length === 0 ? 'Belum Bayar'
+                    : ((stdIuran <= 0 || paidTotal >= stdIuran) ? 'Lunas' : 'Kurang Bayar');
 
                 return {
                     "No": index + 1,
                     "No. Rumah": h.houseNumber || '-',
                     "Nama Penghuni": h.ownerName || '-',
                     "No. Telepon": h.phone || '-',
-                    "Status": payment ? 'Lunas' : 'Belum Bayar',
-                    "Nominal (Rp)": payment ? parseFloat(payment.amount) || 0 : 0
+                    "Status": statusText,
+                    "Nominal (Rp)": paidTotal
                 };
             });
 
@@ -3016,7 +3119,7 @@
             showToast(`Status iuran periode ${periodInput} berhasil diekspor!`);
         };
 
-        window.quickRecordPayment = function(houseNo) { 
+        window.quickRecordPayment = function(houseNo, remaining = 0) { 
             if (!requireAdmin()) return;
             switchMainPage('dashboard');
             cancelEditTransaction();
@@ -3041,8 +3144,9 @@
             }
             
             descInput.value = `Iuran Kas Bulan ${monthName}`;
-            document.getElementById('inc-amount').value = '50000';
-            updateAllocationPreview('50000');
+            const nominalAwal = remaining > 0 ? remaining : getDefaultIuranAmount();
+            document.getElementById('inc-amount').value = String(nominalAwal);
+            updateAllocationPreview(String(nominalAwal));
             document.getElementById('inc-amount').focus();
             document.getElementById('inc-amount').select();
             showToast(`Mencatat iuran rumah ${houseNo}`);
@@ -3097,7 +3201,7 @@
                         amountInput.classList.remove('bg-slate-100', 'cursor-not-allowed');
                     }
                     if (subtitle) {
-                        subtitle.textContent = '(Standar: Rp 50.000)';
+                        subtitle.textContent = standardLabel();
                         subtitle.className = 'text-emerald-600 font-normal text-[10px]';
                     }
                     updateAllocationPreview(t.amount || 0);
@@ -3135,7 +3239,7 @@
             const formInc = document.getElementById('form-income');
             formInc.reset();
             document.getElementById('inc-id').value = '';
-            document.getElementById('inc-amount').value = '50000';
+            document.getElementById('inc-amount').value = String(getDefaultIuranAmount());
             document.getElementById('inc-submit-btn').innerHTML = '<i class="fas fa-save"></i> Simpan Pemasukan';
 
             alokasiMode = 'auto';
@@ -3149,11 +3253,11 @@
             }
             const subtitle = document.getElementById('nominal-subtitle');
             if (subtitle) {
-                subtitle.textContent = '(Standar: Rp 50.000)';
+                subtitle.textContent = standardLabel();
                 subtitle.className = 'text-emerald-600 font-normal text-[10px]';
             }
 
-            updateAllocationPreview('50000');
+            updateAllocationPreview(String(getDefaultIuranAmount()));
             currentIncomeProofs = [];
             renderPreviews('income');
 
@@ -3197,12 +3301,12 @@
             document.getElementById('house-modal').classList.add('hidden');
         };
 
-        window.deleteHouse = function(id) { 
+        window.deleteHouse = async function(id) { 
             if (!requireAdmin()) return;
             const house = houses.find(h => h.id === id);
             const houseName = house ? `Rumah ${house.houseNumber}` : 'data ini';
             if (confirm(`Hapus ${houseName}?`)) {
-                if (firebaseReady) remove(ref(firebaseDb, `kasRt/houses/${id}`));
+                if (firebaseReady) { if (!(await trackWrite(remove(ref(firebaseDb, `kasRt/houses/${id}`)), 'hapus-rumah'))) return; }
                 else {
                     houses = houses.filter(h => h.id !== id);
                     saveLocalStorage();
@@ -3376,11 +3480,11 @@
             showToast('Rincian mutasi berhasil diekspor!');
         };
 
-        window.deleteTransaction = function(id) { 
+        window.deleteTransaction = async function(id) { 
             if (!requireAdmin()) return;
             if (confirm('Hapus transaksi ini?')) {
                 if (editingTransactionId === id) cancelEditTransaction();
-                if (firebaseReady) remove(ref(firebaseDb, `kasRt/transactions/${id}`));
+                if (firebaseReady) { if (!(await trackWrite(remove(ref(firebaseDb, `kasRt/transactions/${id}`)), 'hapus-transaksi'))) return; }
                 else {
                     transactions = transactions.filter(t => t.id !== id);
                     saveLocalStorage();
@@ -3405,10 +3509,27 @@
             else setTimeout(runRender, 0);
         }
 
+        // Sekali saja setelah alokasi termuat: isi nominal form dengan iuran standar yang sebenarnya
+        let standardApplied = false;
+        function applyStandardIuranOnce() {
+            if (standardApplied || !feeAllocations || feeAllocations.length === 0) return;
+            standardApplied = true;
+            const std = getStandardIuran();
+            const amountInput = document.getElementById('inc-amount');
+            if (!amountInput || std <= 0 || editingTransactionId) return;
+            if (document.activeElement === amountInput) return;
+            if (amountInput.value === '50000' && std !== 50000) {
+                amountInput.value = String(std);
+                updateAllocationPreview(String(std));
+            }
+        }
+
         function renderAllViews() {
             updateHouseDatalist();
             renderBankAccounts();
             renderFeeAllocations();
+            refreshStandardIuranUI();
+            applyStandardIuranOnce();
             renderDashboard();
             renderMethodBalances();
             renderHistory();
@@ -3425,7 +3546,7 @@
             if (currentWargaHouse) return;
 
             const found = houses.find(h =>
-                (h.houseNumber || '').trim().toUpperCase() === (savedWargaHouseNumber || '').trim().toUpperCase()
+                normHouseNo(h.houseNumber) === normHouseNo(savedWargaHouseNumber)
             );
 
             if (found) {
@@ -3484,7 +3605,12 @@
             if (!('Notification' in window) || Notification.permission !== 'granted') return;
             const options = { body, icon: 'icons/icon-192.png', badge: 'icons/icon-192.png', tag };
             try {
-                const reg = await navigator.serviceWorker.ready;
+                if (!('serviceWorker' in navigator)) throw new Error('no-sw');
+                // .ready menggantung selamanya bila sw.js tidak terdaftar, jadi diberi batas waktu
+                const reg = await Promise.race([
+                    navigator.serviceWorker.ready,
+                    new Promise((_, reject) => setTimeout(() => reject(new Error('sw-timeout')), 2000))
+                ]);
                 await reg.showNotification(title, options);
             } catch (e) {
                 try { new Notification(title, options); } catch (e2) { console.warn('Notifikasi gagal:', e2); }
@@ -3505,6 +3631,36 @@
             showSystemNotification(title, body, 'tx-' + (t.createdAt || Date.now()));
         }
 
+        // Isi data contoh HANYA SEKALI, dan hanya bila database benar-benar kosong (instalasi baru).
+        // Flag kasRt/settings/seeded mencegah data contoh muncul lagi setelah dihapus admin.
+        let seedChecked = false;
+        async function ensureSeededOnce() {
+            if (seedChecked || !firebaseReady) return;
+            seedChecked = true;
+            try {
+                const res = await runTransaction(ref(firebaseDb, 'kasRt/settings/seeded'), cur => (cur === true ? undefined : true));
+                if (!res.committed) return;
+
+                const names = ['houses', 'banks', 'allocations', 'transactions'];
+                const snaps = await Promise.all(names.map(n => get(ref(firebaseDb, `kasRt/${n}`))));
+                if (snaps.some(sn => sn.exists())) return;
+
+                const updates = {};
+                defaultHousesArray.forEach(h => {
+                    updates[`kasRt/houses/${push(ref(firebaseDb, 'kasRt/houses')).key}`] = { houseNumber: h.houseNumber, ownerName: h.ownerName, phone: h.phone || '' };
+                });
+                defaultBanksArray.forEach(b => {
+                    updates[`kasRt/banks/${push(ref(firebaseDb, 'kasRt/banks')).key}`] = { bankName: b.bankName, accountNumber: b.accountNumber, accountHolder: b.accountHolder };
+                });
+                defaultAllocationsArray.forEach(a => {
+                    updates[`kasRt/allocations/${push(ref(firebaseDb, 'kasRt/allocations')).key}`] = { title: a.title, amount: a.amount };
+                });
+                await update(ref(firebaseDb), updates);
+            } catch (err) {
+                console.warn('Seeding data awal dilewati:', err.message);
+            }
+        }
+
         async function startFirebaseSync() {
             if (!isFirebaseConfigured()) {
                 kasSync.hide();
@@ -3522,18 +3678,22 @@
                     isTokenAutoRefreshEnabled: true
                 });
 
-                signInAnonymously(firebaseAuth).catch((err) => {
+                // Tunggu sign-in selesai supaya listener tidak kena permission-denied
+                try {
+                    await signInAnonymously(firebaseAuth);
+                } catch (err) {
                     console.warn('Anonymous auth gagal:', err.message);
-                });
+                }
 
                 firebaseReady = true;
 
                 await getAdminPinHash();
 
-                const myPresenceRef = ref(firebaseDb, `kasRt/presence/${userSessionId}`);
+                myPresenceRef = ref(firebaseDb, `kasRt/presence/${userSessionId}`);
                 const connectedRef = ref(firebaseDb, '.info/connected');
 
                 onValue(connectedRef, (snap) => {
+                    presenceActive = snap.val() === true;
                     if (snap.val() === true) {
                         onDisconnect(myPresenceRef).remove();
                         set(myPresenceRef, {
@@ -3546,7 +3706,7 @@
                 });
 
                 window.addEventListener('beforeunload', () => {
-                    if (firebaseReady) remove(myPresenceRef);
+                    if (firebaseReady && myPresenceRef) { presenceActive = false; remove(myPresenceRef); }
                 });
 
                 onValue(ref(firebaseDb, 'kasRt/presence'), (snap) => {
@@ -3574,13 +3734,13 @@
                         const badge = document.createElement('div');
                         badge.className = "flex items-center gap-1.5 bg-emerald-50 border border-emerald-200 text-emerald-800 px-2.5 py-1 rounded-xl text-xs font-medium shadow-xs";
                         
-                        let displayName = isMe ? 'Anda' : role;
+                        let displayName = isMe ? 'Anda' : String(role);
                         if (house) displayName += ` (${house})`;
                         
                         badge.innerHTML = `
                             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
                             <span class="flex items-center gap-1">
-                                <b>${displayName}</b>
+                                <b>${escapeHTML(displayName)}</b>
                                 ${device ? `<span class="text-[9px] text-emerald-500">${device === 'Mobile' ? '📱' : '💻'}</span>` : ''}
                             </span>
                         `;
@@ -3599,18 +3759,15 @@
                 onValue(ref(firebaseDb, 'kasRt/houses'), (snap) => {
                     const val = snap.val();
                     if (!val) {
-                        houses = [...defaultHousesArray];
-                        houses.forEach(h => {
-                            const newRef = push(ref(firebaseDb, 'kasRt/houses'));
-                            set(newRef, { houseNumber: h.houseNumber, ownerName: h.ownerName, phone: h.phone || '' });
-                        });
+                        houses = [];
+                        ensureSeededOnce();
                     } else {
                         houses = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
 
                     if (currentWargaHouse) {
                         const updated = houses.find(h =>
-                            (h.houseNumber || '').trim().toUpperCase() === (currentWargaHouse.houseNumber || '').trim().toUpperCase()
+                            normHouseNo(h.houseNumber) === normHouseNo(currentWargaHouse.houseNumber)
                         );
                         if (updated) {
                             currentWargaHouse = updated;
@@ -3627,11 +3784,8 @@
                 onValue(ref(firebaseDb, 'kasRt/banks'), (snap) => {
                     const val = snap.val();
                     if (!val) {
-                        bankAccounts = [...defaultBanksArray];
-                        bankAccounts.forEach(b => {
-                            const newRef = push(ref(firebaseDb, 'kasRt/banks'));
-                            set(newRef, { bankName: b.bankName, accountNumber: b.accountNumber, accountHolder: b.accountHolder });
-                        });
+                        bankAccounts = [];
+                        ensureSeededOnce();
                     } else {
                         bankAccounts = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
@@ -3642,11 +3796,8 @@
                 onValue(ref(firebaseDb, 'kasRt/allocations'), (snap) => {
                     const val = snap.val();
                     if (!val) {
-                        feeAllocations = [...defaultAllocationsArray];
-                        feeAllocations.forEach(a => {
-                            const newRef = push(ref(firebaseDb, 'kasRt/allocations'));
-                            set(newRef, { title: a.title, amount: a.amount });
-                        });
+                        feeAllocations = [];
+                        ensureSeededOnce();
                     } else {
                         feeAllocations = Object.keys(val).map(key => ({ id: key, ...val[key] }));
                     }
@@ -3723,17 +3874,45 @@
                 return;
             }
 
-            const storedHash = await getAdminPinHash();
-            const pinHash = await hashPin(pin);
+            if (Date.now() < pinLockUntil) {
+                const sisa = Math.ceil((pinLockUntil - Date.now()) / 1000);
+                showToast(`Terlalu banyak percobaan. Coba lagi ${sisa} detik.`, 'error');
+                return;
+            }
 
-            if (pinHash === storedHash) {
+            let ok = false, usingDefault = false;
+            try {
+                const storedHash = await getAdminPinHash();
+                ok = await verifyAdminPin(pin, storedHash);
+                if (ok) usingDefault = await isUsingDefaultPin(storedHash);
+            } catch (err) {
+                console.error(err);
+                showToast('Verifikasi PIN gagal: ' + err.message, 'error');
+                return;
+            }
+
+            if (ok) {
+                pinFailCount = 0;
                 isAdmin = true;
                 sessionStorage.setItem('kasRtIsAdmin', 'true');
                 closeAdminLogin();
                 updateAdminUI();
                 showToast('Berhasil login sebagai Admin RT!');
+                if (usingDefault) {
+                    setTimeout(() => {
+                        showToast('PIN masih bawaan. Segera ganti PIN Anda!', 'info');
+                        openChangePin();
+                    }, 600);
+                }
             } else {
-                showToast('PIN Admin salah! Cek dengan admin lain.', 'error');
+                pinFailCount++;
+                if (pinFailCount >= 5) {
+                    pinLockUntil = Date.now() + 60000;
+                    pinFailCount = 0;
+                    showToast('5x salah. Login dikunci 60 detik.', 'error');
+                } else {
+                    showToast('PIN Admin salah! Cek dengan admin lain.', 'error');
+                }
                 document.getElementById('admin-pin').value = '';
             }
         };
@@ -3760,14 +3939,21 @@
 
         window.handlePinChange = async function(e) {
             e.preventDefault();
+            if (!isAdmin) return;
             const oldPin = document.getElementById('old-pin').value;
             const newPin = document.getElementById('new-pin').value;
             const confirmPin = document.getElementById('confirm-pin').value;
 
-            const storedHash = await getAdminPinHash();
-            const oldHash = await hashPin(oldPin);
+            let storedHash, oldOk;
+            try {
+                storedHash = await getAdminPinHash();
+                oldOk = await verifyAdminPin(oldPin, storedHash);
+            } catch (err) {
+                showToast('Verifikasi PIN gagal: ' + err.message, 'error');
+                return;
+            }
 
-            if (oldHash !== storedHash) {
+            if (!oldOk) {
                 showToast('PIN Lama tidak sesuai! Cek dengan admin lain.', 'error');
                 return;
             }
@@ -3775,24 +3961,29 @@
                 showToast('PIN Baru minimal 6 karakter/digit!', 'error');
                 return;
             }
+            if (newPin === DEFAULT_ADMIN_PIN) {
+                showToast('PIN Baru tidak boleh sama dengan PIN bawaan.', 'error');
+                return;
+            }
             if (newPin !== confirmPin) {
                 showToast('Konfirmasi PIN Baru tidak sama!', 'error');
                 return;
             }
 
-            const newHash = await hashPin(newPin);
+            let newHash;
+            try {
+                newHash = await hashPinSalted(newPin);
+            } catch (err) {
+                showToast('Gagal membuat hash PIN: ' + err.message, 'error');
+                return;
+            }
 
             if (firebaseReady) {
-                try {
-                    await set(ref(firebaseDb, 'kasRt/settings/adminPinHash'), newHash);
-                    showToast('PIN diperbarui! Semua admin pakai PIN baru.');
-                } catch (err) {
-                    console.error('Gagal simpan PIN ke server:', err);
-                    showToast('Gagal simpan PIN ke server.', 'error');
-                    return;
-                }
+                const ok = await trackWrite(set(ref(firebaseDb, 'kasRt/settings/adminPinHash'), newHash), 'pin');
+                if (!ok) return;
+                showToast('PIN diperbarui! Semua admin pakai PIN baru.');
             } else {
-                showToast('Mode offline — PIN hanya tersimpan lokal.', 'info');
+                showToast('Mode offline: PIN hanya tersimpan lokal.', 'info');
             }
 
             ADMIN_PIN_HASH = newHash;
@@ -3808,7 +3999,16 @@
             return true;
         }
 
+        function updatePresence() {
+            if (!firebaseReady || !myPresenceRef || !presenceActive) return;
+            update(myPresenceRef, {
+                role: isAdmin ? 'Admin' : 'Warga',
+                house: currentWargaHouse ? currentWargaHouse.houseNumber : ''
+            }).catch(() => {});
+        }
+
         function updateAdminUI() {
+            updatePresence();
             const adminOnlyElements = document.querySelectorAll('.admin-only');
             adminOnlyElements.forEach(el => {
                 if (isAdmin) el.classList.remove('hidden');
@@ -3836,65 +4036,97 @@
             showToast('Backup berhasil diunduh!');
         };
 
-        window.restoreDataJSON = function(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (e) => {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (!confirm('Restore akan MENGGANTI semua data saat ini. Lanjutkan?')) return;
-
-                    houses = data.houses || [];
-                    bankAccounts = data.bankAccounts || [];
-                    feeAllocations = data.feeAllocations || [];
-                    transactions = data.transactions || [];
-
-                    if (firebaseReady) {
-                        // Hapus data lama dulu (opsional, atau bisa langsung set)
-                        // Untuk kesederhanaan, kita set ulang seluruh node
-                        const housesObj = houses.reduce((acc, h) => {
-                            const { id, ...rest } = h;
-                            acc[id || push(ref(firebaseDb, 'kasRt/houses')).key] = rest;
-                            return acc;
-                        }, {});
-                        set(ref(firebaseDb, 'kasRt/houses'), housesObj);
-
-                        const banksObj = bankAccounts.reduce((acc, b) => {
-                            const { id, ...rest } = b;
-                            acc[id || push(ref(firebaseDb, 'kasRt/banks')).key] = rest;
-                            return acc;
-                        }, {});
-                        set(ref(firebaseDb, 'kasRt/banks'), banksObj);
-
-                        const allocsObj = feeAllocations.reduce((acc, a) => {
-                            const { id, ...rest } = a;
-                            acc[id || push(ref(firebaseDb, 'kasRt/allocations')).key] = rest;
-                            return acc;
-                        }, {});
-                        set(ref(firebaseDb, 'kasRt/allocations'), allocsObj);
-
-                        const txObj = transactions.reduce((acc, t) => {
-                            const { id, ...rest } = t;
-                            acc[id || push(ref(firebaseDb, 'kasRt/transactions')).key] = rest;
-                            return acc;
-                        }, {});
-                        set(ref(firebaseDb, 'kasRt/transactions'), txObj);
-                    } else {
-                        saveLocalStorage();
-                        scheduleRenderAllViews();
-                    }
-                    showToast('Data berhasil direstore!');
-                } catch (err) {
-                    console.error(err);
-                    showToast('File backup tidak valid.', 'error');
+        function validateBackup(raw) {
+            if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+                return { ok: false, msg: 'Format backup tidak dikenali.' };
+            }
+            const keys = ['houses', 'bankAccounts', 'feeAllocations', 'transactions'];
+            const out = {};
+            for (const k of keys) {
+                const v = raw[k] == null ? [] : raw[k];
+                if (!Array.isArray(v)) return { ok: false, msg: `Backup rusak: "${k}" bukan daftar.` };
+                if (v.some(it => !it || typeof it !== 'object' || Array.isArray(it))) {
+                    return { ok: false, msg: `Backup rusak: isi "${k}" tidak valid.` };
                 }
+                // JSON roundtrip membuang nilai undefined (ditolak Firebase)
+                out[k] = JSON.parse(JSON.stringify(v));
+            }
+            if (out.houses.some(h => typeof h.houseNumber !== 'string' || !h.houseNumber.trim())) {
+                return { ok: false, msg: 'Backup rusak: ada rumah tanpa nomor.' };
+            }
+            if (out.bankAccounts.some(b => typeof b.bankName !== 'string')) {
+                return { ok: false, msg: 'Backup rusak: ada rekening tanpa nama bank.' };
+            }
+            if (out.feeAllocations.some(a => typeof a.title !== 'string' || !isFinite(parseFloat(a.amount)))) {
+                return { ok: false, msg: 'Backup rusak: ada alokasi tidak valid.' };
+            }
+            if (out.transactions.some(t => (t.type !== 'income' && t.type !== 'expense') || !isFinite(parseFloat(t.amount)) || typeof t.date !== 'string')) {
+                return { ok: false, msg: 'Backup rusak: ada transaksi tidak valid.' };
+            }
+            if (keys.every(k => out[k].length === 0)) {
+                return { ok: false, msg: 'File backup tidak berisi data.' };
+            }
+            return { ok: true, data: out };
+        }
+
+        window.restoreDataJSON = function(event) {
+            const input = event.target;
+            const file = input.files[0];
+            input.value = '';
+            if (!file) return;
+            if (!requireAdmin()) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                let raw;
+                try { raw = JSON.parse(e.target.result); }
+                catch (err) { showToast('File backup tidak valid (bukan JSON).', 'error'); return; }
+
+                const check = validateBackup(raw);
+                if (!check.ok) { showToast(check.msg, 'error'); return; }
+                const d = check.data;
+
+                if (!confirm(
+                    'Restore akan MENGGANTI semua data saat ini dengan:\n' +
+                    `• ${d.houses.length} rumah\n• ${d.bankAccounts.length} rekening\n` +
+                    `• ${d.feeAllocations.length} alokasi\n• ${d.transactions.length} transaksi\n\nLanjutkan?`
+                )) return;
+
+                if (firebaseReady) {
+                    const toObj = (arr, node) => {
+                        const o = {};
+                        arr.forEach(item => {
+                            const { id, ...rest } = item;
+                            const validKey = id && /^[^.#$\[\]\/]+$/.test(String(id));
+                            const key = validKey ? String(id) : push(ref(firebaseDb, `kasRt/${node}`)).key;
+                            o[key] = rest;
+                        });
+                        return Object.keys(o).length ? o : null;
+                    };
+                    // Satu update = atomik: semua node terganti sekaligus, atau tidak sama sekali
+                    const payload = {
+                        houses: toObj(d.houses, 'houses'),
+                        banks: toObj(d.bankAccounts, 'banks'),
+                        allocations: toObj(d.feeAllocations, 'allocations'),
+                        transactions: toObj(d.transactions, 'transactions')
+                    };
+                    const ok = await trackWrite(update(ref(firebaseDb, 'kasRt'), payload), 'restore');
+                    if (!ok) return;
+                } else {
+                    const withId = (arr, p) => arr.map((it, i) => ({ ...it, id: it.id || `${p}_${Date.now()}_${i}` }));
+                    houses = withId(d.houses, 'h');
+                    bankAccounts = withId(d.bankAccounts, 'b');
+                    feeAllocations = withId(d.feeAllocations, 'a');
+                    transactions = withId(d.transactions, 't');
+                    saveLocalStorage();
+                    scheduleRenderAllViews();
+                }
+                showToast('Data berhasil direstore!');
             };
             reader.readAsText(file);
-            event.target.value = '';
         };
 
-        document.getElementById('form-bank').addEventListener('submit', function(e) {
+        document.getElementById('form-bank').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!requireAdmin()) return;
 
@@ -3904,11 +4136,13 @@
             const accountHolder = document.getElementById('modal-bank-holder').value.trim();
 
             if (firebaseReady) {
-                if (id) update(ref(firebaseDb, `kasRt/banks/${id}`), { bankName, accountNumber, accountHolder });
-                else {
-                    const newRef = push(ref(firebaseDb, 'kasRt/banks'));
-                    set(newRef, { bankName, accountNumber, accountHolder });
-                }
+                const w = id
+                    ? update(ref(firebaseDb, `kasRt/banks/${id}`), { bankName, accountNumber, accountHolder })
+                    : set(push(ref(firebaseDb, 'kasRt/banks')), { bankName, accountNumber, accountHolder });
+                const rel = lockBtn(e);
+                const ok = await trackWrite(w, 'bank');
+                rel();
+                if (!ok) return;
             } else {
                 if (id) {
                     const idx = bankAccounts.findIndex(b => b.id === id);
@@ -3957,7 +4191,8 @@
                                     }
                                 });
                                 if (Object.keys(updates).length > 0) {
-                                    await update(ref(firebaseDb), updates);
+                                    const okRename = await trackWrite(update(ref(firebaseDb), updates), 'rename-kategori');
+                                    if (!okRename) return;
                                 }
                             } else {
                                 transactions.forEach(t => {
@@ -3974,11 +4209,13 @@
             }
 
             if (firebaseReady) {
-                if (id) update(ref(firebaseDb, `kasRt/allocations/${id}`), { title, amount });
-                else {
-                    const newRef = push(ref(firebaseDb, 'kasRt/allocations'));
-                    set(newRef, { title, amount });
-                }
+                const w = id
+                    ? update(ref(firebaseDb, `kasRt/allocations/${id}`), { title, amount })
+                    : set(push(ref(firebaseDb, 'kasRt/allocations')), { title, amount });
+                const rel = lockBtn(e);
+                const ok = await trackWrite(w, 'alokasi');
+                rel();
+                if (!ok) return;
             } else {
                 if (id) {
                     const idx = feeAllocations.findIndex(a => a.id === id);
@@ -3994,7 +4231,7 @@
             showToast('Rincian alokasi berhasil disimpan!');
         });
 
-        document.getElementById('form-house').addEventListener('submit', function(e) {
+        document.getElementById('form-house').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!requireAdmin()) return;
 
@@ -4003,24 +4240,31 @@
             const ownerName = document.getElementById('modal-house-owner').value.trim();
             const phone = document.getElementById('modal-house-phone').value.trim();
 
-            if (houseNumber) {
-                houseNumber = houseNumber.replace(/[\s\-]/g, '');
-                const match = houseNumber.match(/^([A-Z]+)(\d+)$/);
-                if (match) {
-                    const letter = match[1];
-                    const number = match[2].padStart(2, '0');
-                    houseNumber = letter + number;
-                } else if (/^\d+$/.test(houseNumber)) {
-                    houseNumber = 'O' + houseNumber.padStart(2, '0');
-                }
+            if (!houseNumber) {
+                showToast('No. Rumah wajib diisi!', 'error');
+                return;
+            }
+            {
+                // Format baku "A-01" (sama dengan data awal). Tanda "-" tidak lagi dibuang
+                // dan angka murni tidak lagi diberi awalan huruf "O".
+                const compact = houseNumber.replace(/[\s\-]/g, '');
+                const match = compact.match(/^([A-Z]+)(\d+)$/);
+                houseNumber = match ? `${match[1]}-${match[2].padStart(2, '0')}` : (compact || houseNumber);
+            }
+            const dup = houses.find(h => h.id !== id && normHouseNo(h.houseNumber) === normHouseNo(houseNumber));
+            if (dup) {
+                showToast(`Nomor rumah ${houseNumber} sudah ada (${dup.ownerName || '-'}).`, 'error');
+                return;
             }
 
             if (firebaseReady) {
-                if (id) update(ref(firebaseDb, `kasRt/houses/${id}`), { houseNumber, ownerName, phone });
-                else {
-                    const newRef = push(ref(firebaseDb, 'kasRt/houses'));
-                    set(newRef, { houseNumber, ownerName, phone });
-                }
+                const w = id
+                    ? update(ref(firebaseDb, `kasRt/houses/${id}`), { houseNumber, ownerName, phone })
+                    : set(push(ref(firebaseDb, 'kasRt/houses')), { houseNumber, ownerName, phone });
+                const rel = lockBtn(e);
+                const ok = await trackWrite(w, 'rumah');
+                rel();
+                if (!ok) return;
             } else {
                 if (id) {
                     const idx = houses.findIndex(h => h.id === id);
@@ -4036,14 +4280,19 @@
             showToast('Data warga berhasil disimpan!');
         });
 
-        document.getElementById('form-income').addEventListener('submit', function(e) {
+        document.getElementById('form-income').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!requireAdmin()) return;
 
             const id = document.getElementById('inc-id').value;
             const date = document.getElementById('inc-date').value;
             const paymentMethod = document.getElementById('inc-method').value;
-            const houseNumber = document.getElementById('inc-house').value.trim().toUpperCase();
+            let houseNumber = document.getElementById('inc-house').value.trim().toUpperCase();
+            if (houseNumber) {
+                // samakan penulisan dengan data rumah ("a01" / "A 01" -> "A-01")
+                const matched = houses.find(h => normHouseNo(h.houseNumber) === normHouseNo(houseNumber));
+                if (matched) houseNumber = matched.houseNumber;
+            }
             const description = document.getElementById('inc-desc').value.trim();
             
             let amount = parseFloat(document.getElementById('inc-amount').value) || 0;
@@ -4061,6 +4310,12 @@
             }
 
             const proofs = [...currentIncomeProofs];
+            // update() hanya menggabungkan data; field lama yang harus hilang dikirim sebagai null
+            const clearOnEdit = { proof: null };
+            if (alokasiMode !== 'manual') {
+                clearOnEdit.allocationMode = null;
+                clearOnEdit.allocations = null;
+            }
 
             const txData = { 
                 type: 'income', 
@@ -4078,15 +4333,25 @@
             }
 
             if (firebaseReady) {
-                if (id) update(ref(firebaseDb, `kasRt/transactions/${id}`), txData);
-                else {
-                    const newRef = push(ref(firebaseDb, 'kasRt/transactions'));
-                    set(newRef, { ...txData, createdAt: Date.now(), createdBy: userSessionId });
-                }
+                const w = id
+                    ? update(ref(firebaseDb, `kasRt/transactions/${id}`), { ...txData, ...clearOnEdit })
+                    : set(push(ref(firebaseDb, 'kasRt/transactions')), { ...txData, createdAt: Date.now(), createdBy: userSessionId });
+                const rel = lockBtn(e);
+                const ok = await trackWrite(w, 'transaksi');
+                rel();
+                if (!ok) return;
             } else {
                 if (id) {
                     const idx = transactions.findIndex(t => t.id === id);
-                    if (idx !== -1) transactions[idx] = { id, ...txData };
+                    if (idx !== -1) {
+                        const old = transactions[idx];
+                        transactions[idx] = {
+                            id,
+                            ...(old.createdAt ? { createdAt: old.createdAt } : {}),
+                            ...(old.createdBy ? { createdBy: old.createdBy } : {}),
+                            ...txData
+                        };
+                    }
                 } else {
                     transactions.push({ id: 't_' + Date.now(), ...txData });
                 }
@@ -4098,7 +4363,7 @@
             showToast(houseNumber ? 'Pemasukan iuran berhasil dicatat!' : 'Dana Tambahan berhasil dicatat!');
         });
 
-        document.getElementById('form-expense').addEventListener('submit', function(e) {
+        document.getElementById('form-expense').addEventListener('submit', async function(e) {
             e.preventDefault();
             if (!requireAdmin()) return;
 
@@ -4109,6 +4374,7 @@
             const category = document.getElementById('exp-category').value;
             const amount = parseFloat(document.getElementById('exp-amount').value) || 0;
             const proofs = [...currentExpenseProofs];
+            const clearOnEdit = { proof: null };
 
             if (amount <= 0) {
                 showToast('Nominal pengeluaran harus lebih dari Rp 0!', 'error');
@@ -4118,15 +4384,25 @@
             const txData = { type: 'expense', date, paymentMethod, description, category, amount, proofs };
 
             if (firebaseReady) {
-                if (id) update(ref(firebaseDb, `kasRt/transactions/${id}`), txData);
-                else {
-                    const newRef = push(ref(firebaseDb, 'kasRt/transactions'));
-                    set(newRef, { ...txData, createdAt: Date.now(), createdBy: userSessionId });
-                }
+                const w = id
+                    ? update(ref(firebaseDb, `kasRt/transactions/${id}`), { ...txData, ...clearOnEdit })
+                    : set(push(ref(firebaseDb, 'kasRt/transactions')), { ...txData, createdAt: Date.now(), createdBy: userSessionId });
+                const rel = lockBtn(e);
+                const ok = await trackWrite(w, 'transaksi');
+                rel();
+                if (!ok) return;
             } else {
                 if (id) {
                     const idx = transactions.findIndex(t => t.id === id);
-                    if (idx !== -1) transactions[idx] = { id, ...txData };
+                    if (idx !== -1) {
+                        const old = transactions[idx];
+                        transactions[idx] = {
+                            id,
+                            ...(old.createdAt ? { createdAt: old.createdAt } : {}),
+                            ...(old.createdBy ? { createdBy: old.createdBy } : {}),
+                            ...txData
+                        };
+                    }
                 } else {
                     transactions.push({ id: 't_' + Date.now(), ...txData });
                 }
@@ -4288,7 +4564,7 @@
                             <div class="text-xs font-bold text-slate-800">${escapeHTML(b.accountNumber)}</div>
                             <div class="text-[10px] text-slate-500">a.n. ${escapeHTML(b.accountHolder)}</div>
                         </div>
-                        <button onclick="copyToClipboard('${escapeHTML(b.accountNumber)}')" class="text-[10px] px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold rounded shrink-0">
+                        <button onclick="copyToClipboard(${jsArg(b.accountNumber)})" class="text-[10px] px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-bold rounded shrink-0">
                             <i class="fas fa-copy"></i> Salin
                         </button>
                     </div>
@@ -4423,6 +4699,7 @@
         };
 
         function updateWargaUI() {
+            updatePresence();
             const banner = document.getElementById('warga-welcome-banner');
             const btnText = document.getElementById('warga-btn-text');
 
