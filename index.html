@@ -1517,6 +1517,11 @@
             return String(b.id || '').localeCompare(String(a.id || ''));
         };
 
+        // Urutan untuk ekspor Excel: tanggal terlama di atas, terbaru di bawah (kronologis)
+        window.sortTxOldestFirst = function(list) {
+            return [...(list || [])].sort((a, b) => compareTxNewestFirst(b, a));
+        };
+
         window.formatDate = function(dateString) {
             if (!dateString) return '-';
             const d = new Date(dateString);
@@ -2498,7 +2503,7 @@
 
             const { categoryName, total, transactions: txList } = currentExpenseCategoryExport;
 
-            const exportData = txList.map((t, index) => ({
+            const exportData = sortTxOldestFirst(txList).map((t, index) => ({
                 "No": index + 1,
                 "Tanggal": t.date || '-',
                 "Keterangan": t.description || '-',
@@ -3025,7 +3030,7 @@
                     showToast('Tidak ada data transaksi untuk diekspor.', 'error');
                     return;
                 }
-                const exportData = transactions.map((t, index) => ({
+                const exportData = sortTxOldestFirst(transactions).map((t, index) => ({
                     "No": index + 1,
                     "Tanggal": t.date || '-',
                     "Tipe": t.type === 'income' ? (t.houseNumber && t.houseNumber.trim() ? 'Pemasukan (Iuran)' : 'Pemasukan (Dana Tambahan)') : 'Pengeluaran',
@@ -3455,7 +3460,7 @@
             rows.forEach(({ t, saldo }) => {
                 const isInc = t.type === 'income';
                 exportData.push({
-                    "Tanggal": formatDate(t.date),
+                    "Tanggal": t.date || '-',
                     "Keterangan": t.description || '-',
                     "No. Rumah / Kategori": isInc ? (t.houseNumber || 'Dana Tambahan') : (normalizeCategory(t.category) || '-'),
                     "Debit (Keluar)": !isInc ? (parseFloat(t.amount) || 0) : '',
