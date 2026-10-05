@@ -516,9 +516,14 @@
                                 <i class="fas fa-chart-line mr-1"></i> Rekap Bulanan
                             </button>
                         </div>
-                        <button onclick="exportToExcel()" class="mb-2 px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                        <div class="flex items-center gap-1.5 mb-2">
+                            <button onclick="copyWaRecapAll()" class="px-2.5 py-1 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
+                                <i class="fab fa-whatsapp"></i> Salin WA
+                            </button>
+                            <button onclick="exportToExcel()" class="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 shadow-sm">
                             <i class="fas fa-file-excel"></i> Ekspor Excel
                         </button>
+                        </div>
                     </div>
 
                     <div id="view-history" class="p-0 overflow-hidden flex-1 flex flex-col">
@@ -906,9 +911,14 @@
             </div>
             <div id="recap-detail-list" class="p-3 overflow-y-auto custom-scrollbar flex-1 space-y-2"></div>
             <div class="p-2 bg-slate-50 flex items-center justify-between gap-2 border-t border-slate-100">
-                <button onclick="exportRecapDetailToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                <div class="flex items-center gap-1.5">
+                    <button onclick="copyWaRecapDetail()" class="px-3 py-1.5 bg-green-500 hover:bg-green-600 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
+                        <i class="fab fa-whatsapp"></i> Salin WA
+                    </button>
+                    <button onclick="exportRecapDetailToExcel()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold rounded-lg flex items-center gap-1.5">
                     <i class="fas fa-file-excel"></i> Ekspor Excel
                 </button>
+                </div>
                 <button onclick="closeRecapDetail()" class="px-3 py-1.5 bg-slate-200 text-slate-800 text-xs font-semibold rounded-lg">Tutup</button>
             </div>
         </div>
@@ -3048,39 +3058,7 @@
                 XLSX.writeFile(workbook, `Buku_Kas_RT_${new Date().toISOString().split('T')[0]}.xlsx`);
                 showToast('Buku Kas berhasil diekspor!');
             } else {
-                const monthlyData = {};
-                transactions.forEach(t => {
-                    const d = new Date(t.date);
-                    if (isNaN(d.getTime())) return;
-                    const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-                    if (!monthlyData[key]) monthlyData[key] = { income: 0, expense: 0 };
-                    const amt = parseFloat(t.amount) || 0;
-                    if (t.type === 'income') monthlyData[key].income += amt;
-                    else if (t.type === 'expense') monthlyData[key].expense += amt;
-                });
-
-                const sortedKeys = Object.keys(monthlyData).sort().reverse();
-                if (sortedKeys.length === 0) {
-                    showToast('Tidak ada data rekap untuk diekspor.', 'error');
-                    return;
-                }
-
-                const exportData = sortedKeys.map((key, index) => {
-                    const item = monthlyData[key];
-                    return {
-                        "No": index + 1,
-                        "Periode": key,
-                        "Pemasukan (Rp)": item.income,
-                        "Pengeluaran (Rp)": item.expense,
-                        "Bersih (Rp)": item.income - item.expense
-                    };
-                });
-
-                const worksheet = XLSX.utils.json_to_sheet(exportData);
-                const workbook = XLSX.utils.book_new();
-                XLSX.utils.book_append_sheet(workbook, worksheet, "Rekap Bulanan");
-                XLSX.writeFile(workbook, `Rekap_Kas_RT_${new Date().toISOString().split('T')[0]}.xlsx`);
-                showToast('Rekap bulanan berhasil diekspor!');
+                exportRecapSummaryToExcel();
             }
         };
 
@@ -3437,52 +3415,393 @@
             document.getElementById('recap-detail-modal').classList.add('hidden');
         };
 
-        window.exportRecapDetailToExcel = function() {
-            if (typeof XLSX === 'undefined') {
-                showToast('Pustaka Excel belum siap.', 'error');
-                return;
-            }
-            if (!currentRecapExport) {
-                showToast('Tidak ada data mutasi untuk diekspor.', 'error');
-                return;
-            }
+        // ============================================================
+        // EKSPOR REKAP DETAIL + LAPORAN TEKS WHATSAPP
+        // ============================================================
+        const RT_TITLE = 'KAS RT 01 RW 12';
+        const RT_SUBTITLE = 'Perumahan Puri Avanti';
+        const MONEY_FMT = '"Rp" #,##0;[Red]-"Rp" #,##0';
 
-            const { monthName, openingBalance, closingBalance, rows } = currentRecapExport;
+        const rpPlain = n => formatRupiah(n).replace(/\u00a0/g, ' ');
+        const rpSigned = n => (n > 0 ? '+' : (n < 0 ? '-' : '')) + rpPlain(Math.abs(n));
+        const tglPanjang = s => {
+            const d = new Date(s);
+            return isNaN(d.getTime()) ? (s || '-') : d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+        };
+        const tglSingkat = s => {
+            const d = new Date(s);
+            return isNaN(d.getTime()) ? (s || '-') : d.toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
+        };
+        const nowLabel = () => new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+        const todayISO = () => new Date().toISOString().split('T')[0];
+        const monthKeyOf = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        const monthLabelOf = key => {
+            const [y, m] = key.split('-').map(Number);
+            return new Date(y, m - 1, 1).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+        };
+        const monthShortOf = key => {
+            const [y, m] = key.split('-').map(Number);
+            return new Date(y, m - 1, 1).toLocaleDateString('id-ID', { month: 'short', year: 'numeric' });
+        };
+        const isIuranTx = t => t.type === 'income' && t.houseNumber && String(t.houseNumber).trim() !== '';
+        const methodOf = t => (t.paymentMethod && String(t.paymentMethod).trim()) || 'Cash';
+        const catOf = t => normalizeCategory(t.category && String(t.category).trim() ? t.category : 'Tanpa Kategori');
+        const jenisOf = t => t.type === 'expense' ? 'Pengeluaran' : (isIuranTx(t) ? 'Pemasukan - Iuran Warga' : 'Pemasukan - Dana Tambahan');
+        const safeSheetName = s => String(s).replace(/[\[\]:*?\/\\]/g, '').substring(0, 31) || 'Sheet';
 
-            const exportData = [];
-            exportData.push({
-                "Tanggal": "-", "Keterangan": "SALDO AWAL",
-                "No. Rumah / Kategori": "-",
-                "Debit (Keluar)": "", "Kredit (Masuk)": "",
-                "Saldo": openingBalance
-            });
+        // Hitung seluruh rekap sekali: per bulan, saldo awal/akhir, kategori, metode
+        window.computeRecapData = function() {
+            const valid = (transactions || []).filter(t => !isNaN(new Date(t.date).getTime()));
+            const chrono = [...valid].sort((a, b) => compareTxNewestFirst(b, a));
 
-            rows.forEach(({ t, saldo }) => {
+            const monthsMap = {};
+            const catSet = {};
+            const methodTotals = {};
+            const allRows = [];
+            let running = 0, totalIn = 0, totalOut = 0;
+
+            chrono.forEach(t => {
+                const d = new Date(t.date);
+                const key = monthKeyOf(d);
+                const amt = parseFloat(t.amount) || 0;
                 const isInc = t.type === 'income';
-                exportData.push({
-                    "Tanggal": t.date || '-',
-                    "Keterangan": t.description || '-',
-                    "No. Rumah / Kategori": isInc ? (t.houseNumber || 'Dana Tambahan') : (normalizeCategory(t.category) || '-'),
-                    "Debit (Keluar)": !isInc ? (parseFloat(t.amount) || 0) : '',
-                    "Kredit (Masuk)": isInc ? (parseFloat(t.amount) || 0) : '',
-                    "Saldo": saldo
+                const m = methodOf(t);
+
+                if (!monthsMap[key]) {
+                    monthsMap[key] = {
+                        key, label: monthLabelOf(key), short: monthShortOf(key),
+                        opening: running, iuran: 0, extra: 0, income: 0, expense: 0,
+                        count: 0, houses: new Set(), expCat: {}, txs: [], methodClose: {}
+                    };
+                }
+                const M = monthsMap[key];
+                running += isInc ? amt : -amt;
+
+                if (!methodTotals[m]) methodTotals[m] = { in: 0, out: 0 };
+                if (isInc) {
+                    M.income += amt; totalIn += amt; methodTotals[m].in += amt;
+                    if (isIuranTx(t)) { M.iuran += amt; M.houses.add(normHouseNo(t.houseNumber)); }
+                    else M.extra += amt;
+                } else {
+                    M.expense += amt; totalOut += amt; methodTotals[m].out += amt;
+                    const c = catOf(t);
+                    if (!M.expCat[c]) M.expCat[c] = { count: 0, total: 0 };
+                    M.expCat[c].count++; M.expCat[c].total += amt;
+                    catSet[c] = (catSet[c] || 0) + amt;
+                }
+                M.count++;
+                M.closing = running;
+                M.txs.push({ t, amt, isInc, saldo: running });
+                allRows.push({ t, amt, isInc, saldo: running, key });
+                const snap = {};
+                Object.keys(methodTotals).forEach(k => snap[k] = methodTotals[k].in - methodTotals[k].out);
+                M.methodClose = snap;
+            });
+
+            const months = Object.keys(monthsMap).sort().map(k => monthsMap[k]);
+            months.forEach(M => { M.net = M.income - M.expense; });
+            return { months, allRows, totalIn, totalOut, saldo: running, methodTotals, catTotals: catSet };
+        };
+
+        function sheetFromAoa(aoa, opts) {
+            const { widths, merges, moneyCols = [], moneyFrom = 0, pctCols = [] } = opts || {};
+            const ws = XLSX.utils.aoa_to_sheet(aoa);
+            if (widths) ws['!cols'] = widths.map(w => ({ wch: w }));
+            if (merges) ws['!merges'] = merges;
+            for (let r = moneyFrom; r < aoa.length; r++) {
+                moneyCols.forEach(c => {
+                    const cell = ws[XLSX.utils.encode_cell({ r, c })];
+                    if (cell && cell.t === 'n') cell.z = MONEY_FMT;
                 });
-            });
+                pctCols.forEach(c => {
+                    const cell = ws[XLSX.utils.encode_cell({ r, c })];
+                    if (cell && cell.t === 'n') cell.z = '0.0%';
+                });
+            }
+            return ws;
+        }
+        const mergeRow = (r, c0, c1) => ({ s: { r, c: c0 }, e: { r, c: c1 } });
 
-            exportData.push({
-                "Tanggal": "-", "Keterangan": "SALDO AKHIR",
-                "No. Rumah / Kategori": "-",
-                "Debit (Keluar)": "", "Kredit (Masuk)": "",
-                "Saldo": closingBalance
-            });
+        // ---------- EXCEL: REKAP SELURUH PERIODE (tab Rekap Bulanan) ----------
+        window.exportRecapSummaryToExcel = function() {
+            const R = computeRecapData();
+            if (!R.months.length) { showToast('Tidak ada data rekap untuk diekspor.', 'error'); return; }
 
-            const worksheet = XLSX.utils.json_to_sheet(exportData);
-            worksheet['!cols'] = [{ wch: 12 }, { wch: 32 }, { wch: 20 }, { wch: 14 }, { wch: 14 }, { wch: 14 }];
-            const workbook = XLSX.utils.book_new();
-            const sheetName = monthName.replace(/[^a-zA-Z0-9 ]/g, '').substring(0, 31) || 'Mutasi';
-            XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
-            XLSX.writeFile(workbook, `Mutasi_Kas_RT_${monthName.replace(/\s+/g, '_')}.xlsx`);
+            const first = R.months[0], last = R.months[R.months.length - 1];
+            const wb = XLSX.utils.book_new();
+
+            // --- Sheet 1: Ringkasan Bulanan ---
+            const a1 = [];
+            const merges1 = [];
+            const pushMerged = (row) => { a1.push(row); };
+
+            a1.push([`LAPORAN REKAPITULASI ${RT_TITLE}`]); merges1.push(mergeRow(0, 0, 10));
+            a1.push([RT_SUBTITLE]); merges1.push(mergeRow(1, 0, 10));
+            a1.push([`Periode: ${first.label} s/d ${last.label}   |   Dicetak: ${nowLabel()}`]); merges1.push(mergeRow(2, 0, 10));
+            a1.push([]);
+            a1.push(['POSISI KAS SAAT INI']); merges1.push(mergeRow(4, 0, 10));
+            const summaryStart = a1.length;
+            [
+                ['Total Pemasukan (seluruh periode)', R.totalIn],
+                ['Total Pengeluaran (seluruh periode)', R.totalOut],
+                ['SALDO KAS SAAT INI', R.saldo]
+            ].forEach(([label, val]) => {
+                a1.push([label, '', val]);
+                merges1.push(mergeRow(a1.length - 1, 0, 1));
+            });
+            a1.push([]);
+            a1.push(['REKAP PER BULAN (urut dari bulan terlama)']); merges1.push(mergeRow(a1.length - 1, 0, 10));
+            a1.push(['No', 'Periode', 'Saldo Awal', 'Iuran Warga', 'Dana Tambahan', 'Total Pemasukan', 'Total Pengeluaran', 'Selisih (Surplus/Defisit)', 'Saldo Akhir', 'Jml Transaksi', 'Rumah Bayar Iuran']);
+            R.months.forEach((M, i) => {
+                a1.push([i + 1, M.label, M.opening, M.iuran, M.extra, M.income, M.expense, M.net, M.closing, M.count, M.houses.size]);
+            });
+            a1.push(['', 'TOTAL', '', R.months.reduce((s, m) => s + m.iuran, 0), R.months.reduce((s, m) => s + m.extra, 0), R.totalIn, R.totalOut, R.totalIn - R.totalOut, R.saldo, R.months.reduce((s, m) => s + m.count, 0), '']);
+            a1.push([]);
+            a1.push(['Keterangan: Saldo Awal = saldo akhir bulan sebelumnya. Selisih = Total Pemasukan - Total Pengeluaran bulan tersebut.']); merges1.push(mergeRow(a1.length - 1, 0, 10));
+
+            XLSX.utils.book_append_sheet(wb, sheetFromAoa(a1, {
+                widths: [6, 22, 16, 16, 16, 18, 18, 22, 16, 14, 16],
+                merges: merges1, moneyCols: [2, 3, 4, 5, 6, 7, 8], moneyFrom: summaryStart
+            }), 'Ringkasan Bulanan');
+
+            // --- Sheet 2: Pengeluaran per Kategori (matriks bulan x kategori) ---
+            const cats = Object.keys(R.catTotals).sort((a, b) => R.catTotals[b] - R.catTotals[a]);
+            const a2 = [];
+            a2.push(['PENGELUARAN PER KATEGORI']);
+            a2.push([`${RT_TITLE} - ${RT_SUBTITLE}  |  Dicetak: ${nowLabel()}`]);
+            a2.push([]);
+            if (cats.length === 0) {
+                a2.push(['Belum ada data pengeluaran.']);
+                XLSX.utils.book_append_sheet(wb, sheetFromAoa(a2, { widths: [40] }), 'Pengeluaran per Kategori');
+            } else {
+                a2.push(['Kategori', ...R.months.map(m => m.short), 'Total (Rp)', '% dari Total']);
+                const hdrRow = a2.length - 1;
+                cats.forEach(c => {
+                    a2.push([c, ...R.months.map(m => m.expCat[c] ? m.expCat[c].total : null), R.catTotals[c], R.totalOut > 0 ? R.catTotals[c] / R.totalOut : 0]);
+                });
+                a2.push(['TOTAL', ...R.months.map(m => m.expense), R.totalOut, 1]);
+                const nCols = R.months.length + 3;
+                const moneyCols = Array.from({ length: R.months.length + 1 }, (_, i) => i + 1);
+                XLSX.utils.book_append_sheet(wb, sheetFromAoa(a2, {
+                    widths: [34, ...R.months.map(() => 15), 16, 13],
+                    merges: [mergeRow(0, 0, Math.max(nCols - 1, 3)), mergeRow(1, 0, Math.max(nCols - 1, 3))],
+                    moneyCols, moneyFrom: hdrRow + 1, pctCols: [R.months.length + 2]
+                }), 'Pengeluaran per Kategori');
+            }
+
+            // --- Sheet 3: Saldo per Metode ---
+            const a3 = [['SALDO PER METODE PEMBAYARAN'], [`Per ${nowLabel()}`], [],
+                ['Metode', 'Total Masuk', 'Total Keluar', 'Saldo']];
+            Object.keys(R.methodTotals).sort().forEach(k => {
+                const v = R.methodTotals[k];
+                a3.push([k, v.in, v.out, v.in - v.out]);
+            });
+            a3.push(['TOTAL', R.totalIn, R.totalOut, R.saldo]);
+            XLSX.utils.book_append_sheet(wb, sheetFromAoa(a3, {
+                widths: [26, 18, 18, 18], merges: [mergeRow(0, 0, 3), mergeRow(1, 0, 3)], moneyCols: [1, 2, 3], moneyFrom: 4
+            }), 'Saldo per Metode');
+
+            // --- Sheet 4: Semua Transaksi (kronologis + saldo berjalan) ---
+            const a4 = [['SELURUH TRANSAKSI (KRONOLOGIS)'], [`${RT_TITLE} - ${RT_SUBTITLE}  |  Dicetak: ${nowLabel()}`], [],
+                ['No', 'Tanggal', 'Jenis', 'No. Rumah / Kategori', 'Keterangan', 'Metode', 'Pemasukan', 'Pengeluaran', 'Saldo']];
+            R.allRows.forEach((x, i) => {
+                const t = x.t;
+                a4.push([i + 1, tglPanjang(t.date), jenisOf(t),
+                    x.isInc ? (t.houseNumber && String(t.houseNumber).trim() ? t.houseNumber : 'Dana Tambahan') : catOf(t),
+                    t.description || '-', methodOf(t),
+                    x.isInc ? x.amt : null, !x.isInc ? x.amt : null, x.saldo]);
+            });
+            a4.push(['', '', '', '', 'TOTAL', '', R.totalIn, R.totalOut, R.saldo]);
+            XLSX.utils.book_append_sheet(wb, sheetFromAoa(a4, {
+                widths: [6, 14, 26, 22, 44, 14, 16, 16, 16],
+                merges: [mergeRow(0, 0, 8), mergeRow(1, 0, 8)], moneyCols: [6, 7, 8], moneyFrom: 4
+            }), 'Semua Transaksi');
+
+            XLSX.writeFile(wb, `Rekap_Kas_RT01_RW12_${todayISO()}.xlsx`);
+            showToast('Rekap lengkap berhasil diekspor!');
+        };
+
+        // ---------- EXCEL: RINCIAN MUTASI SATU BULAN ----------
+        window.exportRecapDetailToExcel = function() {
+            if (typeof XLSX === 'undefined') { showToast('Pustaka Excel belum siap.', 'error'); return; }
+            if (!currentRecapExport) { showToast('Tidak ada data mutasi untuk diekspor.', 'error'); return; }
+
+            const R = computeRecapData();
+            const M = R.months.find(m => m.key === currentRecapExport.monthKey);
+            if (!M) { showToast('Data bulan tidak ditemukan.', 'error'); return; }
+
+            const wb = XLSX.utils.book_new();
+            const a = [];
+            const merges = [];
+            a.push([`RINCIAN MUTASI ${RT_TITLE}`]); merges.push(mergeRow(0, 0, 7));
+            a.push([`${RT_SUBTITLE}  |  Periode: ${M.label}`]); merges.push(mergeRow(1, 0, 7));
+            a.push([`Dicetak: ${nowLabel()}`]); merges.push(mergeRow(2, 0, 7));
+            a.push([]);
+            a.push(['RINGKASAN BULAN INI']); merges.push(mergeRow(4, 0, 7));
+            const sumStart = a.length;
+            [
+                ['Saldo Awal Bulan', M.opening],
+                [`Pemasukan Iuran Warga (${M.houses.size} rumah)`, M.iuran],
+                ['Pemasukan Dana Tambahan', M.extra],
+                ['TOTAL PEMASUKAN', M.income],
+                ['TOTAL PENGELUARAN', M.expense],
+                ['Selisih (Surplus/Defisit)', M.net],
+                ['SALDO AKHIR BULAN', M.closing]
+            ].forEach(([label, val]) => {
+                a.push([label, '', val]);
+                merges.push(mergeRow(a.length - 1, 0, 1));
+            });
+            a.push([]);
+            a.push(['RINCIAN TRANSAKSI']); merges.push(mergeRow(a.length - 1, 0, 7));
+            a.push(['Tanggal', 'Keterangan', 'Jenis', 'No. Rumah / Kategori', 'Metode', 'Pemasukan', 'Pengeluaran', 'Saldo']);
+            const tblStart = a.length;
+            a.push(['-', 'SALDO AWAL', '', '', '', null, null, M.opening]);
+            M.txs.forEach(x => {
+                const t = x.t;
+                a.push([tglPanjang(t.date), t.description || '-', jenisOf(t),
+                    x.isInc ? (t.houseNumber && String(t.houseNumber).trim() ? t.houseNumber : 'Dana Tambahan') : catOf(t),
+                    methodOf(t), x.isInc ? x.amt : null, !x.isInc ? x.amt : null, x.saldo]);
+            });
+            a.push(['-', 'SALDO AKHIR', '', '', '', M.income, M.expense, M.closing]);
+
+            XLSX.utils.book_append_sheet(wb, sheetFromAoa(a, {
+                widths: [14, 44, 26, 24, 14, 17, 17, 17],
+                merges, moneyCols: [2, 5, 6, 7], moneyFrom: sumStart
+            }), safeSheetName(`Mutasi ${M.short}`));
+
+            // Sheet: Pengeluaran per kategori bulan ini
+            const cats = Object.keys(M.expCat).sort((x, y) => M.expCat[y].total - M.expCat[x].total);
+            const b = [[`PENGELUARAN PER KATEGORI - ${M.label}`], [], ['Kategori', 'Jml Transaksi', 'Total (Rp)', '% dari Pengeluaran']];
+            if (cats.length === 0) b.push(['Tidak ada pengeluaran pada bulan ini.']);
+            else {
+                cats.forEach(c => b.push([c, M.expCat[c].count, M.expCat[c].total, M.expense > 0 ? M.expCat[c].total / M.expense : 0]));
+                b.push(['TOTAL', cats.reduce((s, c) => s + M.expCat[c].count, 0), M.expense, 1]);
+            }
+            XLSX.utils.book_append_sheet(wb, sheetFromAoa(b, {
+                widths: [36, 15, 18, 18], merges: [mergeRow(0, 0, 3)], moneyCols: [2], moneyFrom: 3, pctCols: [3]
+            }), 'Pengeluaran per Kategori');
+
+            // Sheet: Iuran warga yang masuk bulan ini
+            const perHouse = {};
+            M.txs.filter(x => x.isInc && isIuranTx(x.t)).forEach(x => {
+                const k = normHouseNo(x.t.houseNumber);
+                if (!perHouse[k]) perHouse[k] = { no: x.t.houseNumber, count: 0, total: 0, last: x.t.date };
+                perHouse[k].count++; perHouse[k].total += x.amt;
+                if (new Date(x.t.date) > new Date(perHouse[k].last)) perHouse[k].last = x.t.date;
+            });
+            const houseList = Object.keys(perHouse).map(k => {
+                const h = (houses || []).find(hh => normHouseNo(hh.houseNumber) === k);
+                return { ...perHouse[k], owner: h ? (h.ownerName || '-') : '-' };
+            }).sort((x, y) => String(x.no).localeCompare(String(y.no), undefined, { numeric: true, sensitivity: 'base' }));
+            const c = [[`IURAN WARGA MASUK - ${M.label}`], [], ['No', 'No. Rumah', 'Nama Penghuni', 'Jml Pembayaran', 'Total Dibayar', 'Tgl Terakhir Bayar']];
+            if (houseList.length === 0) c.push(['', 'Belum ada iuran masuk pada bulan ini.']);
+            else {
+                houseList.forEach((h, i) => c.push([i + 1, h.no, h.owner, h.count, h.total, tglPanjang(h.last)]));
+                c.push(['', 'TOTAL', `${houseList.length} rumah`, houseList.reduce((s, h) => s + h.count, 0), houseList.reduce((s, h) => s + h.total, 0), '']);
+            }
+            XLSX.utils.book_append_sheet(wb, sheetFromAoa(c, {
+                widths: [6, 14, 30, 16, 18, 20], merges: [mergeRow(0, 0, 5)], moneyCols: [4], moneyFrom: 3
+            }), 'Iuran Warga');
+
+            XLSX.writeFile(wb, `Mutasi_Kas_RT01_RW12_${M.label.replace(/\s+/g, '_')}.xlsx`);
             showToast('Rincian mutasi berhasil diekspor!');
+        };
+
+        // ---------- TEKS WHATSAPP ----------
+        function methodLines(snap) {
+            const ks = Object.keys(snap || {}).filter(k => Math.round(snap[k]) !== 0).sort();
+            return ks.map(k => `   • ${k.replace(/^Bank /, '')}: ${rpPlain(snap[k])}`);
+        }
+
+        window.buildWaMonthText = function(monthKey) {
+            const R = computeRecapData();
+            const M = R.months.find(m => m.key === monthKey);
+            if (!M) return '';
+            const L = [];
+            L.push(`📋 *LAPORAN ${RT_TITLE}*`);
+            L.push(RT_SUBTITLE);
+            L.push(`🗓️ Periode: *${M.label}*`);
+            L.push('━━━━━━━━━━━━━━');
+            L.push(`💼 Saldo awal: ${rpPlain(M.opening)}`);
+            L.push('');
+            L.push(`📥 *Pemasukan: ${rpPlain(M.income)}*`);
+            L.push(`   • Iuran warga: ${rpPlain(M.iuran)} (${M.houses.size} rumah)`);
+            if (M.extra > 0) L.push(`   • Dana tambahan: ${rpPlain(M.extra)}`);
+            L.push('');
+            L.push(`📤 *Pengeluaran: ${rpPlain(M.expense)}*`);
+            const expTx = M.txs.filter(x => !x.isInc);
+            if (expTx.length === 0) L.push('   (tidak ada pengeluaran)');
+            else {
+                expTx.forEach((x, i) => {
+                    L.push(`${i + 1}. ${tglSingkat(x.t.date)} - ${x.t.description || '-'} (${catOf(x.t)}): ${rpPlain(x.amt)}`);
+                });
+            }
+            L.push('');
+            L.push(`📊 Selisih bulan ini: *${rpSigned(M.net)}* ${M.net >= 0 ? '(surplus)' : '(defisit)'}`);
+            L.push(`🏦 *Saldo akhir: ${rpPlain(M.closing)}*`);
+            const ml = methodLines(M.methodClose);
+            if (ml.length) { L.push('Rincian saldo:'); L.push(...ml); }
+            L.push('━━━━━━━━━━━━━━');
+            L.push(`_Dicetak ${nowLabel()}_`);
+            return L.join('\n');
+        };
+
+        window.buildWaAllText = function() {
+            const R = computeRecapData();
+            if (!R.months.length) return '';
+            const L = [];
+            L.push(`📋 *LAPORAN KEUANGAN ${RT_TITLE}*`);
+            L.push(RT_SUBTITLE);
+            L.push(`🗓️ Per ${nowLabel()}`);
+            L.push('━━━━━━━━━━━━━━');
+            L.push(`🏦 *Saldo kas saat ini: ${rpPlain(R.saldo)}*`);
+            const snap = {};
+            Object.keys(R.methodTotals).forEach(k => snap[k] = R.methodTotals[k].in - R.methodTotals[k].out);
+            L.push(...methodLines(snap));
+            L.push('━━━━━━━━━━━━━━');
+            const desc = [...R.months].reverse();
+            const shown = desc.slice(0, 12);
+            L.push(`*Rekap per bulan${desc.length > 12 ? ' (12 bulan terakhir)' : ''}:*`);
+            shown.forEach(M => {
+                L.push('');
+                L.push(`*${M.label}*`);
+                L.push(`📥 Masuk: ${rpPlain(M.income)} (iuran ${rpPlain(M.iuran)}${M.extra > 0 ? `, tambahan ${rpPlain(M.extra)}` : ''})`);
+                L.push(`📤 Keluar: ${rpPlain(M.expense)}`);
+                L.push(`📊 Selisih: ${rpSigned(M.net)}`);
+                L.push(`🏦 Saldo akhir: ${rpPlain(M.closing)}`);
+            });
+            L.push('');
+            L.push('━━━━━━━━━━━━━━');
+            L.push(`Total pemasukan: ${rpPlain(R.totalIn)}`);
+            L.push(`Total pengeluaran: ${rpPlain(R.totalOut)}`);
+            L.push(`_Detail per bulan: klik bulan di aplikasi lalu "Salin WA"._`);
+            return L.join('\n');
+        };
+
+        function copyTextFallback(text) {
+            const ta = document.createElement('textarea');
+            ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+            document.body.appendChild(ta); ta.select();
+            let ok = false;
+            try { ok = document.execCommand('copy'); } catch (e) {}
+            document.body.removeChild(ta);
+            return ok;
+        }
+        function copyWaText(text) {
+            if (!text) { showToast('Belum ada data untuk dilaporkan.', 'error'); return; }
+            const done = () => showToast('Laporan disalin! Tinggal paste di grup WA.');
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(done).catch(() => {
+                    copyTextFallback(text) ? done() : showToast('Gagal menyalin laporan.', 'error');
+                });
+            } else {
+                copyTextFallback(text) ? done() : showToast('Gagal menyalin laporan.', 'error');
+            }
+        }
+        window.copyWaRecapAll = function() { copyWaText(buildWaAllText()); };
+        window.copyWaRecapDetail = function() {
+            if (!currentRecapExport) { showToast('Tidak ada data bulan yang dipilih.', 'error'); return; }
+            copyWaText(buildWaMonthText(currentRecapExport.monthKey));
         };
 
         window.deleteTransaction = async function(id) { 
