@@ -858,6 +858,11 @@
                     <label class="block text-xs font-medium text-slate-700 mb-1">No. WhatsApp / Telepon</label>
                     <input type="tel" id="modal-house-phone" placeholder="Misal: 08123456789" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
                 </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-700 mb-1">Mulai Iuran Dari Bulan <span class="text-slate-400 font-normal">(kosong = sejak awal)</span></label>
+                    <input type="month" id="modal-house-start" class="w-full px-3 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-blue-500 outline-none">
+                    <p class="text-[10px] text-slate-400 mt-1">Warga baru tidak akan muncul di status iuran bulan-bulan sebelum bulan ini.</p>
+                </div>
                 <div class="pt-2 flex justify-end gap-2">
                     <button type="button" onclick="closeHouseModal()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg text-xs">Batal</button>
                     <button type="submit" class="px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg text-xs shadow-sm">Simpan</button>
@@ -1505,7 +1510,7 @@
 
             const filtered = sortedHouses.filter(h => {
                 const no = (h.houseNumber || '').toUpperCase();
-                return no.includes(query);
+                return no.includes(query) || (normHouseNo(query) && normHouseNo(no).includes(normHouseNo(query)));
             });
 
             if (filtered.length === 0) {
@@ -1609,7 +1614,18 @@
 
         // Normalisasi nomor rumah: "A-01", "a 01", "A01" dianggap sama
         window.normHouseNo = function(s) {
-            return String(s || '').replace(/[\s\-]/g, '').toUpperCase();
+            return String(s || '').toUpperCase()
+                .replace(/[^A-Z0-9]/g, '')            // buang strip (termasuk – —), spasi, titik, garis miring
+                .replace(/(^|[A-Z])0+(?=\d)/g, '$1'); // J-01 = J1
+        };
+
+        // Rumah baru hanya dihitung mulai bulan ia ditambahkan (field startPeriod = 'YYYY-MM').
+        // Data lama tanpa startPeriod dianggap sudah ada sejak awal. Jika ada pembayaran
+        // di bulan sebelum startPeriod, rumah tetap ditampilkan agar datanya tidak hilang.
+        window.houseActiveInPeriod = function(h, period) {
+            if (!h || !h.startPeriod || !period) return true;
+            if (period >= h.startPeriod) return true;
+            return getHousePayments(h.houseNumber, period).length > 0;
         };
 
         // Iuran standar = jumlah semua rincian alokasi
@@ -2667,7 +2683,8 @@
             const filteredTransactions = transactions.filter(t => {
                 const desc = (t.description || '').toLowerCase();
                 const house = (t.houseNumber || '').toLowerCase();
-                const matchSearch = desc.includes(searchQuery) || house.includes(searchQuery);
+                const matchSearch = desc.includes(searchQuery) || house.includes(searchQuery) ||
+                    (normHouseNo(searchQuery) !== '' && normHouseNo(t.houseNumber).includes(normHouseNo(searchQuery)));
                 const matchType = typeFilter === 'all' || t.type === typeFilter;
                 
                 let matchMethod = true;
@@ -2922,8 +2939,11 @@
                 (a.houseNumber || '').localeCompare(b.houseNumber || '', undefined, { numeric: true, sensitivity: 'base' })
             );
 
-            const filteredHouses = sortedHouses.filter(h => 
+            const activeHouses = sortedHouses.filter(h => houseActiveInPeriod(h, selectedPeriod));
+            const sq = normHouseNo(searchQuery);
+            const filteredHouses = activeHouses.filter(h => 
                 (h.houseNumber && h.houseNumber.toLowerCase().includes(searchQuery)) || 
+                (sq && normHouseNo(h.houseNumber).includes(sq)) ||
                 (h.ownerName && h.ownerName.toLowerCase().includes(searchQuery))
             );
 
@@ -3025,7 +3045,7 @@
                 tbody.appendChild(tr);
             });
 
-            const totalHouses = houses.length;
+            const totalHouses = activeHouses.length;
             document.getElementById('stat-total-houses').textContent = totalHouses;
             document.getElementById('stat-paid-houses').textContent = paidCount;
             document.getElementById('stat-unpaid-houses').textContent = unpaidCount;
@@ -3398,6 +3418,7 @@
             document.getElementById('modal-house-no').value = '';
             document.getElementById('modal-house-owner').value = '';
             document.getElementById('modal-house-phone').value = '';
+            document.getElementById('modal-house-start').value = currentYearMonth;
             document.getElementById('house-modal-title').innerHTML = '<i class="fas fa-home text-blue-600"></i> Tambah Data Warga';
             document.getElementById('house-modal').classList.remove('hidden');
         };
@@ -3411,6 +3432,7 @@
             document.getElementById('modal-house-no').value = house.houseNumber || '';
             document.getElementById('modal-house-owner').value = house.ownerName || '';
             document.getElementById('modal-house-phone').value = house.phone || '';
+            document.getElementById('modal-house-start').value = house.startPeriod || '';
             document.getElementById('house-modal-title').innerHTML = '<i class="fas fa-edit text-amber-500"></i> Edit Data Warga';
             document.getElementById('house-modal').classList.remove('hidden');
         };
@@ -3653,7 +3675,7 @@
         // Status iuran semua rumah pada satu periode (YYYY-MM)
         window.getHouseStatusList = function(period) {
             const std = getStandardIuran();
-            return [...(houses || [])].sort((a, b) => houseCmp(a.houseNumber, b.houseNumber)).map(h => {
+            return [...(houses || [])].filter(h => houseActiveInPeriod(h, period)).sort((a, b) => houseCmp(a.houseNumber, b.houseNumber)).map(h => {
                 const pays = getHousePayments(h.houseNumber, period);
                 const paid = pays.reduce((s, t) => s + (parseFloat(t.amount) || 0), 0);
                 const status = pays.length === 0 ? 'Belum Bayar' : ((std <= 0 || paid >= std) ? 'Lunas' : 'Kurang Bayar');
@@ -5015,6 +5037,7 @@
             let houseNumber = document.getElementById('modal-house-no').value.trim().toUpperCase();
             const ownerName = document.getElementById('modal-house-owner').value.trim();
             const phone = document.getElementById('modal-house-phone').value.trim();
+            const startPeriod = document.getElementById('modal-house-start').value || '';
 
             if (!houseNumber) {
                 showToast('No. Rumah wajib diisi!', 'error');
@@ -5035,8 +5058,8 @@
 
             if (firebaseReady) {
                 const w = id
-                    ? update(ref(firebaseDb, `kasRt/houses/${id}`), { houseNumber, ownerName, phone })
-                    : set(push(ref(firebaseDb, 'kasRt/houses')), { houseNumber, ownerName, phone });
+                    ? update(ref(firebaseDb, `kasRt/houses/${id}`), { houseNumber, ownerName, phone, startPeriod: startPeriod || null })
+                    : set(push(ref(firebaseDb, 'kasRt/houses')), { houseNumber, ownerName, phone, ...(startPeriod ? { startPeriod } : {}) });
                 const rel = lockBtn(e);
                 const ok = await trackWrite(w, 'rumah');
                 rel();
@@ -5044,9 +5067,9 @@
             } else {
                 if (id) {
                     const idx = houses.findIndex(h => h.id === id);
-                    if (idx !== -1) houses[idx] = { id, houseNumber, ownerName, phone };
+                    if (idx !== -1) houses[idx] = { id, houseNumber, ownerName, phone, ...(startPeriod ? { startPeriod } : {}) };
                 } else {
-                    houses.push({ id: 'h_' + Date.now(), houseNumber, ownerName, phone });
+                    houses.push({ id: 'h_' + Date.now(), houseNumber, ownerName, phone, ...(startPeriod ? { startPeriod } : {}) });
                 }
                 saveLocalStorage();
                 scheduleRenderAllViews();
@@ -5205,11 +5228,8 @@
                 return;
             }
 
-            const normalized = houseNo.replace(/[\s\-]/g, '');
-            const house = houses.find(h => {
-                const hNorm = (h.houseNumber || '').replace(/[\s\-]/g, '').toUpperCase();
-                return hNorm === normalized;
-            });
+            const normalized = normHouseNo(houseNo);
+            const house = houses.find(h => normHouseNo(h.houseNumber) === normalized);
 
             if (!house) {
                 showToast(`Rumah "${houseNo}" tidak ditemukan. Cek dengan pengurus.`, 'error');
@@ -5241,14 +5261,14 @@
                 return;
             }
 
-            const normalized = currentWargaHouse.houseNumber.replace(/[\s\-]/g, '').toUpperCase();
+            const normalized = normHouseNo(currentWargaHouse.houseNumber);
             const now = new Date();
             const currentYM = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
 
             const paymentsByMonth = {};
             transactions.forEach(t => {
                 if (t.type !== 'income' || !t.houseNumber) return;
-                if (t.houseNumber.replace(/[\s\-]/g, '').toUpperCase() !== normalized) return;
+                if (normHouseNo(t.houseNumber) !== normalized) return;
                 
                 const tDate = new Date(t.date);
                 if (isNaN(tDate.getTime())) return;
