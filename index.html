@@ -866,6 +866,61 @@
         </div>
     </div>
 
+    <!-- Modal Bayar Cepat (dari Status Iuran) -->
+    <div id="quick-pay-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center p-0 sm:p-3 hidden">
+        <div class="bg-white w-full sm:max-w-sm rounded-t-2xl sm:rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-emerald-600 text-white px-4 py-3 flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                    <div class="font-bold text-sm truncate" id="qp-title">Catat Iuran</div>
+                    <div class="text-[11px] text-emerald-100 truncate" id="qp-sub">-</div>
+                </div>
+                <button type="button" onclick="closeQuickPay()" class="text-white/80 hover:text-white p-1 shrink-0"><i class="fas fa-times"></i></button>
+            </div>
+            <form id="form-quick-pay" class="p-4 space-y-3">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Metode Pembayaran <span class="text-rose-500">*</span></label>
+                    <div id="qp-methods" class="grid grid-cols-3 gap-2"></div>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-600 mb-1">Nominal (Rp) <span class="text-rose-500">*</span> <span class="text-emerald-600 font-normal text-[10px]" id="qp-hint"></span></label>
+                    <input type="number" id="qp-amount" required min="1" inputmode="numeric" class="w-full px-3 py-2 rounded-lg border border-slate-300 text-sm font-semibold focus:ring-2 focus:ring-emerald-500 outline-none">
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Tanggal</label>
+                        <input type="date" id="qp-date" required class="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-600 mb-1">Keterangan</label>
+                        <input type="text" id="qp-desc" required class="w-full px-2 py-1.5 rounded-lg border border-slate-300 text-xs focus:ring-2 focus:ring-emerald-500 outline-none">
+                    </div>
+                </div>
+                <div class="flex gap-2 pt-1">
+                    <button type="button" onclick="closeQuickPay()" class="flex-1 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">Batal</button>
+                    <button type="submit" id="qp-submit" class="flex-[2] py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-bold flex items-center justify-center gap-1"><i class="fas fa-save"></i> Simpan</button>
+                </div>
+                <button type="button" onclick="openFullFormFromQuickPay()" class="w-full text-[11px] text-blue-600 hover:underline">Perlu upload bukti / alokasi manual? Buka form lengkap</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal Peringatan Transaksi Double -->
+    <div id="dup-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[110] flex items-center justify-center p-3 hidden">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden">
+            <div class="bg-amber-500 text-white px-4 py-3 flex items-center gap-2">
+                <i class="fas fa-triangle-exclamation"></i>
+                <div class="font-bold text-sm">Kemungkinan transaksi double</div>
+            </div>
+            <div class="p-4 space-y-3">
+                <div id="dup-body" class="space-y-2 text-xs text-slate-700"></div>
+                <div class="flex gap-2">
+                    <button type="button" id="dup-cancel" class="flex-1 py-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold">Batal, cek dulu</button>
+                    <button type="button" id="dup-ok" class="flex-1 py-2 rounded-lg bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold">Tetap simpan</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Modal Proof (z-index dinaikkan jadi z-[100]) -->
     <div id="proof-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-[100] flex items-center justify-center p-3 hidden">
         <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl flex flex-col max-h-[85vh]">
@@ -2996,7 +3051,193 @@
 
 
 
-        window.quickRecordPayment = function(houseNo, remaining = 0) { 
+        // ============================================================
+        // APP URL (untuk teks share WA)
+        // ============================================================
+        const APP_URL = 'https://kas-avanti.vercel.app/';
+
+        // ============================================================
+        // DETEKSI TRANSAKSI DOUBLE
+        // ============================================================
+        function periodOfDate(dateStr) {
+            return String(dateStr || '').slice(0, 7);
+        }
+        function findDuplicateWarnings(tx, excludeId) {
+            const warnings = [];
+            const others = transactions.filter(t => t.id !== excludeId && t.type === tx.type);
+            const sameDesc = (a, b) => String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+
+            // 1. Transaksi yang hampir sama persis (tanggal + nominal + rumah/keterangan)
+            const exact = others.filter(t => {
+                if (t.date !== tx.date || Math.round(parseFloat(t.amount) || 0) !== Math.round(tx.amount)) return false;
+                if (tx.type === 'income' && tx.houseNumber) return normHouseNo(t.houseNumber) === normHouseNo(tx.houseNumber);
+                if (tx.type === 'income') return !t.houseNumber && sameDesc(t.description, tx.description);
+                return sameDesc(t.description, tx.description) || (tx.category && t.category === tx.category);
+            });
+            exact.forEach(t => warnings.push({
+                kind: 'Transaksi sama sudah ada',
+                text: `${formatDate(t.date)} · ${t.houseNumber ? 'Rumah ' + t.houseNumber + ' · ' : ''}${t.description || '-'} · ${t.paymentMethod || 'Cash'} · <b>${formatRupiah(t.amount)}</b>`
+            }));
+
+            // 2. Iuran rumah yang sudah lunas di bulan tersebut
+            if (tx.type === 'income' && tx.houseNumber) {
+                const std = getStandardIuran();
+                const period = periodOfDate(tx.date);
+                const paid = getHousePayments(tx.houseNumber, period)
+                    .filter(t => t.id !== excludeId)
+                    .reduce((sum, t) => sum + (parseFloat(t.amount) || 0), 0);
+                if (std > 0 && paid >= std && exact.length === 0) {
+                    warnings.push({
+                        kind: 'Rumah sudah lunas bulan ini',
+                        text: `Rumah <b>${escapeHTML(tx.houseNumber)}</b> sudah membayar <b>${formatRupiah(paid)}</b> (standar ${formatRupiah(std)}) untuk periode ${period}. Pembayaran ini jadi kelebihan.`
+                    });
+                } else if (std > 0 && paid > 0 && paid < std && paid + tx.amount > std && exact.length === 0) {
+                    warnings.push({
+                        kind: 'Melebihi iuran standar',
+                        text: `Sudah dibayar ${formatRupiah(paid)} + ${formatRupiah(tx.amount)} = ${formatRupiah(paid + tx.amount)}, melebihi standar ${formatRupiah(std)}.`
+                    });
+                }
+            }
+            return warnings;
+        }
+        // Resolve true = lanjut simpan, false = batal
+        function confirmIfDuplicate(tx, excludeId) {
+            const warnings = findDuplicateWarnings(tx, excludeId);
+            if (!warnings.length) return Promise.resolve(true);
+            return new Promise(resolve => {
+                const modal = document.getElementById('dup-modal');
+                document.getElementById('dup-body').innerHTML = warnings.map(w => `
+                    <div class="rounded-lg border border-amber-200 bg-amber-50 p-2.5">
+                        <div class="font-bold text-amber-700 mb-0.5">${w.kind}</div>
+                        <div>${w.text}</div>
+                    </div>`).join('');
+                const okBtn = document.getElementById('dup-ok');
+                const cancelBtn = document.getElementById('dup-cancel');
+                const finish = (val) => {
+                    modal.classList.add('hidden');
+                    okBtn.onclick = null; cancelBtn.onclick = null;
+                    resolve(val);
+                };
+                okBtn.onclick = () => finish(true);
+                cancelBtn.onclick = () => finish(false);
+                modal.classList.remove('hidden');
+            });
+        }
+
+        // ============================================================
+        // BAYAR CEPAT (modal di halaman Status Iuran)
+        // ============================================================
+        let quickPayHouse = null;
+        let quickPayMethod = 'Cash';
+        const localDateISO = () => {
+            const d = new Date();
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        };
+
+        window.setQuickPayMethod = function(m) {
+            quickPayMethod = m;
+            document.querySelectorAll('#qp-methods button').forEach(b => {
+                const on = b.dataset.method === m;
+                b.className = 'py-2.5 px-1 rounded-lg border-2 text-xs font-bold transition-all ' +
+                    (on ? 'border-emerald-600 bg-emerald-50 text-emerald-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300');
+            });
+        };
+
+        window.quickRecordPayment = function(houseNo, remaining = 0) {
+            if (!requireAdmin()) return;
+            const house = houses.find(h => normHouseNo(h.houseNumber) === normHouseNo(houseNo));
+            quickPayHouse = house ? house.houseNumber : houseNo;
+
+            const period = document.getElementById('house-period-filter').value || currentYearMonth;
+            const [pY, pM] = period.split('-');
+            const pDate = new Date(parseInt(pY), parseInt(pM) - 1, 1);
+            const monthName = pDate.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
+            const todayPeriod = localDateISO().slice(0, 7);
+
+            document.getElementById('qp-title').textContent = `Catat Iuran ${quickPayHouse}`;
+            document.getElementById('qp-sub').textContent = `${house ? house.ownerName + ' · ' : ''}${monthName}`;
+            document.getElementById('qp-date').value = period === todayPeriod ? localDateISO() : `${period}-01`;
+            document.getElementById('qp-desc').value = `Iuran Kas Bulan ${monthName}`;
+            const nominal = remaining > 0 ? remaining : getDefaultIuranAmount();
+            document.getElementById('qp-amount').value = String(nominal);
+            document.getElementById('qp-hint').textContent = remaining > 0 ? '(sisa kekurangan)' : standardLabel();
+
+            // Tombol metode (diambil dari pilihan di form utama), ingat pilihan terakhir
+            const opts = Array.from(document.getElementById('inc-method').options);
+            const box = document.getElementById('qp-methods');
+            box.innerHTML = '';
+            opts.forEach(o => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.dataset.method = o.value;
+                b.textContent = o.textContent.replace(/^Bank /, '').replace(/ \/ Tunai/, '');
+                b.onclick = () => setQuickPayMethod(o.value);
+                box.appendChild(b);
+            });
+            let last = 'Cash';
+            try { last = localStorage.getItem('kasRtLastMethod') || 'Cash'; } catch (e) {}
+            if (!opts.some(o => o.value === last)) last = opts[0] ? opts[0].value : 'Cash';
+            setQuickPayMethod(last);
+
+            document.getElementById('quick-pay-modal').classList.remove('hidden');
+            const first = box.querySelector(`button[data-method="${CSS.escape(last)}"]`);
+            if (first) first.focus();
+        };
+
+        window.closeQuickPay = function() {
+            document.getElementById('quick-pay-modal').classList.add('hidden');
+            quickPayHouse = null;
+        };
+
+        window.openFullFormFromQuickPay = function() {
+            const h = quickPayHouse;
+            const amt = parseFloat(document.getElementById('qp-amount').value) || 0;
+            closeQuickPay();
+            quickRecordPaymentFull(h, amt);
+        };
+
+        document.getElementById('form-quick-pay').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            if (!requireAdmin()) return;
+            const btn = document.getElementById('qp-submit');
+            if (btn.disabled) return;
+
+            const amount = parseFloat(document.getElementById('qp-amount').value) || 0;
+            if (amount <= 0) { showToast('Nominal harus lebih dari Rp 0!', 'error'); return; }
+
+            const txData = {
+                type: 'income',
+                date: document.getElementById('qp-date').value,
+                paymentMethod: quickPayMethod,
+                houseNumber: quickPayHouse,
+                description: document.getElementById('qp-desc').value.trim(),
+                amount,
+                proofs: []
+            };
+
+            btn.disabled = true;
+            try {
+                if (!(await confirmIfDuplicate(txData, null))) return;
+
+                if (firebaseReady) {
+                    const w = set(push(ref(firebaseDb, 'kasRt/transactions')), { ...txData, createdAt: Date.now(), createdBy: userSessionId });
+                    const ok = await trackWrite(w, 'transaksi');
+                    if (!ok) return;
+                } else {
+                    transactions.push({ id: 't_' + Date.now(), ...txData });
+                    saveLocalStorage();
+                    scheduleRenderAllViews();
+                }
+                try { localStorage.setItem('kasRtLastMethod', quickPayMethod); } catch (e2) {}
+                const house = quickPayHouse;
+                closeQuickPay();
+                showToast(`Iuran ${house} (${quickPayMethod === 'Cash' ? 'Tunai' : quickPayMethod}) tercatat!`);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        window.quickRecordPaymentFull = function(houseNo, remaining = 0) { 
             if (!requireAdmin()) return;
             switchMainPage('dashboard');
             cancelEditTransaction();
@@ -3946,6 +4187,8 @@
             const iu = waIuranLines(monthKey);
             if (iu.length) { L.push('━━━━━━━━━━━━━━'); L.push(...iu); }
             L.push('━━━━━━━━━━━━━━');
+            L.push(`🔗 Cek status iuran & laporan lengkap:`);
+            L.push(APP_URL);
             L.push(`_Dicetak ${nowLabel()}_`);
             return L.join('\n');
         };
@@ -3981,6 +4224,8 @@
             const iu = waIuranLines(currentYearMonth);
             if (iu.length) { L.push('━━━━━━━━━━━━━━'); L.push(...iu); }
             L.push('━━━━━━━━━━━━━━');
+            L.push(`🔗 Cek status iuran & laporan lengkap:`);
+            L.push(APP_URL);
             L.push(`_Detail per bulan: klik bulan di aplikasi lalu "Salin WA"._`);
             return L.join('\n');
         };
@@ -4840,6 +5085,8 @@
                 return;
             }
 
+            if (!(await confirmIfDuplicate({ type: 'income', date, paymentMethod, houseNumber, description, amount }, id || null))) return;
+
             const proofs = [...currentIncomeProofs];
             // update() hanya menggabungkan data; field lama yang harus hilang dikirim sebagai null
             const clearOnEdit = { proof: null };
@@ -4911,6 +5158,8 @@
                 showToast('Nominal pengeluaran harus lebih dari Rp 0!', 'error');
                 return;
             }
+
+            if (!(await confirmIfDuplicate({ type: 'expense', date, paymentMethod, description, category, amount }, id || null))) return;
 
             const txData = { type: 'expense', date, paymentMethod, description, category, amount, proofs };
 
